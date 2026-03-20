@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sipos Studio — Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{font-family:'Inter',sans-serif;background:#0a0a0a;color:#fff;min-height:100vh;-webkit-font-smoothing:antialiased}
+
+:root{
+  --green:#22c55e;--green-dim:#16a34a;--green-bg:rgba(34,197,94,.08);
+  --amber:#f59e0b;--amber-bg:rgba(245,158,11,.08);
+  --red:#ef4444;--red-bg:rgba(239,68,68,.08);
+  --purple:#8b5cf6;--purple-bg:rgba(139,92,246,.08);
+  --dark:#111;--card:#161616;--border:#222;--gray:#666;--light:#aaa;
+}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+@media(max-width:768px){.layout{grid-template-columns:1fr}}
+
+/* SIDEBAR */
+.sidebar{background:#0d0d0d;border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+@media(max-width:768px){.sidebar{display:none}}
+.sidebar-logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.sidebar-logo .name{font-size:1.1rem;font-weight:700}
+.sidebar-logo .name span{color:var(--green)}
+.sidebar-logo .sub{font-size:.75rem;color:var(--gray);margin-top:2px}
+.nav-section{padding:0 12px;margin-bottom:8px}
+.nav-label{font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);padding:0 8px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:.875rem;color:var(--light);transition:all .15s;margin-bottom:2px}
+.nav-item:hover{background:#1a1a1a;color:#fff}
+.nav-item.active{background:var(--green-bg);color:var(--green);font-weight:500}
+.nav-item .icon{font-size:16px;width:20px;text-align:center}
+.sidebar-footer{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
+.sidebar-footer p{font-size:.75rem;color:var(--gray)}
+
+/* MAIN */
+.main{overflow:hidden}
+
+/* TOPBAR */
+.topbar{padding:16px 32px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:#0d0d0d;position:sticky;top:0;z-index:10}
+.topbar h1{font-size:1.1rem;font-weight:600}
+.topbar-actions{display:flex;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:.85rem;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:'Inter',sans-serif}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:var(--green-dim)}
+.btn-ghost{background:transparent;color:var(--light);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--green);color:#fff}
+
+/* CONTENT */
+.content{padding:28px 32px}
+@media(max-width:768px){.content{padding:16px}}
+
+/* STATS GRID */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+@media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
+.stat-card .label{font-size:.75rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--gray);margin-bottom:8px}
+.stat-card .value{font-size:1.8rem;font-weight:700;line-height:1}
+.stat-card .sub{font-size:.8rem;color:var(--gray);margin-top:4px}
+.stat-card.green .value{color:var(--green)}
+.stat-card.amber .value{color:var(--amber)}
+.stat-card.red .value{color:var(--red)}
+.stat-card.purple .value{color:var(--purple)}
+
+/* CATEGORIAS */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-header h2{font-size:1rem;font-weight:600}
+.categoria{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.cat-header{display:flex;align-items:center;gap:12px;padding:16px 20px;cursor:pointer;transition:background .15s}
+.cat-header:hover{background:#1a1a1a}
+.cat-icon{font-size:18px;width:36px;height:36px;background:#1a1a1a;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cat-info{flex:1}
+.cat-title{font-size:.95rem;font-weight:600;margin-bottom:2px}
+.cat-progress-wrap{display:flex;align-items:center;gap:10px}
+.cat-bar{flex:1;height:4px;background:var(--border);border-radius:999px;overflow:hidden;max-width:120px}
+.cat-bar-fill{height:100%;background:var(--green);border-radius:999px;transition:width .4s}
+.cat-pct{font-size:.75rem;color:var(--gray)}
+.cat-toggle{font-size:.75rem;color:var(--gray);transition:transform .2s;padding:4px}
+.cat-toggle.open{transform:rotate(180deg)}
+.cat-body{display:none;padding:0 20px 16px;border-top:1px solid var(--border)}
+.cat-body.open{display:block}
+.items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:12px}
+.item{display:flex;align-items:flex-start;gap:10px;padding:12px;background:#111;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;position:relative}
+.item:hover{border-color:#333;background:#161616}
+.item-status{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.s-ok{background:var(--green)}
+.s-doing{background:var(--amber)}
+.s-nope{background:var(--red)}
+.s-future{background:var(--purple)}
+.item-body{flex:1;min-width:0}
+.item-title{font-size:.85rem;font-weight:500;margin-bottom:2px;line-height:1.3}
+.item-desc{font-size:.75rem;color:var(--gray);line-height:1.4}
+.item-badge{display:inline-block;font-size:.7rem;padding:2px 7px;border-radius:999px;margin-top:5px;font-weight:500}
+.badge-ok{background:rgba(34,197,94,.15);color:#4ade80}
+.badge-doing{background:rgba(245,158,11,.15);color:#fbbf24}
+.badge-nope{background:rgba(239,68,68,.15);color:#f87171}
+.badge-future{background:rgba(139,92,246,.15);color:#a78bfa}
+.item-actions{display:flex;gap:4px;margin-top:6px}
+.item-btn{font-size:.7rem;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--gray);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.item-btn:hover{border-color:var(--green);color:var(--green)}
+
+/* AI CHAT */
+.ai-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:24px}
+.ai-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.ai-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.ai-title{font-size:.95rem;font-weight:600}
+.ai-sub{font-size:.75rem;color:var(--gray)}
+.ai-messages{height:320px;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:85%;padding:10px 14px;border-radius:10px;font-size:.875rem;line-height:1.6}
+.msg-ai{background:#1a1a1a;border:1px solid var(--border);color:#ddd;align-self:flex-start;border-radius:4px 10px 10px 10px}
+.msg-user{background:var(--green);color:#fff;align-self:flex-end;border-radius:10px 4px 10px 10px}
+.msg-loading{display:flex;gap:4px;align-items:center;padding:12px 16px}
+.msg-loading span{width:6px;height:6px;border-radius:50%;background:var(--gray);animation:bounce .8s infinite}
+.msg-loading span:nth-child(2){animation-delay:.15s}
+.msg-loading span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.ai-input-wrap{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px}
+.ai-input{flex:1;background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:#fff;font-family:'Inter',sans-serif;font-size:.875rem;outline:none;transition:border-color .15s;resize:none}
+.ai-input:focus{border-color:var(--green)}
+.ai-input::placeholder{color:var(--gray)}
+.btn-send{background:var(--green);border:none;border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;flex-shrink:0}
+.btn-send:hover{background:var(--green-dim)}
+.quick-btns{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 10px}
+.quick-btn{font-size:.75rem;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--gray);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;white-space:nowrap}
+.quick-btn:hover{border-color:var(--green);color:var(--green)}
+
+/* ADD ITEM MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:#111;border:1px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:480px}
+.modal h3{font-size:1rem;font-weight:600;margin-bottom:20px}
+.form-group{margin-bottom:16px}
+.form-group label{font-size:.8rem;font-weight:500;color:var(--gray);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.form-input{width:100%;background:#0d0d0d;border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:#fff;font-family:'Inter',sans-serif;font-size:.875rem;outline:none;transition:border-color .15s}
+.form-input:focus{border-color:var(--green)}
+.form-select{width:100%;background:#0d0d0d;border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:#fff;font-family:'Inter',sans-serif;font-size:.875rem;outline:none}
+.form-select option{background:#111}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="name">Sipos<span>.</span>Studio</div>
+    <div class="sub">Command Center</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Principal</div>
+    <div class="nav-item active" onclick="showSection('mapa')"><span class="icon">🗺️</span> Mapa Mental</div>
+    <div class="nav-item" onclick="showSection('ai')"><span class="icon">🤖</span> Assistente IA</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Progresso</div>
+    <div class="nav-item" id="nav-identidade" onclick="scrollTo('identidade')"><span class="icon">🏷️</span> Identidade & Marca</div>
+    <div class="nav-item" id="nav-presenca" onclick="scrollTo('presenca')"><span class="icon">🌐</span> Presença Digital</div>
+    <div class="nav-item" id="nav-portfolio" onclick="scrollTo('portfolio')"><span class="icon">💼</span> Portfólio</div>
+    <div class="nav-item" id="nav-prospeccao" onclick="scrollTo('prospeccao')"><span class="icon">📱</span> Prospecção</div>
+    <div class="nav-item" id="nav-servicos" onclick="scrollTo('servicos')"><span class="icon">⚙️</span> Serviços</div>
+    <div class="nav-item" id="nav-financeiro" onclick="scrollTo('financeiro')"><span class="icon">💰</span> Financeiro</div>
+    <div class="nav-item" id="nav-operacional" onclick="scrollTo('operacional')"><span class="icon">🔧</span> Operacional</div>
+    <div class="nav-item" id="nav-crescimento" onclick="scrollTo('crescimento')"><span class="icon">📈</span> Crescimento</div>
+  </div>
+  <div class="sidebar-footer">
+    <p>Sipos Studio © 2026</p>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <h1 id="page-title">Mapa Mental</h1>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" onclick="openModal()">+ Adicionar item</button>
+      <button class="btn btn-green" onclick="exportData()">↓ Exportar</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- STATS -->
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <!-- CATEGORIAS -->
+    <div class="section-header">
+      <h2>Estrutura do negócio</h2>
+      <button class="btn btn-ghost" style="font-size:.8rem;padding:6px 12px" onclick="toggleAll()">Expandir tudo</button>
+    </div>
+    <div id="categorias-container"></div>
+
+    <!-- AI CHAT -->
+    <div class="ai-panel" id="ai-section">
+      <div class="ai-header">
+        <div class="ai-dot"></div>
+        <div>
+          <div class="ai-title">Assistente Sipos Studio</div>
+          <div class="ai-sub">IA integrada — pergunte qualquer coisa sobre seu negócio</div>
+        </div>
+      </div>
+      <div class="ai-messages" id="ai-messages">
+        <div class="msg msg-ai">Oi Eduardo! Sou seu assistente da Sipos Studio. Posso te ajudar a analisar seu progresso, sugerir próximas ações, criar scripts de vendas, revisar estratégias e muito mais. O que precisa?</div>
+      </div>
+      <div class="quick-btns">
+        <button class="quick-btn" onclick="quickMsg('Quais são as prioridades mais urgentes agora?')">🎯 Prioridades urgentes</button>
+        <button class="quick-btn" onclick="quickMsg('O que está faltando para fechar meu primeiro cliente?')">💰 Fechar primeiro cliente</button>
+        <button class="quick-btn" onclick="quickMsg('Crie um script de follow-up para leads que não responderam')">📱 Script follow-up</button>
+        <button class="quick-btn" onclick="quickMsg('Analise meu progresso atual e me dê um diagnóstico honesto')">📊 Diagnóstico honesto</button>
+      </div>
+      <div class="ai-input-wrap">
+        <textarea class="ai-input" id="ai-input" placeholder="Pergunte sobre seu negócio, peça scripts, estratégias..." rows="1" onkeydown="handleKey(event)"></textarea>
+        <button class="btn-send" onclick="sendMessage()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>Adicionar novo item</h3>
+    <div class="form-group">
+      <label>Categoria</label>
+      <select class="form-select" id="modal-cat"></select>
+    </div>
+    <div class="form-group">
+      <label>Título</label>
+      <input class="form-input" id="modal-title" placeholder="Ex: Criar conta no TikTok"/>
+    </div>
+    <div class="form-group">
+      <label>Descrição</label>
+      <input class="form-input" id="modal-desc" placeholder="Detalhes sobre este item"/>
+    </div>
+    <div class="form-group">
+      <label>Status</label>
+      <select class="form-select" id="modal-status">
+        <option value="nope">Faltando</option>
+        <option value="doing">Em andamento</option>
+        <option value="ok">Feito</option>
+        <option value="future">Futuro</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-green" onclick="saveItem()">Salvar</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DADOS_KEY = 'sipos_studio_dados';
+
+const dadosDefault = [
+  {id:'identidade',icon:'🏷️',title:'Identidade & Marca',items:[
+    {id:'i1',title:'Nome comercial',desc:'Sipos Studio',status:'ok'},
+    {id:'i2',title:'Logo',desc:'Símbolo diamante verde PNG',status:'ok'},
+    {id:'i3',title:'Paleta de cores',desc:'Preto #0a0a0a + Verde #22c55e',status:'ok'},
+    {id:'i4',title:'Tipografia',desc:'Inter definida',status:'ok'},
+    {id:'i5',title:'Slogan',desc:'Frase de posicionamento da marca',status:'nope'},
+    {id:'i6',title:'Manual de marca',desc:'Guia de uso da identidade visual',status:'future'},
+  ]},
+  {id:'presenca',icon:'🌐',title:'Presença Digital',items:[
+    {id:'p1',title:'Landing page',desc:'siposstudio.vercel.app no ar',status:'ok'},
+    {id:'p2',title:'Domínio próprio',desc:'siposstudio.com.br — não registrado',status:'nope'},
+    {id:'p3',title:'WhatsApp Business',desc:'Configurado com nome e descrição',status:'ok'},
+    {id:'p4',title:'Instagram',desc:'@siposstudio — não criado',status:'nope'},
+    {id:'p5',title:'Google Meu Negócio',desc:'Perfil não criado ainda',status:'nope'},
+    {id:'p6',title:'Email profissional',desc:'contato@siposstudio.com.br',status:'nope'},
+    {id:'p7',title:'Analytics',desc:'Vercel Analytics ativo no site',status:'ok'},
+  ]},
+  {id:'portfolio',icon:'💼',title:'Portfólio & Cases',items:[
+    {id:'pf1',title:'Iron House Brusque',desc:'Site fictício — estudo de caso',status:'ok'},
+    {id:'pf2',title:'Iron House Canaã',desc:'Prévia enviada — aguardando fechamento',status:'doing'},
+    {id:'pf3',title:'Iron House Diego',desc:'Prévia enviada — aguardando resposta',status:'doing'},
+    {id:'pf4',title:'Case salão de beleza',desc:'Não criado ainda',status:'nope'},
+    {id:'pf5',title:'Case pet shop',desc:'Não criado ainda',status:'nope'},
+    {id:'pf6',title:'Depoimentos reais',desc:'Aguardando primeiros clientes',status:'nope'},
+  ]},
+  {id:'prospeccao',icon:'📱',title:'Prospecção & Vendas',items:[
+    {id:'pr1',title:'Lista de leads',desc:'152 leads qualificados do Apify',status:'ok'},
+    {id:'pr2',title:'Script Matador',desc:'7 fases completas prontas',status:'ok'},
+    {id:'pr3',title:'PDF de mensagens',desc:'153 mensagens personalizadas',status:'ok'},
+    {id:'pr4',title:'Planilha de controle',desc:'Excel com dashboard e funil',status:'ok'},
+    {id:'pr5',title:'Disparador WhatsApp',desc:'Ferramenta semi-automática criada',status:'ok'},
+    {id:'pr6',title:'Rotina diária',desc:'255 mensagens/dia em execução',status:'doing'},
+    {id:'pr7',title:'Follow-up sistemático',desc:'Processo de acompanhamento estruturado',status:'nope'},
+    {id:'pr8',title:'Script Instagram DM',desc:'Não adaptado ainda',status:'nope'},
+  ]},
+  {id:'servicos',icon:'⚙️',title:'Serviços & Entrega',items:[
+    {id:'s1',title:'Sites estáticos HTML',desc:'Domina — entregou Iron House',status:'ok'},
+    {id:'s2',title:'Template base',desc:'Template genérico para negócios locais',status:'ok'},
+    {id:'s3',title:'SEO básico on-page',desc:'Meta tags, título, descrição',status:'nope'},
+    {id:'s4',title:'Google Meu Negócio',desc:'Sabe configurar o básico',status:'doing'},
+    {id:'s5',title:'Automação WhatsApp',desc:'n8n + Z-API — planejado',status:'future'},
+    {id:'s6',title:'Gestão de tráfego',desc:'Google/Meta Ads — aprendendo',status:'doing'},
+    {id:'s7',title:'Processo de entrega',desc:'Fluxo onboarding → aprovação → entrega',status:'nope'},
+    {id:'s8',title:'Contrato/proposta',desc:'Documento formal para clientes',status:'nope'},
+  ]},
+  {id:'financeiro',icon:'💰',title:'Financeiro & Precificação',items:[
+    {id:'f1',title:'Pacote Essencial',desc:'R$ 797 — definido',status:'ok'},
+    {id:'f2',title:'Pacote Profissional',desc:'R$ 1.097 — definido',status:'ok'},
+    {id:'f3',title:'Pacote Completo',desc:'R$ 1.397 — definido',status:'ok'},
+    {id:'f4',title:'Política de pagamento',desc:'50% entrada + 50% entrega',status:'ok'},
+    {id:'f5',title:'Recibo/NF',desc:'Documento para clientes',status:'nope'},
+    {id:'f6',title:'Controle financeiro',desc:'Planilha de receitas e despesas',status:'nope'},
+    {id:'f7',title:'PIX/conta bancária',desc:'Para receber pagamentos',status:'nope'},
+    {id:'f8',title:'Meta mensal',desc:'R$ 2.000 — 2 clientes Profissional',status:'doing'},
+  ]},
+  {id:'operacional',icon:'🔧',title:'Operacional & Ferramentas',items:[
+    {id:'o1',title:'Apify',desc:'Extrator de leads Google Maps',status:'ok'},
+    {id:'o2',title:'Vercel',desc:'Hospedagem dos sites',status:'ok'},
+    {id:'o3',title:'GitHub',desc:'Controle de versão dos projetos',status:'ok'},
+    {id:'o4',title:'Claude Code',desc:'Para desenvolvimento dos sites',status:'ok'},
+    {id:'o5',title:'Manus / v0.dev',desc:'Ferramentas de geração de UI',status:'ok'},
+    {id:'o6',title:'Framer',desc:'Para demos rápidas — não usado ainda',status:'nope'},
+    {id:'o7',title:'CRM / gestão',desc:'Organização pós-venda de clientes',status:'nope'},
+  ]},
+  {id:'crescimento',icon:'📈',title:'Crescimento & Futuro',items:[
+    {id:'c1',title:'Agente WhatsApp IA',desc:'n8n + Z-API ~R$100/mês',status:'future'},
+    {id:'c2',title:'Expansão de nichos',desc:'Restaurantes, clínicas, metalúrgicas',status:'future'},
+    {id:'c3',title:'Programa de indicações',desc:'Clientes indicando outros clientes',status:'future'},
+    {id:'c4',title:'Equipe/parceiros',desc:'Outros devs para escalar',status:'future'},
+    {id:'c5',title:'LinkedIn',desc:'Para atrair clientes maiores',status:'future'},
+  ]},
+];
+
+// Carregar dados do localStorage
+function getDados(){
+  try{
+    const saved = localStorage.getItem(DADOS_KEY);
+    return saved ? JSON.parse(saved) : dadosDefault;
+  }catch(e){return dadosDefault}
+}
+function saveDados(d){
+  localStorage.setItem(DADOS_KEY, JSON.stringify(d));
+}
+
+let dados = getDados();
+let allOpen = false;
+
+const statusLabel = {ok:'Feito',doing:'Em andamento',nope:'Faltando',future:'Futuro'};
+const dotClass = {ok:'s-ok',doing:'s-doing',nope:'s-nope',future:'s-future'};
+const badgeClass = {ok:'badge-ok',doing:'badge-doing',nope:'badge-nope',future:'badge-future'};
+
+function calcStats(){
+  let ok=0,doing=0,nope=0,future=0,total=0;
+  dados.forEach(cat=>cat.items.forEach(i=>{total++;if(i.status==='ok')ok++;else if(i.status==='doing')doing++;else if(i.status==='nope')nope++;else future++;}));
+  return{ok,doing,nope,future,total};
+}
+
+function renderStats(){
+  const s = calcStats();
+  const pct = Math.round(s.ok/s.total*100);
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card green"><div class="label">Feito</div><div class="value">${s.ok}</div><div class="sub">${pct}% do total</div></div>
+    <div class="stat-card amber"><div class="label">Em andamento</div><div class="value">${s.doing}</div><div class="sub">em progresso</div></div>
+    <div class="stat-card red"><div class="label">Faltando</div><div class="value">${s.nope}</div><div class="sub">para fazer</div></div>
+    <div class="stat-card purple"><div class="label">Futuro</div><div class="value">${s.future}</div><div class="sub">planejado</div></div>
+  `;
+}
+
+function renderCategorias(){
+  const container = document.getElementById('categorias-container');
+  container.innerHTML = '';
+  dados.forEach(cat=>{
+    const ok = cat.items.filter(i=>i.status==='ok').length;
+    const pct = Math.round(ok/cat.items.length*100);
+    const el = document.createElement('div');
+    el.className = 'categoria';
+    el.id = 'cat-'+cat.id;
+    el.innerHTML = `
+      <div class="cat-header" onclick="toggleCat('${cat.id}')">
+        <div class="cat-icon">${cat.icon}</div>
+        <div class="cat-info">
+          <div class="cat-title">${cat.title}</div>
+          <div class="cat-progress-wrap">
+            <div class="cat-bar"><div class="cat-bar-fill" style="width:${pct}%"></div></div>
+            <div class="cat-pct">${ok}/${cat.items.length} · ${pct}%</div>
+          </div>
+        </div>
+        <span class="cat-toggle" id="toggle-${cat.id}">▼</span>
+      </div>
+      <div class="cat-body" id="body-${cat.id}">
+        <div class="items-grid">
+          ${cat.items.map(item=>`
+            <div class="item" id="item-${item.id}">
+              <div class="item-status ${dotClass[item.status]}"></div>
+              <div class="item-body">
+                <div class="item-title">${item.title}</div>
+                <div class="item-desc">${item.desc}</div>
+                <span class="item-badge ${badgeClass[item.status]}">${statusLabel[item.status]}</span>
+                <div class="item-actions">
+                  ${item.status!=='ok'?`<button class="item-btn" onclick="changeStatus('${cat.id}','${item.id}','ok')">✓ Feito</button>`:''}
+                  ${item.status!=='doing'?`<button class="item-btn" onclick="changeStatus('${cat.id}','${item.id}','doing')">→ Iniciar</button>`:''}
+                  <button class="item-btn" onclick="removeItem('${cat.id}','${item.id}')" style="color:#ef4444">✕</button>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <button class="btn btn-ghost" style="margin-top:12px;font-size:.8rem;padding:6px 12px" onclick="openModalCat('${cat.id}')">+ Adicionar item</button>
+      </div>
+    `;
+    container.appendChild(el);
+  });
+  renderStats();
+}
+
+function toggleCat(id){
+  const body = document.getElementById('body-'+id);
+  const toggle = document.getElementById('toggle-'+id);
+  const open = body.classList.contains('open');
+  body.classList.toggle('open');
+  toggle.classList.toggle('open',!open);
+}
+
+function toggleAll(){
+  allOpen = !allOpen;
+  dados.forEach(cat=>{
+    const body = document.getElementById('body-'+cat.id);
+    const toggle = document.getElementById('toggle-'+cat.id);
+    if(body){
+      body.classList.toggle('open',allOpen);
+      if(toggle) toggle.classList.toggle('open',allOpen);
+    }
+  });
+}
+
+function changeStatus(catId, itemId, newStatus){
+  const cat = dados.find(c=>c.id===catId);
+  if(!cat) return;
+  const item = cat.items.find(i=>i.id===itemId);
+  if(!item) return;
+  item.status = newStatus;
+  saveDados(dados);
+  renderCategorias();
+}
+
+function removeItem(catId, itemId){
+  if(!confirm('Remover este item?')) return;
+  const cat = dados.find(c=>c.id===catId);
+  if(!cat) return;
+  cat.items = cat.items.filter(i=>i.id!==itemId);
+  saveDados(dados);
+  renderCategorias();
+}
+
+// MODAL
+let modalCatPreset = null;
+function openModal(){modalCatPreset=null;document.getElementById('modal').classList.add('open')}
+function openModalCat(catId){modalCatPreset=catId;document.getElementById('modal-cat').value=catId;document.getElementById('modal').classList.add('open')}
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+
+function saveItem(){
+  const catId = document.getElementById('modal-cat').value;
+  const title = document.getElementById('modal-title').value.trim();
+  const desc = document.getElementById('modal-desc').value.trim();
+  const status = document.getElementById('modal-status').value;
+  if(!title){alert('Digite um título');return}
+  const cat = dados.find(c=>c.id===catId);
+  if(!cat) return;
+  cat.items.push({id:'u'+Date.now(),title,desc:desc||'',status});
+  saveDados(dados);
+  renderCategorias();
+  closeModal();
+  document.getElementById('modal-title').value='';
+  document.getElementById('modal-desc').value='';
+}
+
+function populateModalCat(){
+  const sel = document.getElementById('modal-cat');
+  sel.innerHTML = dados.map(c=>`<option value="${c.id}">${c.icon} ${c.title}</option>`).join('');
+}
+
+function exportData(){
+  const json = JSON.stringify(dados, null, 2);
+  const blob = new Blob([json],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url;a.download='sipos-studio-dados.json';a.click();
+}
+
+function scrollTo(id){
+  const el = document.getElementById('cat-'+id);
+  if(el){
+    const body = document.getElementById('body-'+id);
+    if(!body.classList.contains('open')) toggleCat(id);
+    el.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+}
+
+function showSection(s){
+  document.getElementById('page-title').textContent = s==='mapa'?'Mapa Mental':'Assistente IA';
+}
+
+// AI CHAT
+const CONTEXT = `Você é o assistente pessoal do Eduardo Spínola, dono da Sipos Studio — empresa de criação de sites para pequenos negócios locais no Brasil.
+
+Contexto do negócio:
+- Nome: Sipos Studio
+- Serviço principal: Sites profissionais para pequenos negócios
+- Pacotes: Essencial R$797, Profissional R$1.097, Completo R$1.397
+- Pagamento: 50% entrada + 50% entrega
+- Meta: R$2.000/mês = 2 clientes Profissional
+- Funil: 400 leads → 10 demos → 2 fechamentos
+- Prospecção: WhatsApp Business, 255 msgs/dia
+- Ferramentas: Apify (leads), Vercel (hospedagem), GitHub, Claude Code
+- Leads atuais: 152 qualificados do Google Maps em Brusque/SC
+- Em negociação: Iron House Canaã dos Carajás e Diego Panizza (personal trainer)
+- Site no ar: siposstudio.vercel.app
+
+Seja direto, prático e fale português brasileiro. Dê respostas acionáveis.`;
+
+let chatHistory = [{role:'assistant',content:'Oi Eduardo! Sou seu assistente da Sipos Studio. Posso te ajudar a analisar seu progresso, sugerir próximas ações, criar scripts de vendas, revisar estratégias e muito mais. O que precisa?'}];
+
+async function sendMessage(){
+  const input = document.getElementById('ai-input');
+  const msg = input.value.trim();
+  if(!msg) return;
+  input.value='';
+  addMsg(msg,'user');
+  chatHistory.push({role:'user',content:msg});
+  const loading = addLoading();
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:CONTEXT,
+        messages:chatHistory.slice(-10)
+      })
+    });
+    const data = await res.json();
+    loading.remove();
+    const reply = data.content?.[0]?.text || 'Não consegui processar. Tente novamente.';
+    addMsg(reply,'ai');
+    chatHistory.push({role:'assistant',content:reply});
+  }catch(e){
+    loading.remove();
+    addMsg('Erro ao conectar. Verifique sua conexão.','ai');
+  }
+}
+
+function addMsg(text, who){
+  const msgs = document.getElementById('ai-messages');
+  const div = document.createElement('div');
+  div.className = `msg msg-${who}`;
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function addLoading(){
+  const msgs = document.getElementById('ai-messages');
+  const div = document.createElement('div');
+  div.className = 'msg msg-ai msg-loading';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function quickMsg(msg){
+  document.getElementById('ai-input').value = msg;
+  sendMessage();
+}
+
+function handleKey(e){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}
+}
+
+// INIT
+populateModalCat();
+renderCategorias();
+</script>
+</body>
+</html>
