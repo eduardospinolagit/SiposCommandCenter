@@ -96,15 +96,19 @@ body{font-family:'Inter',sans-serif;background:#0a0a0a;color:#fff;min-height:100
 .content{padding:24px 28px;flex:1;overflow-y:auto}
 @media(max-width:768px){.content{padding:12px 14px}}
 
-.cg{display:grid;gap:10px;margin-bottom:20px}
-.g2{grid-template-columns:repeat(2,1fr)}.g4{grid-template-columns:repeat(4,1fr)}.g5{grid-template-columns:repeat(5,1fr)}
+.cg{display:grid;gap:8px;margin-bottom:16px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g5{grid-template-columns:repeat(5,1fr)}
 @media(max-width:1000px){.g4,.g5{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:600px){.g4,.g5,.g2{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:400px){.cg{grid-template-columns:1fr}}
-.kpi{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:14px 16px}
-.kpi .kl{font-size:.68rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--gray);margin-bottom:6px}
-.kpi .kv{font-size:1.4rem;font-weight:700;line-height:1;margin-bottom:3px}
-.kpi .ks{font-size:.72rem;color:var(--gray)}
+@media(max-width:768px){
+  .g4,.g5{grid-template-columns:repeat(2,1fr) !important}
+  .g2{grid-template-columns:repeat(2,1fr) !important}
+}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;min-width:0}
+.kpi .kl{font-size:.65rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--gray);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .kv{font-size:1.2rem;font-weight:700;line-height:1;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .ks{font-size:.68rem;color:var(--gray)}
 
 /* BOTÃO VOLTAR AO TOPO */
 .back-top{position:fixed;bottom:80px;right:16px;width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--light);display:none;align-items:center;justify-content:center;cursor:pointer;z-index:150;transition:all .2s;font-size:16px}
@@ -115,37 +119,45 @@ body{font-family:'Inter',sans-serif;background:#0a0a0a;color:#fff;min-height:100
 /* MOBILE — FINANCEIRO E RECORRÊNCIAS */
 @media(max-width:768px){
   .chart-row{grid-template-columns:1fr !important}
-  .tbox{overflow-x:hidden}
-  .tbox-head{flex-direction:column;align-items:flex-start}
-  table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;font-size:.78rem}
-  thead th{padding:8px 10px;white-space:nowrap;font-size:.68rem}
-  tbody td{padding:8px 10px;white-space:nowrap}
+  .chart-wrap{height:160px}
 
-  /* Esconder colunas menos importantes no mobile */
-  #fin-tx tr td:nth-child(3),
-  #fin-tx tr th:nth-child(3),
-  #fin-tx tr td:nth-child(4),
-  #fin-tx tr th:nth-child(4){display:none}
+  /* Tabelas com scroll horizontal */
+  .tbox{border-radius:10px}
+  .tbox-head{flex-direction:column;align-items:flex-start;gap:8px}
+  .tbox-head > div{width:100%;display:flex;gap:6px;flex-wrap:wrap}
+  .tbox-head .fs{flex:1;min-width:0;font-size:.78rem;padding:6px 8px}
 
-  #dash-tx tr td:nth-child(1),
-  #dash-tx tr th:nth-child(1){display:none}
+  /* Tabela financeiro com scroll */
+  #fin-tx,#dash-tx{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #fin-tx tr,#dash-tx tr{display:table-row}
+
+  /* Esconder colunas menos importantes */
+  #fin-tx tr td:nth-child(3),#fin-tx tr th:nth-child(3),
+  #fin-tx tr td:nth-child(4),#fin-tx tr th:nth-child(4){display:none}
+  #dash-tx tr td:nth-child(1),#dash-tx tr th:nth-child(1){display:none}
+  thead th{padding:8px 10px;font-size:.68rem;white-space:nowrap}
+  tbody td{padding:9px 10px;font-size:.8rem}
 
   /* Recorrências — linha em coluna */
-  .rec-row{flex-wrap:wrap;gap:8px;padding:12px}
-  .rec-info{width:100%}
-  .rec-val{min-width:auto;text-align:left}
+  .rec-row{flex-wrap:wrap;gap:8px;padding:12px 14px}
+  .rec-info{width:100%;min-width:0}
+  .rec-val{min-width:auto;text-align:left;font-size:.88rem}
   .rec-st{min-width:auto}
   .rec-act{min-width:auto;margin-left:auto}
 
-  /* Filtros financeiro empilhados */
-  .tbox-head > div{width:100%;display:flex;gap:6px;flex-wrap:wrap}
-  .tbox-head .fs{flex:1;min-width:100px;font-size:.78rem;padding:6px 8px}
-
   /* Meta box */
-  .meta-box .meta-top{flex-direction:column;gap:4px;align-items:flex-start}
+  .meta-box{padding:12px 14px}
+  .meta-box > div:first-child{flex-direction:column;gap:3px;align-items:flex-start !important}
 
-  /* KPIs financeiro 2x3 no mobile */
-  #fin-kpis,#rec-kpis{grid-template-columns:repeat(2,1fr) !important}
+  /* KPIs forçar 2 colunas */
+  #fin-kpis,#rec-kpis,#crm-kpis,#dash-kpis,#dash-mapa,#mapa-kpis{
+    grid-template-columns:repeat(2,1fr) !important
+  }
+
+  /* Filtros CRM */
+  .crm-filters{flex-direction:column}
+  .crm-search{width:100%}
+  .crm-filters .fs{width:100%}
 }
 .c-g{color:var(--green)}.c-r{color:var(--red)}.c-a{color:var(--amber)}.c-p{color:var(--purple)}.c-b{color:var(--blue)}
 
@@ -433,7 +445,7 @@ tbody tr:hover td{background:#1a1a1a}
     <!-- TABELA -->
     <div id="crm-tabela" style="display:none">
       <div class="crm-filters">
-        <input class="crm-search" id="crm-search" placeholder="<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Buscar por nome, negócio ou telefone..." oninput="renderTabela()"/>
+        <input class="crm-search" id="crm-search" placeholder="Buscar por nome, negócio ou telefone..." oninput="renderTabelaCRM()"/>
         <select class="fs" id="crm-f-etapa" onchange="renderTabela()" style="padding:7px 12px;font-size:.8rem;width:auto">
           <option value="">Todas etapas</option>
           <option value="contato">Contato</option>
