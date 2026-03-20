@@ -12,6 +12,10 @@
 body{font-family:'Inter',sans-serif;background:#0a0a0a;color:#fff;min-height:100vh;-webkit-font-smoothing:antialiased}
 :root{--green:#22c55e;--green-dim:#16a34a;--green-bg:rgba(34,197,94,.08);--amber:#f59e0b;--red:#ef4444;--purple:#8b5cf6;--blue:#3b82f6;--card:#161616;--border:#222;--gray:#555;--light:#999}
 
+/* ICON SYSTEM */
+.ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.ic svg{display:block}
+
 #loading{position:fixed;inset:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:16px}
 #loading .spin{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -102,6 +106,42 @@ body{font-family:'Inter',sans-serif;background:#0a0a0a;color:#fff;min-height:100
 .back-top.show{display:flex}
 .back-top:hover{background:#222;color:#fff;border-color:var(--green)}
 @media(min-width:769px){.back-top{bottom:24px;right:88px}}
+
+/* MOBILE — FINANCEIRO E RECORRÊNCIAS */
+@media(max-width:768px){
+  .chart-row{grid-template-columns:1fr !important}
+  .tbox{overflow-x:hidden}
+  .tbox-head{flex-direction:column;align-items:flex-start}
+  table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;font-size:.78rem}
+  thead th{padding:8px 10px;white-space:nowrap;font-size:.68rem}
+  tbody td{padding:8px 10px;white-space:nowrap}
+
+  /* Esconder colunas menos importantes no mobile */
+  #fin-tx tr td:nth-child(3),
+  #fin-tx tr th:nth-child(3),
+  #fin-tx tr td:nth-child(4),
+  #fin-tx tr th:nth-child(4){display:none}
+
+  #dash-tx tr td:nth-child(1),
+  #dash-tx tr th:nth-child(1){display:none}
+
+  /* Recorrências — linha em coluna */
+  .rec-row{flex-wrap:wrap;gap:8px;padding:12px}
+  .rec-info{width:100%}
+  .rec-val{min-width:auto;text-align:left}
+  .rec-st{min-width:auto}
+  .rec-act{min-width:auto;margin-left:auto}
+
+  /* Filtros financeiro empilhados */
+  .tbox-head > div{width:100%;display:flex;gap:6px;flex-wrap:wrap}
+  .tbox-head .fs{flex:1;min-width:100px;font-size:.78rem;padding:6px 8px}
+
+  /* Meta box */
+  .meta-box .meta-top{flex-direction:column;gap:4px;align-items:flex-start}
+
+  /* KPIs financeiro 2x3 no mobile */
+  #fin-kpis,#rec-kpis{grid-template-columns:repeat(2,1fr) !important}
+}
 .c-g{color:var(--green)}.c-r{color:var(--red)}.c-a{color:var(--amber)}.c-p{color:var(--purple)}.c-b{color:var(--blue)}
 
 .meta-box{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:16px 18px;margin-bottom:20px}
@@ -318,20 +358,20 @@ tbody tr:hover td{background:#1a1a1a}
   <div class="sb-logo"><div class="name">Sipos<span>.</span>Studio</div><div class="sub">Command Center</div></div>
   <div class="sb-sec">
     <div class="sb-label">Páginas</div>
-    <div class="sb-item active" id="nav-dash" onclick="goPage('dash')"><span class="ico">📊</span> Dashboard</div>
-    <div class="sb-item" id="nav-crm" onclick="goPage('crm')"><span class="ico">👥</span> CRM</div>
-    <div class="sb-item" id="nav-fin" onclick="goPage('fin')"><span class="ico">💰</span> Financeiro</div>
-    <div class="sb-item" id="nav-rec" onclick="goPage('rec')"><span class="ico">🔄</span> Recorrências</div>
-    <div class="sb-item" id="nav-mapa" onclick="goPage('mapa')"><span class="ico">🗺️</span> Mapa Mental</div>
+    <div class="sb-item active" id="nav-dash" onclick="goPage('dash')"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span> Dashboard</div>
+    <div class="sb-item" id="nav-crm" onclick="goPage('crm')"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> CRM</div>
+    <div class="sb-item" id="nav-fin" onclick="goPage('fin')"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span> Financeiro</div>
+    <div class="sb-item" id="nav-rec" onclick="goPage('rec')"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span> Recorrências</div>
+    <div class="sb-item" id="nav-mapa" onclick="goPage('mapa')"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>️</span> Mapa Mental</div>
   </div>
   <div class="sb-sec">
     <div class="sb-label">Categorias</div>
-    <div class="sb-item" onclick="goScroll('identidade')"><span class="ico">🏷️</span> Identidade</div>
-    <div class="sb-item" onclick="goScroll('presenca')"><span class="ico">🌐</span> Presença Digital</div>
-    <div class="sb-item" onclick="goScroll('portfolio')"><span class="ico">💼</span> Portfólio</div>
-    <div class="sb-item" onclick="goScroll('prospeccao')"><span class="ico">📱</span> Prospecção</div>
-    <div class="sb-item" onclick="goScroll('servicos')"><span class="ico">⚙️</span> Serviços</div>
-    <div class="sb-item" onclick="goScroll('crescimento')"><span class="ico">📈</span> Crescimento</div>
+    <div class="sb-item" onclick="goScroll('identidade')"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>️</span> Identidade</div>
+    <div class="sb-item" onclick="goScroll('presenca')"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> Presença Digital</div>
+    <div class="sb-item" onclick="goScroll('portfolio')"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span> Portfólio</div>
+    <div class="sb-item" onclick="goScroll('prospeccao')"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span> Prospecção</div>
+    <div class="sb-item" onclick="goScroll('servicos')"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>️</span> Serviços</div>
+    <div class="sb-item" onclick="goScroll('crescimento')"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span> Crescimento</div>
   </div>
   <div class="sb-footer">
     <div class="user-info"><span class="user-email" id="user-email">Eduardo Spínola</span><span class="user-badge">✓ auth</span></div>
@@ -376,8 +416,8 @@ tbody tr:hover td{background:#1a1a1a}
 
     <!-- TABS -->
     <div class="crm-tabs">
-      <div class="crm-tab active" id="tab-kanban" onclick="setCrmTab('kanban')">📋 Kanban</div>
-      <div class="crm-tab" id="tab-tabela" onclick="setCrmTab('tabela')">📄 Tabela</div>
+      <div class="crm-tab active" id="tab-kanban" onclick="setCrmTab('kanban')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> Kanban</div>
+      <div class="crm-tab" id="tab-tabela" onclick="setCrmTab('tabela')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Tabela</div>
     </div>
 
     <!-- KANBAN -->
@@ -388,7 +428,7 @@ tbody tr:hover td{background:#1a1a1a}
     <!-- TABELA -->
     <div id="crm-tabela" style="display:none">
       <div class="crm-filters">
-        <input class="crm-search" id="crm-search" placeholder="🔍 Buscar por nome, negócio ou telefone..." oninput="renderTabela()"/>
+        <input class="crm-search" id="crm-search" placeholder="<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Buscar por nome, negócio ou telefone..." oninput="renderTabela()"/>
         <select class="fs" id="crm-f-etapa" onchange="renderTabela()" style="padding:7px 12px;font-size:.8rem;width:auto">
           <option value="">Todas etapas</option>
           <option value="contato">Contato</option>
@@ -400,9 +440,9 @@ tbody tr:hover td{background:#1a1a1a}
         </select>
         <select class="fs" id="crm-f-pri" onchange="renderTabela()" style="padding:7px 12px;font-size:.8rem;width:auto">
           <option value="">Todas prioridades</option>
-          <option value="alta">Alta 🔴</option>
-          <option value="media">Média 🟡</option>
-          <option value="baixa">Baixa 🔵</option>
+          <option value="alta">Alta <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0"></span></option>
+          <option value="media">Média <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b;flex-shrink:0"></span></option>
+          <option value="baixa">Baixa <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3b82f6;flex-shrink:0"></span></option>
         </select>
       </div>
       <div class="tbox">
@@ -444,19 +484,19 @@ tbody tr:hover td{background:#1a1a1a}
       <h4>Funil de vendas</h4>
       <div class="drawer-field"><label>Etapa</label>
         <select id="ld-etapa">
-          <option value="contato">📞 Contato inicial</option>
-          <option value="interesse">👀 Demonstrou interesse</option>
-          <option value="demo">🖥️ Demo enviada</option>
-          <option value="negociacao">🤝 Em negociação</option>
-          <option value="fechado">✅ Fechado</option>
-          <option value="perdido">❌ Perdido</option>
+          <option value="contato"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Contato inicial</option>
+          <option value="interesse"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Demonstrou interesse</option>
+          <option value="demo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>️ Demo enviada</option>
+          <option value="negociacao"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Em negociação</option>
+          <option value="fechado"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Fechado</option>
+          <option value="perdido"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Perdido</option>
         </select>
       </div>
       <div class="drawer-field"><label>Prioridade</label>
         <select id="ld-pri">
-          <option value="alta">🔴 Alta</option>
-          <option value="media" selected>🟡 Média</option>
-          <option value="baixa">🔵 Baixa</option>
+          <option value="alta"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0"></span> Alta</option>
+          <option value="media" selected><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b;flex-shrink:0"></span> Média</option>
+          <option value="baixa"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3b82f6;flex-shrink:0"></span> Baixa</option>
         </select>
       </div>
       <div class="drawer-field"><label>Valor estimado (R$)</label><input id="ld-val" type="number" placeholder="797" min="0"/></div>
@@ -492,7 +532,7 @@ tbody tr:hover td{background:#1a1a1a}
       WhatsApp
     </button>
     <button class="save-lead-btn" onclick="saveLead()">Salvar</button>
-    <button class="del-lead-btn" id="del-lead-btn" onclick="deleteLead()" style="display:none">🗑️</button>
+    <button class="del-lead-btn" id="del-lead-btn" onclick="deleteLead()" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>️</button>
   </div>
 </div>
 <div id="drawer-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:299;display:none" onclick="closeDrawer()"></div>
@@ -562,19 +602,19 @@ tbody tr:hover td{background:#1a1a1a}
 <!-- NAVBAR MOBILE -->
 <nav class="mobile-nav">
   <button class="mob-nav-item active" id="mnav-dash" onclick="goPage('dash')">
-    <span class="mn-ico">📊</span>Dashboard
+    <span class="mn-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>Dashboard
   </button>
   <button class="mob-nav-item" id="mnav-crm" onclick="goPage('crm')">
-    <span class="mn-ico">👥</span>CRM
+    <span class="mn-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>CRM
   </button>
   <button class="mob-nav-item" id="mnav-fin" onclick="goPage('fin')">
-    <span class="mn-ico">💰</span>Financeiro
+    <span class="mn-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Financeiro
   </button>
   <button class="mob-nav-item" id="mnav-rec" onclick="goPage('rec')">
-    <span class="mn-ico">🔄</span>Recorrências
+    <span class="mn-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>Recorrências
   </button>
   <button class="mob-nav-item" id="mnav-mapa" onclick="goPage('mapa')">
-    <span class="mn-ico">🗺️</span>Mapa
+    <span class="mn-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>️</span>Mapa
   </button>
 </nav>
 
@@ -592,13 +632,13 @@ tbody tr:hover td{background:#1a1a1a}
     <button class="ai-float-close" onclick="toggleAI()">✕</button>
   </div>
   <div class="ai-msgs" id="ai-msgs" style="flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:10px;min-height:200px;max-height:320px">
-    <div class="msg msg-ai">Oi Eduardo! Pronto para ajudar com estratégias, scripts e análises da Sipos Studio. 🚀</div>
+    <div class="msg msg-ai">Oi Eduardo! Pronto para ajudar com estratégias, scripts e análises da Sipos Studio. <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg></div>
   </div>
   <div class="qbtns" style="padding:6px 12px;flex-wrap:wrap;display:flex;gap:5px">
-    <button class="qbtn" onclick="qMsg('Quais são as prioridades mais urgentes agora?')">🎯 Prioridades</button>
-    <button class="qbtn" onclick="qMsg('Como fechar meu primeiro cliente esta semana?')">💰 Fechar cliente</button>
-    <button class="qbtn" onclick="qMsg('Crie um script de follow-up para leads que não responderam')">📱 Follow-up</button>
-    <button class="qbtn" onclick="qMsg('Analise meu progresso e dê um diagnóstico honesto')">📊 Diagnóstico</button>
+    <button class="qbtn" onclick="qMsg('Quais são as prioridades mais urgentes agora?')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Prioridades</button>
+    <button class="qbtn" onclick="qMsg('Como fechar meu primeiro cliente esta semana?')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Fechar cliente</button>
+    <button class="qbtn" onclick="qMsg('Crie um script de follow-up para leads que não responderam')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> Follow-up</button>
+    <button class="qbtn" onclick="qMsg('Analise meu progresso e dê um diagnóstico honesto')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Diagnóstico</button>
   </div>
   <div class="ai-input-row" style="padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:7px;flex-shrink:0">
     <textarea class="ai-input" id="ai-inp" placeholder="Pergunte qualquer coisa..." rows="1" onkeydown="aiKey(event)" style="flex:1;background:#0d0d0d;border:1px solid var(--border);border-radius:7px;padding:9px 13px;color:#fff;font-family:'Inter',sans-serif;font-size:.85rem;outline:none;resize:none"></textarea>
@@ -617,7 +657,7 @@ tbody tr:hover td{background:#1a1a1a}
       <select class="fs" id="mf-cat"><option>Site</option><option>Google Meu Negócio</option><option>Tráfego</option><option>Automação</option><option>Manutenção</option><option>Ferramentas</option><option>Assinatura</option><option>Marketing</option><option>Outros</option></select>
     </div>
     <div class="fg"><label>Recorrência</label>
-      <select class="fs" id="mf-rec"><option value="unica">Pagamento único</option><option value="mensal">Mensal 🔄</option><option value="anual">Anual 📅</option></select>
+      <select class="fs" id="mf-rec"><option value="unica">Pagamento único</option><option value="mensal">Mensal <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></option><option value="anual">Anual <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></option></select>
     </div>
     <div class="fg" id="mf-st-wrap"><label>Status</label>
       <select class="fs" id="mf-st"><option value="recebido">Recebido</option><option value="pendente">Pendente</option></select>
@@ -633,7 +673,7 @@ tbody tr:hover td{background:#1a1a1a}
   <div class="mo-box">
     <h3 id="mp-title">Pagamento</h3>
     <div class="fg"><label>Status</label>
-      <select class="fs" id="mp-st"><option value="pago">✓ Pago</option><option value="pendente">⏳ Pendente</option><option value="atrasado">⚠️ Atrasado</option></select>
+      <select class="fs" id="mp-st"><option value="pago">✓ Pago</option><option value="pendente">⏳ Pendente</option><option value="atrasado"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>️ Atrasado</option></select>
     </div>
     <div class="fg"><label>Data</label><input class="fi" id="mp-data" type="date"/></div>
     <div class="fg"><label>Observação</label><input class="fi" id="mp-obs" placeholder="Pago via Pix..."/></div>
@@ -675,49 +715,49 @@ let fin=[], pgto={}, meta={val:2000,desc:'2 clientes Profissional'}, dados=[];
 
 // ── DADOS PADRÃO DO MAPA ──
 const dadosDefault=[
-  {id:'identidade',ico:'🏷️',title:'Identidade & Marca',items:[
+  {id:'identidade',ico:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>️',title:'Identidade & Marca',items:[
     {id:'i1',title:'Nome comercial',desc:'Sipos Studio',s:'ok'},{id:'i2',title:'Logo',desc:'Símbolo diamante verde PNG',s:'ok'},
     {id:'i3',title:'Paleta de cores',desc:'Preto #0a0a0a + Verde #22c55e',s:'ok'},{id:'i4',title:'Tipografia',desc:'Inter definida',s:'ok'},
     {id:'i5',title:'Slogan',desc:'Frase de posicionamento',s:'nope'},{id:'i6',title:'Manual de marca',desc:'Guia de identidade',s:'future'},
   ]},
-  {id:'presenca',ico:'🌐',title:'Presença Digital',items:[
+  {id:'presenca',ico:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',title:'Presença Digital',items:[
     {id:'p1',title:'Landing page',desc:'siposstudio.vercel.app',s:'ok'},{id:'p2',title:'Domínio próprio',desc:'siposstudio.com.br',s:'nope'},
     {id:'p3',title:'WhatsApp Business',desc:'Configurado',s:'ok'},{id:'p4',title:'Instagram @siposstudio',desc:'Não criado',s:'nope'},
     {id:'p5',title:'Google Meu Negócio',desc:'Não criado',s:'nope'},{id:'p6',title:'Email profissional',desc:'contato@siposstudio.com.br',s:'nope'},
     {id:'p7',title:'Analytics',desc:'Vercel Analytics ativo',s:'ok'},
   ]},
-  {id:'portfolio',ico:'💼',title:'Portfólio & Cases',items:[
+  {id:'portfolio',ico:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',title:'Portfólio & Cases',items:[
     {id:'pf1',title:'Iron House Brusque',desc:'Case fictício no portfólio',s:'ok'},
     {id:'pf2',title:'Iron House Canaã',desc:'Prévia enviada — aguardando fechamento',s:'doing'},
     {id:'pf3',title:'Iron House Diego',desc:'Prévia enviada — aguardando resposta',s:'doing'},
     {id:'pf4',title:'Case salão de beleza',desc:'Não criado',s:'nope'},{id:'pf5',title:'Case pet shop',desc:'Não criado',s:'nope'},
     {id:'pf6',title:'Depoimentos reais',desc:'Aguardando primeiros clientes',s:'nope'},
   ]},
-  {id:'prospeccao',ico:'📱',title:'Prospecção & Vendas',items:[
+  {id:'prospeccao',ico:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>',title:'Prospecção & Vendas',items:[
     {id:'pr1',title:'Lista de 152 leads',desc:'Google Maps via Apify',s:'ok'},{id:'pr2',title:'Script Matador 7 fases',desc:'Completo',s:'ok'},
     {id:'pr3',title:'153 mensagens personalizadas',desc:'PDF gerado',s:'ok'},{id:'pr4',title:'Planilha de controle',desc:'Excel com funil',s:'ok'},
     {id:'pr5',title:'Disparador WhatsApp',desc:'Ferramenta semi-automática',s:'ok'},{id:'pr6',title:'Rotina 255 msgs/dia',desc:'Em execução',s:'doing'},
     {id:'pr7',title:'Follow-up sistemático',desc:'Não estruturado',s:'nope'},{id:'pr8',title:'Script Instagram DM',desc:'Não adaptado',s:'nope'},
   ]},
-  {id:'servicos',ico:'⚙️',title:'Serviços & Entrega',items:[
+  {id:'servicos',ico:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>️',title:'Serviços & Entrega',items:[
     {id:'s1',title:'Sites HTML',desc:'Domina — entregou Iron House',s:'ok'},{id:'s2',title:'Template base',desc:'Criado',s:'ok'},
     {id:'s3',title:'SEO on-page',desc:'Meta tags, título, descrição',s:'nope'},{id:'s4',title:'Google Meu Negócio',desc:'Aprendendo',s:'doing'},
     {id:'s5',title:'Automação WhatsApp',desc:'n8n + Z-API — planejado',s:'future'},{id:'s6',title:'Gestão de tráfego',desc:'Aprendendo',s:'doing'},
     {id:'s7',title:'Processo de entrega',desc:'Onboarding → aprovação → entrega',s:'nope'},{id:'s8',title:'Contrato formal',desc:'Não criado',s:'nope'},
   ]},
-  {id:'financeiro',ico:'💰',title:'Financeiro',items:[
+  {id:'financeiro',ico:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',title:'Financeiro',items:[
     {id:'f1',title:'Pacote Essencial R$797',desc:'Definido',s:'ok'},{id:'f2',title:'Pacote Profissional R$1.097',desc:'Definido',s:'ok'},
     {id:'f3',title:'Pacote Completo R$1.397',desc:'Definido',s:'ok'},{id:'f4',title:'50% entrada + 50% entrega',desc:'Definido',s:'ok'},
     {id:'f5',title:'Recibo/NF',desc:'Não criado',s:'nope'},{id:'f6',title:'Módulo financeiro',desc:'Ativo com Supabase',s:'ok'},
     {id:'f7',title:'PIX/conta bancária',desc:'Para recebimentos',s:'nope'},{id:'f8',title:'Meta R$2.000/mês',desc:'Em progresso',s:'doing'},
   ]},
-  {id:'operacional',ico:'🔧',title:'Operacional',items:[
+  {id:'operacional',ico:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',title:'Operacional',items:[
     {id:'o1',title:'Apify',desc:'Extrator de leads',s:'ok'},{id:'o2',title:'Vercel',desc:'Hospedagem',s:'ok'},
     {id:'o3',title:'GitHub',desc:'Controle de versão',s:'ok'},{id:'o4',title:'Claude Code',desc:'Desenvolvimento',s:'ok'},
     {id:'o5',title:'Supabase',desc:'Banco de dados e auth',s:'ok'},{id:'o6',title:'Framer',desc:'Para demos rápidas',s:'nope'},
     {id:'o7',title:'CRM de clientes',desc:'Pós-venda',s:'nope'},
   ]},
-  {id:'crescimento',ico:'📈',title:'Crescimento & Futuro',items:[
+  {id:'crescimento',ico:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',title:'Crescimento & Futuro',items:[
     {id:'c1',title:'Agente WhatsApp IA',desc:'n8n + Z-API',s:'future'},{id:'c2',title:'Expansão nichos',desc:'Restaurantes, clínicas',s:'future'},
     {id:'c3',title:'Indicações',desc:'Clientes indicando outros',s:'future'},{id:'c4',title:'Equipe',desc:'Outros devs para escalar',s:'future'},
     {id:'c5',title:'LinkedIn',desc:'Clientes maiores',s:'future'},
@@ -729,7 +769,7 @@ const fmt=v=>'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,max
 const SL={ok:'Feito',doing:'Em andamento',nope:'Faltando',future:'Futuro'};
 const DC={ok:'d-ok',doing:'d-doing',nope:'d-nope',future:'d-future'};
 const BC={ok:'b-ok',doing:'b-doing',nope:'b-nope',future:'b-future'};
-const RL={unica:'Único',mensal:'Mensal 🔄',anual:'Anual 📅'};
+const RL={unica:'Único',mensal:'Mensal <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',anual:'Anual <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'};
 const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
 function setLoading(msg){document.getElementById('loading-msg').textContent=msg||'Carregando...'}
@@ -950,7 +990,7 @@ function renderControle(){
   const wrap=document.getElementById('controle-wrap');
   if(!mensais.length){wrap.innerHTML='<p style="padding:16px 18px;color:var(--gray);font-size:.85rem">Adicione receitas ou despesas mensais para controlar aqui.</p>';return}
   const stC={pago:'var(--green)',pendente:'var(--amber)',atrasado:'var(--red)'};
-  const stL={pago:'✓ Pago',pendente:'⏳ Pendente',atrasado:'⚠️ Atrasado'};
+  const stL={pago:'✓ Pago',pendente:'⏳ Pendente',atrasado:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>️ Atrasado'};
   wrap.innerHTML=mensais.map(t=>{
     const key=`${t.id}_2026-${mes}`;const p=pgto[key]||{};const st=p.st||'pendente';
     return`<div class="rec-row"><div class="rec-info"><div class="rec-name">${t.desc}${t.cli?` <small style="color:var(--gray)">— ${t.cli}</small>`:''}</div><div class="rec-sub">${t.cat}${p.obs?` · ${p.obs}`:''}</div></div><div class="rec-val" style="color:${t.tipo==='entrada'?'var(--green)':'var(--red)'}">${t.tipo==='entrada'?'+':'-'}${fmt(t.val)}</div><div class="rec-st"><span style="font-size:.78rem;font-weight:600;color:${stC[st]}">${stL[st]}</span></div><div class="rec-act"><button class="it-btn" onclick="openPgto('${t.id}','${mes}')">Atualizar</button></div></div>`;
@@ -1267,7 +1307,7 @@ const ETAPAS=[
   {id:'fechado',label:'Fechado ✓',color:'#22c55e'},
   {id:'perdido',label:'Perdido ✗',color:'#555'},
 ];
-const PRI_LABEL={alta:'🔴 Alta',media:'🟡 Média',baixa:'🔵 Baixa'};
+const PRI_LABEL={alta:'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0"></span> Alta',media:'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b;flex-shrink:0"></span> Média',baixa:'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3b82f6;flex-shrink:0"></span> Baixa'};
 
 async function loadLeads(){
   const {data,error}=await sb.from('leads').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
@@ -1308,12 +1348,12 @@ function renderKanban(){
       </div>
       <div class="kb-cards">
         ${cols.map(l=>{
-          const fuStr=l.proximo_followup?`<div class="kb-card-fu">📅 ${new Date(l.proximo_followup).toLocaleDateString('pt-BR')}</div>`:'';
+          const fuStr=l.proximo_followup?`<div class="kb-card-fu"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${new Date(l.proximo_followup).toLocaleDateString('pt-BR')}</div>`:'';
           return`<div class="kb-card" onclick="openLead('${l.id}')">
             <div class="kb-card-name">${l.nome}</div>
             <div class="kb-card-neg">${l.negocio||l.categoria||'—'}</div>
             <div class="kb-card-footer">
-              <div class="kb-card-tel">📱 ${l.telefone}</div>
+              <div class="kb-card-tel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> ${l.telefone}</div>
               <span class="kb-card-pri pri-${l.prioridade}">${l.prioridade}</span>
             </div>
             ${fuStr}
@@ -1333,7 +1373,7 @@ function renderTabelaCRM(){
   if(search)lista=lista.filter(l=>(l.nome+l.negocio+l.telefone).toLowerCase().includes(search));
   if(fEtapa)lista=lista.filter(l=>l.etapa===fEtapa);
   if(fPri)lista=lista.filter(l=>l.prioridade===fPri);
-  const etapaLabel={contato:'📞 Contato',interesse:'👀 Interesse',demo:'🖥️ Demo',negociacao:'🤝 Negociação',fechado:'✅ Fechado',perdido:'❌ Perdido'};
+  const etapaLabel={contato:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Contato',interesse:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Interesse',demo:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>️ Demo',negociacao:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Negociação',fechado:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Fechado',perdido:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Perdido'};
   document.getElementById('crm-tbody').innerHTML=lista.length?lista.map(l=>`<tr onclick="openLead('${l.id}')" style="cursor:pointer">
     <td style="font-weight:500">${l.nome}</td>
     <td style="color:var(--gray)">${l.negocio||'—'}</td>
