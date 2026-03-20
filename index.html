@@ -15,6 +15,10 @@ body{font-family:'Inter',sans-serif;background:#0a0a0a;color:#fff;min-height:100
 /* ICON SYSTEM */
 .ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
 .ic svg{display:block}
+.sb-item .ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex-shrink:0}
+.sb-item .ico svg{width:15px;height:15px;display:block}
+.mob-nav-item .mn-ico{display:flex;align-items:center;justify-content:center;width:22px;height:22px}
+.mob-nav-item .mn-ico svg{width:20px;height:20px;display:block}
 
 #loading{position:fixed;inset:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:16px}
 #loading .spin{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 1s linear infinite}
@@ -65,7 +69,8 @@ body{font-family:'Inter',sans-serif;background:#0a0a0a;color:#fff;min-height:100
 .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#0d0d0d;border-top:1px solid var(--border);z-index:200;padding:0;height:60px}
 @media(max-width:768px){.mobile-nav{display:flex}}
 .mob-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;padding:8px 4px;color:var(--gray);transition:color .15s;font-size:.6rem;font-weight:500;border:none;background:transparent;font-family:'Inter',sans-serif}
-.mob-nav-item .mn-ico{font-size:18px;line-height:1}
+.mob-nav-item .mn-ico{display:flex;align-items:center;justify-content:center;width:20px;height:20px}
+.mob-nav-item .mn-ico svg{width:20px;height:20px;display:block;stroke:currentColor}
 .mob-nav-item.active{color:var(--green)}
 .mob-nav-item:hover{color:#fff}
 
@@ -445,7 +450,7 @@ tbody tr:hover td{background:#1a1a1a}
           <option value="baixa">Baixa <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3b82f6;flex-shrink:0"></span></option>
         </select>
       </div>
-      <div class="tbox">
+      <div class="tbox" id="crm-table-wrap">
         <table>
           <thead><tr><th>Nome</th><th>Negócio</th><th>Telefone</th><th>Etapa</th><th>Prioridade</th><th>Follow-up</th><th>Valor</th><th></th></tr></thead>
           <tbody id="crm-tbody"></tbody>
@@ -1373,17 +1378,51 @@ function renderTabelaCRM(){
   if(search)lista=lista.filter(l=>(l.nome+l.negocio+l.telefone).toLowerCase().includes(search));
   if(fEtapa)lista=lista.filter(l=>l.etapa===fEtapa);
   if(fPri)lista=lista.filter(l=>l.prioridade===fPri);
-  const etapaLabel={contato:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Contato',interesse:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Interesse',demo:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>️ Demo',negociacao:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Negociação',fechado:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Fechado',perdido:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Perdido'};
-  document.getElementById('crm-tbody').innerHTML=lista.length?lista.map(l=>`<tr onclick="openLead('${l.id}')" style="cursor:pointer">
-    <td style="font-weight:500">${l.nome}</td>
-    <td style="color:var(--gray)">${l.negocio||'—'}</td>
-    <td><a href="https://wa.me/55${l.telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);font-size:.8rem">${l.telefone}</a></td>
-    <td><span class="tag" style="background:rgba(255,255,255,.06);color:var(--light)">${etapaLabel[l.etapa]||l.etapa}</span></td>
-    <td><span class="kb-card-pri pri-${l.prioridade}">${PRI_LABEL[l.prioridade]}</span></td>
-    <td style="color:${l.proximo_followup&&new Date(l.proximo_followup)<new Date()?'var(--red)':'var(--gray)'}">${l.proximo_followup?new Date(l.proximo_followup).toLocaleDateString('pt-BR'):'—'}</td>
-    <td style="color:var(--green)">${l.valor_estimado?fmt(l.valor_estimado):'—'}</td>
-    <td><button class="it-btn" onclick="event.stopPropagation();openLead('${l.id}')">✏️</button></td>
-  </tr>`).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--gray);padding:20px">Nenhum lead encontrado</td></tr>';
+
+  const etapaLabel={contato:'Contato',interesse:'Interesse',demo:'Demo',negociacao:'Negociação',fechado:'Fechado',perdido:'Perdido'};
+  const etapaCor={contato:'#3b82f6',interesse:'#f59e0b',demo:'#8b5cf6',negociacao:'#f97316',fechado:'#22c55e',perdido:'#555'};
+  const priCor={alta:'#ef4444',media:'#f59e0b',baixa:'#3b82f6'};
+  const isMobile=window.innerWidth<=768;
+
+  const tableWrap=document.getElementById('crm-table-wrap');
+  let mobileList=document.getElementById('crm-mobile-list');
+  if(!mobileList){
+    mobileList=document.createElement('div');
+    mobileList.id='crm-mobile-list';
+    mobileList.style.cssText='background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden';
+    tableWrap.parentNode.insertBefore(mobileList,tableWrap);
+  }
+
+  if(isMobile){
+    tableWrap.style.display='none';
+    mobileList.style.display='block';
+    mobileList.innerHTML=lista.length?lista.map(l=>`
+      <div onclick="openLead('${l.id}')" style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;gap:12px;transition:background .15s" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background='transparent'">
+        <div style="width:38px;height:38px;border-radius:50%;background:#1a1a1a;border:2px solid ${etapaCor[l.etapa]||'#333'};display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;color:#fff;flex-shrink:0">${l.nome.charAt(0).toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.88rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.nome}</div>
+          <div style="font-size:.75rem;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px">${l.negocio||l.categoria||l.telefone||'—'}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
+          <span style="font-size:.65rem;font-weight:600;padding:2px 8px;border-radius:999px;background:${etapaCor[l.etapa]||'#333'}22;color:${etapaCor[l.etapa]||'#999'}">${etapaLabel[l.etapa]||l.etapa}</span>
+          <span style="width:7px;height:7px;border-radius:50%;background:${priCor[l.prioridade]||'#555'};display:inline-block"></span>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>`).join('')+'':'<p style="text-align:center;color:var(--gray);padding:24px;font-size:.85rem">Nenhum lead</p>';
+  } else {
+    tableWrap.style.display='block';
+    mobileList.style.display='none';
+    document.getElementById('crm-tbody').innerHTML=lista.length?lista.map(l=>`<tr onclick="openLead('${l.id}')" style="cursor:pointer">
+      <td style="font-weight:500">${l.nome}</td>
+      <td style="color:var(--gray)">${l.negocio||'—'}</td>
+      <td><a href="https://wa.me/55${l.telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);font-size:.8rem">${l.telefone}</a></td>
+      <td><span style="font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px;background:${etapaCor[l.etapa]||'#333'}22;color:${etapaCor[l.etapa]||'#999'}">${etapaLabel[l.etapa]||l.etapa}</span></td>
+      <td><span style="display:inline-flex;align-items:center;gap:5px;font-size:.78rem;font-weight:500;color:${priCor[l.prioridade]}"><span style="width:7px;height:7px;border-radius:50%;background:${priCor[l.prioridade]};display:inline-block"></span>${l.prioridade}</span></td>
+      <td style="color:${l.proximo_followup&&new Date(l.proximo_followup)<new Date()?'var(--red)':'var(--gray)'}">${l.proximo_followup?new Date(l.proximo_followup).toLocaleDateString('pt-BR'):'—'}</td>
+      <td style="color:var(--green)">${l.valor_estimado?fmt(l.valor_estimado):'—'}</td>
+      <td><button class="it-btn" onclick="event.stopPropagation();openLead('${l.id}')">✏</button></td>
+    </tr>`).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--gray);padding:20px">Nenhum lead</td></tr>';
+  }
 }
 
 function setCrmTab(tab){
