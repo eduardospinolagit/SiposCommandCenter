@@ -395,7 +395,7 @@ tbody tr:hover td{background:#1a1a1a}
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
     </div>
     <div style="flex:1;min-width:0">
-      <div style="font-size:.88rem;font-weight:600;margin-bottom:2px">Instalar Sipos Studio</div>
+      <div style="font-size:.88rem;font-weight:600;margin-bottom:2px">Instalar SLAC</div>
       <div style="font-size:.72rem;color:#555">Adicione à tela inicial para acesso rápido</div>
     </div>
     <button id="pwa-install-btn" style="background:#22c55e;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">Instalar</button>
@@ -1318,6 +1318,19 @@ function initRealtime(){
       if(p==='page-dash')renderDash();if(p==='page-fin')renderFin();
     })
     .subscribe();
+  // Escutar mensagens da aba de Prospecção
+  try {
+    const bc = new BroadcastChannel('slac_crm');
+    bc.onmessage = async (e) => {
+      if (e.data?.type === 'lead_novo') {
+        await loadLeads();
+        const p = document.querySelector('.page.active')?.id;
+        if (p === 'page-crm') renderCRM();
+        if (p === 'page-dash') renderDash();
+        toast('Novo lead da Prospecção ✓', 'ok');
+      }
+    };
+  } catch(e) {}
 }
 
 // IA
@@ -1880,7 +1893,7 @@ function agendarNotifDiaria(){
       return t.data===hojeStr;
     });
     if(mensaisHoje.length){
-      new Notification('SiposCC — Cobranças',{
+      new Notification('SLAC — Cobranças',{
         body:mensaisHoje.length+' pagamento'+(mensaisHoje.length>1?'s':'')+' vence'+(mensaisHoje.length>1?'m':'')+' hoje: '+mensaisHoje.map(t=>t.cli||t.desc).join(', '),
         icon:'/icons/web-app-manifest-192x192.png'
       });
