@@ -784,6 +784,8 @@ async function marcarContato(id) {
     }, {onConflict:'id'});
     toast(`${row.nome} → Kanban ✓`, 'ok');
   } catch(e) { toast('Salvo localmente', 'info'); }
+  // Sinaliza para o CRM (se aberto em outra aba) recarregar leads
+  try { new BroadcastChannel('slac_crm').postMessage({ type: 'lead_novo' }); } catch(e) {}
   atualizarTudo();
   applyFilters();
 }
@@ -843,10 +845,9 @@ async function enviarSelecionadosKanban() {
 }
 
 function excluirSelecionados() {
-  const ids = [...selectedIds];
-  if (!ids.length) return;
-  if (!confirm(`Excluir ${ids.length} empresa${ids.length!==1?'s':''}? Não pode ser desfeito.`)) return;
-  allRows = allRows.filter(r => !ids.has(r._id));
+  if (!selectedIds.size) return;
+  if (!confirm(`Excluir ${selectedIds.size} empresa${selectedIds.size!==1?'s':''}? Não pode ser desfeito.`)) return;
+  allRows = allRows.filter(r => !selectedIds.has(r._id));
   selectedIds.clear();
   salvarDados();
   updateSelBar();
