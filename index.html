@@ -891,12 +891,18 @@ function hideSaving(){
 
 // AUTH
 async function initAuth(){
-  const {data:{session}}=await sb.auth.getSession();
-  if(session){currentUser=session.user;await loadAllData();showApp();}
-  else showLogin();
-  document.getElementById('loading').classList.add('hidden');
+  try {
+    const {data:{session}}=await sb.auth.getSession();
+    if(session){currentUser=session.user;await loadAllData();await showApp();}
+    else showLogin();
+  } catch(e) {
+    console.error('Auth error:',e);
+    showLogin();
+  } finally {
+    document.getElementById('loading').classList.add('hidden');
+  }
   sb.auth.onAuthStateChange(async(event,session)=>{
-    if(event==='SIGNED_IN'&&session){currentUser=session.user;await loadAllData();showApp();}
+    if(event==='SIGNED_IN'&&session){currentUser=session.user;await loadAllData();await showApp();}
     if(event==='SIGNED_OUT'){currentUser=null;showLogin();}
   });
 }
@@ -911,7 +917,7 @@ async function doLogin(){
   btn.disabled=false;document.getElementById('lbtn-text').textContent='Entrar';
 }
 async function doLogout(){await sb.auth.signOut();toast('Sessão encerrada','ok')}
-function showApp(){
+async function showApp(){
   document.getElementById('login-screen').classList.remove('visible');
   document.getElementById('app').classList.add('visible');
   // Carregar nome do usuário salvo
@@ -920,7 +926,6 @@ function showApp(){
     if(cfgNome?.valor?.nome) {
       document.getElementById('user-email').textContent = cfgNome.valor.nome;
     } else {
-      // Primeiro login — mostrar modal
       document.getElementById('user-email').textContent = currentUser.email?.split('@')[0] || 'usuário';
       setTimeout(()=>{ document.getElementById('welcome-overlay').style.display='flex'; document.getElementById('welcome-nome').focus(); }, 600);
     }
@@ -944,7 +949,7 @@ async function loadFin(){
   const {data,error}=await sb.from('financeiro').select('*').eq('user_id',currentUser.id).order('data',{ascending:false});
   if(error){console.error(error);return}
   fin=(data||[]).map(r=>({id:r.id,tipo:r.tipo,desc:r.descricao,cat:r.cat,val:r.val,data:r.data,st:r.st,rec:r.rec,cli:r.cli||'',obs:r.obs||''}));
-  if(!fin.length){const seed={id:'t0',tipo:'saida',desc:'Claude Pro',cat:'Assinatura',val:110,data:'2026-03-01',st:'pago',rec:'mensal',cli:'',obs:''};await sbInsertFin(seed);fin=[seed];}
+  // Sem dados ainda — deixa vazio, usuário vai adicionar
 }
 async function loadPgto(){
   const {data,error}=await sb.from('pagamentos').select('*').eq('user_id',currentUser.id);
