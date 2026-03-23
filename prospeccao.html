@@ -239,6 +239,10 @@ tbody td{padding:11px 14px;vertical-align:middle}
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
       Modo Foco
     </button>
+    <button class="btn btn-gh" onclick="exportarCSV()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar CSV
+    </button>
     <button class="btn btn-gh" onclick="document.getElementById('file-input').click()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       Importar CSV
@@ -723,7 +727,7 @@ function renderTabela() {
       <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
       <td>
         <div class="action-cell">
-          <button class="btn-contact" ${contatado?'disabled':''} onclick="${contatado?'':``marcarContato('${r._id}')``}" title="${contatado&&r._contatado_em?'Contatado em '+new Date(r._contatado_em).toLocaleString('pt-BR'):'Marcar como contatado'}">
+          <button class="btn-contact" ${contatado?'disabled':''} onclick="${contatado?'':('marcarContato(\''+r._id+'\')')}" title="${contatado&&r._contatado_em?'Contatado em '+new Date(r._contatado_em).toLocaleString('pt-BR'):'Marcar como contatado'}">
             ${contatado?'✓ Contatei':'📲 Contatei'}
           </button>
           <button class="btn-del-row" onclick="excluirLead('${r._id}')" title="Excluir">🗑</button>
@@ -1127,6 +1131,40 @@ function toast(msg, type='ok') {
   const el = document.getElementById('toast');
   el.textContent = msg; el.className = `toast ${type} show`;
   clearTimeout(el._t); el._t = setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+// ── EXPORTAR CSV ──
+function exportarCSV() {
+  if (!allRows.length) { toast('Nenhum dado para exportar', 'err'); return; }
+
+  const cols = ['nome','telefone','categoria','cidade','site','instagram','endereco','_status','_contatado_em'];
+  const headers = ['Nome','Telefone','Categoria','Cidade','Site','Instagram','Endereço','Status','Contatado em'];
+
+  const escape = v => {
+    const s = String(v||'');
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g,'""')}"` : s;
+  };
+
+  const rows = [
+    headers.join(','),
+    ...allRows.map(r => cols.map(c => {
+      if (c === '_contatado_em') return escape(r[c] ? new Date(r[c]).toLocaleString('pt-BR') : '');
+      if (c === '_status') return escape(r[c] === 'contatado' ? 'Contatado' : 'Pendente');
+      return escape(r[c]);
+    }).join(','))
+  ].join('\n');
+
+  const bom = '\uFEFF'; // BOM para Excel reconhecer UTF-8
+  const blob = new Blob([bom + rows], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `prospeccao_sanolab_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast(`${allRows.length} linhas exportadas ✓`, 'ok');
 }
 
 init();
