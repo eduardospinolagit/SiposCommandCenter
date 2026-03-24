@@ -15,8 +15,9 @@
 </template>
 
 <script setup>
-import { onMounted, provide, ref } from 'vue'
+import { onMounted, onUnmounted, provide, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { sb } from '@/lib/supabase'
 
 const auth = useAuthStore()
 
@@ -38,7 +39,6 @@ let savingTimer = null
 function showSaving() {
   saving.value = true
   clearTimeout(savingTimer)
-  // Timeout de segurança — nunca fica preso
   savingTimer = setTimeout(() => { saving.value = false }, 12000)
 }
 
@@ -49,8 +49,30 @@ function hideSaving() {
 
 provide('saving', { showSaving, hideSaving })
 
-// Auth init — só aqui, o router guard só verifica o estado
+// ── Renovar sessão quando página volta do inativo ──
+async function handleVisibilityChange() {
+  if (document.visibilityState === 'visible') {
+    try {
+      const { data, error } = await sb.auth.getSession()
+      if (error || !data.session) {
+        // Sessão expirou — faz logout limpo
+        await auth.logout()
+        return
+      }
+      // Força refresh do token se está próximo de expirar
+      await sb.auth.refreshSession()
+    } catch (e) {
+      console.warn('Erro ao renovar sessão:', e)
+    }
+  }
+}
+
 onMounted(async () => {
   await auth.init()
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
