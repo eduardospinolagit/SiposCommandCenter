@@ -375,7 +375,6 @@
         </button>
       </div>
     </div>
-  </Transition>
 
   <!-- Modal fechar negócio -->
   <FecharNegocioModal
@@ -836,8 +835,7 @@ onMounted(() => {
 }
 .drawer-backdrop {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,.5);
-  backdrop-filter: blur(2px);
+  background: rgba(0,0,0,.45);
   z-index: 800;
 }
 .drawer-header {
@@ -917,8 +915,7 @@ onMounted(() => {
 .fade-enter-active, .fade-leave-active { transition: opacity 200ms ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
-.drawer-slide-enter-active, .drawer-slide-leave-active { transition: transform 280ms ease; }
-.drawer-slide-enter-from, .drawer-slide-leave-to { transform: translateX(100%); }
+/* drawer sem animação para performance */
 
 /* Responsive */
 @media (max-width: 1100px) {
