@@ -3,7 +3,7 @@
     <!-- SIDEBAR DESKTOP -->
     <aside class="sidebar">
       <div class="sb-logo">
-        <div class="name">SLAC <span>●</span></div>
+        <img src="/logo.png" alt="Sano Lab" style="height:36px;width:auto;display:block;margin-bottom:6px" />
         <div class="sub">Sano Lab Advanced CRM</div>
       </div>
 
