@@ -46,6 +46,14 @@
           </div>
         </div>
 
+        <!-- Instalar PWA (tela cheia) -->
+        <button v-if="pwaInstallable" class="sb-item" @click="installPWA" title="Instalar app (tela cheia)">
+          <span class="sb-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </span>
+          <span class="sb-text">Instalar app</span>
+        </button>
+
         <!-- Sair: logout imediato -->
         <button class="sb-item sb-danger" @click="handleLogout" title="Sair">
           <span class="sb-icon">
@@ -168,6 +176,30 @@ async function saveWelcomeName() {
 }
 
 function go(path) { router.push(path) }
+
+// PWA install prompt
+const pwaInstallable = ref(false)
+let deferredPrompt = null
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault()
+    deferredPrompt = e
+    pwaInstallable.value = true
+  })
+  window.addEventListener('appinstalled', () => {
+    pwaInstallable.value = false
+    deferredPrompt = null
+  })
+}
+
+async function installPWA() {
+  if (!deferredPrompt) return
+  deferredPrompt.prompt()
+  const { outcome } = await deferredPrompt.userChoice
+  if (outcome === 'accepted') pwaInstallable.value = false
+  deferredPrompt = null
+}
 </script>
 
 <style scoped>

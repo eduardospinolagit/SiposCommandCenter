@@ -1,7 +1,6 @@
 <template>
   <div class="dash-page">
 
-    <!-- Page header -->
     <div class="page-header">
       <div>
         <h1 class="page-title">Dashboard</h1>
@@ -19,7 +18,7 @@
       </div>
     </div>
 
-    <!-- ── KPIs Financeiros ── -->
+    <!-- KPIs Financeiros -->
     <div class="kpi-grid kpi-grid--5">
       <div class="kpi-card">
         <span class="kpi-label">Receita</span>
@@ -48,7 +47,7 @@
       </div>
     </div>
 
-    <!-- ── Alertas Follow-up ── -->
+    <!-- Alertas Follow-up -->
     <div v-if="leads.followUpsAlerta.length" class="card card--followup">
       <div class="followup-header">
         <div class="followup-title">
@@ -60,15 +59,7 @@
       </div>
       <div class="table-wrapper" style="border:none;border-radius:0;margin-top:.75rem">
         <table>
-          <thead>
-            <tr>
-              <th>Lead</th>
-              <th>Negócio</th>
-              <th>Etapa</th>
-              <th>Follow-up</th>
-              <th></th>
-            </tr>
-          </thead>
+          <thead><tr><th>Lead</th><th>Negócio</th><th>Etapa</th><th>Follow-up</th><th></th></tr></thead>
           <tbody>
             <tr v-for="l in leads.followUpsAlerta.slice(0, 5)" :key="l.id">
               <td style="font-weight:600">{{ l.nome }}</td>
@@ -77,10 +68,7 @@
               <td style="color:var(--status-warning);font-size:.85rem">{{ fmtData(l.proximo_followup) }}</td>
               <td>
                 <a :href="'https://wa.me/55' + l.telefone.replace(/\D/g, '')" target="_blank">
-                  <button class="btn btn-ghost btn-sm">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                    WhatsApp
-                  </button>
+                  <button class="btn btn-ghost btn-sm">WhatsApp</button>
                 </a>
               </td>
             </tr>
@@ -89,26 +77,20 @@
       </div>
     </div>
 
-    <!-- ── Gráficos ── -->
+    <!-- Gráficos -->
     <div class="charts-row">
       <div class="card chart-card">
         <h3 class="chart-title">Receita mensal</h3>
-        <div class="chart-wrap">
-          <canvas ref="chartRec"></canvas>
-        </div>
+        <div class="chart-wrap"><canvas ref="chartRec"></canvas></div>
       </div>
       <div class="card chart-card">
         <h3 class="chart-title">Despesas por categoria</h3>
-        <div class="chart-wrap">
-          <canvas ref="chartGas"></canvas>
-        </div>
+        <div class="chart-wrap"><canvas ref="chartGas"></canvas></div>
       </div>
     </div>
 
-    <!-- ── KPIs Mapa ── -->
-    <div class="sec-header">
-      <h2 class="sec-title">Progresso</h2>
-    </div>
+    <!-- KPIs Progresso -->
+    <div class="sec-header"><h2 class="sec-title">Progresso</h2></div>
     <div class="kpi-grid kpi-grid--4">
       <div class="kpi-card">
         <span class="kpi-label">Feito</span>
@@ -132,10 +114,8 @@
       </div>
     </div>
 
-    <!-- ── KPIs CRM ── -->
-    <div class="sec-header">
-      <h2 class="sec-title">Prospecção</h2>
-    </div>
+    <!-- KPIs CRM -->
+    <div class="sec-header"><h2 class="sec-title">Prospecção</h2></div>
     <div class="kpi-grid kpi-grid--5">
       <div class="kpi-card">
         <span class="kpi-label">Total leads</span>
@@ -164,7 +144,7 @@
       </div>
     </div>
 
-    <!-- ── Últimas transações ── -->
+    <!-- Últimas transações -->
     <div class="card" style="margin-top:0">
       <div class="card-header">
         <h3 class="card-title">Últimas transações</h3>
@@ -175,12 +155,7 @@
       <div class="table-wrapper" style="border:none;border-radius:0;margin-top:.75rem">
         <table>
           <thead>
-            <tr>
-              <th>Data</th>
-              <th>Descrição</th>
-              <th>Tipo</th>
-              <th style="text-align:right">Valor</th>
-            </tr>
+            <tr><th>Data</th><th>Descrição</th><th>Tipo</th><th style="text-align:right">Valor</th></tr>
           </thead>
           <tbody>
             <tr v-if="!fin.fin.length">
@@ -190,13 +165,13 @@
               <td class="text-muted text-sm">{{ t.data }}</td>
               <td style="font-weight:500">{{ t.desc }}</td>
               <td>
-                <span class="badge" :class="t.tipo === 'entrada' ? (t.st === 'pendente' ? 'badge-warning' : 'badge-accent') : 'badge-danger'">
-                  {{ t.tipo === 'entrada' ? (t.st === 'pendente' ? 'Pendente' : 'Entrada') : 'Saída' }}
+                <span class="badge" :class="t.tipo==='entrada'?(t.st==='pendente'?'badge-warning':'badge-accent'):'badge-danger'">
+                  {{ t.tipo==='entrada'?(t.st==='pendente'?'Pendente':'Entrada'):'Saída' }}
                 </span>
               </td>
               <td style="text-align:right;font-weight:700;font-family:var(--font-display)"
-                  :style="{ color: t.tipo === 'entrada' ? 'var(--accent)' : 'var(--status-danger)' }">
-                {{ t.tipo === 'entrada' ? '+' : '-' }}{{ fmt(t.val) }}
+                  :style="{ color: t.tipo==='entrada'?'var(--accent)':'var(--status-danger)' }">
+                {{ t.tipo==='entrada'?'+':'-' }}{{ fmt(t.val) }}
               </td>
             </tr>
           </tbody>
@@ -204,8 +179,6 @@
       </div>
     </div>
 
-    <!-- Rodapé -->
-    <p class="dash-footer">Desenvolvido por Sano Lab</p>
   </div>
 </template>
 
@@ -222,18 +195,14 @@ const mapa  = useMapaStore()
 const fmt   = fin.fmt
 const { theme } = useTheme()
 
-const mesSel  = ref('')
+const mesSel   = ref('')
 const chartRec = ref(null)
 const chartGas = ref(null)
 let charts = {}
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-const ETAPA_LABEL = {
-  contato:'Contato', interesse:'Interesse', demo:'Demo',
-  negociacao:'Negociação', fechado:'Fechado', perdido:'Perdido'
-}
+const ETAPA_LABEL = { contato:'Contato', interesse:'Interesse', demo:'Demo', negociacao:'Negociação', fechado:'Fechado', perdido:'Perdido' }
 
-// ── Computed ──
 const mesesDisponiveis = computed(() => {
   const ms = [...new Set(fin.fin.map(t => t.data?.substring(0,7)).filter(Boolean))].sort().reverse()
   return ms.map(m => {
@@ -244,30 +213,33 @@ const mesesDisponiveis = computed(() => {
 
 const f = computed(() => fin.calcPeriodo(mesSel.value))
 
-// ── Helpers ──
 function etapaLabel(e) { return ETAPA_LABEL[e] || e }
 function fmtData(d) { if (!d) return '—'; return new Date(d).toLocaleDateString('pt-BR') }
-function safePercent(val, total) {
-  if (!total) return 0
-  return Math.round(val / total * 100)
-}
+function safePercent(val, total) { return !total ? 0 : Math.round(val / total * 100) }
 
-// ── Chart colors adaptados ao tema ──
+// Cores adaptadas ao tema
 function chartColors() {
   const dark = theme.value === 'dark'
   return {
-    grid:    dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)',
-    tick:    dark ? '#555' : '#9ca3af',
-    legend:  dark ? '#666' : '#6b7280',
+    grid:   dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)',
+    tick:   dark ? '#555' : '#9ca3af',
+    legend: dark ? '#777' : '#6b7280',
   }
 }
 
+// Fonte garantida — usa stack com fallback sans-serif
+const CHART_FONT = "'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif"
+
 function renderCharts() {
   if (!window.Chart) return
+
+  // Setar fonte global do Chart.js ANTES de criar os charts
+  window.Chart.defaults.font.family = CHART_FONT
+  window.Chart.defaults.font.size   = 11
+
   nextTick(() => {
     const c = chartColors()
 
-    // Bar chart — Receita
     if (chartRec.value) {
       if (charts.rec) charts.rec.destroy()
       charts.rec = new window.Chart(chartRec.value, {
@@ -277,7 +249,7 @@ function renderCharts() {
           datasets: [{
             label: 'Receita',
             data: fin.mRec,
-            backgroundColor: 'rgba(34,197,94,0.25)',
+            backgroundColor: 'rgba(34,197,94,0.2)',
             borderColor: '#22c55e',
             borderWidth: 2,
             borderRadius: 6,
@@ -288,17 +260,28 @@ function renderCharts() {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: c.legend, boxWidth: 10, font: { size: 11, family: 'DM Sans' } } }
+            legend: {
+              labels: {
+                color: c.legend,
+                boxWidth: 10,
+                font: { size: 11, family: CHART_FONT }
+              }
+            }
           },
           scales: {
-            x: { grid: { color: c.grid }, ticks: { color: c.tick, font: { size: 10 } } },
-            y: { grid: { color: c.grid }, ticks: { color: c.tick, font: { size: 10 }, callback: v => 'R$' + v } }
+            x: {
+              grid: { color: c.grid },
+              ticks: { color: c.tick, font: { size: 10, family: CHART_FONT } }
+            },
+            y: {
+              grid: { color: c.grid },
+              ticks: { color: c.tick, font: { size: 10, family: CHART_FONT }, callback: v => 'R$' + v }
+            }
           }
         }
       })
     }
 
-    // Doughnut chart — Despesas
     if (chartGas.value) {
       if (charts.gas) charts.gas.destroy()
       const gd = fin.gastosData()
@@ -309,12 +292,12 @@ function renderCharts() {
           datasets: [{
             data: gd.vals,
             backgroundColor: [
-              'rgba(239,68,68,0.7)',
-              'rgba(245,158,11,0.7)',
-              'rgba(59,130,246,0.7)',
-              'rgba(139,92,246,0.7)',
-              'rgba(34,197,94,0.7)',
-              'rgba(20,184,166,0.7)',
+              'rgba(224,85,85,0.75)',
+              'rgba(232,168,56,0.75)',
+              'rgba(91,141,238,0.75)',
+              'rgba(139,92,246,0.75)',
+              'rgba(34,197,94,0.75)',
+              'rgba(20,184,166,0.75)',
             ],
             borderWidth: 0,
             hoverOffset: 6,
@@ -326,7 +309,12 @@ function renderCharts() {
           plugins: {
             legend: {
               position: 'bottom',
-              labels: { color: c.legend, boxWidth: 10, font: { size: 11, family: 'DM Sans' }, padding: 16 }
+              labels: {
+                color: c.legend,
+                boxWidth: 10,
+                font: { size: 11, family: CHART_FONT },
+                padding: 14
+              }
             }
           }
         }
@@ -335,19 +323,9 @@ function renderCharts() {
   })
 }
 
-// ── Exportar CSV ──
 function exportar() {
   const rows = [['Data','Descrição','Categoria','Cliente','Tipo','Valor']]
-  fin.fin.forEach(t => {
-    rows.push([
-      t.data || '',
-      t.desc || '',
-      t.categoria || '',
-      t.cliente || '',
-      t.tipo || '',
-      t.val || 0,
-    ])
-  })
+  fin.fin.forEach(t => rows.push([t.data||'', t.desc||'', t.categoria||'', t.cliente||'', t.tipo||'', t.val||0]))
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n')
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
   const a = document.createElement('a')
@@ -356,7 +334,6 @@ function exportar() {
   a.click()
 }
 
-// ── Lifecycle ──
 onMounted(() => {
   if (!window.Chart) {
     const s = document.createElement('script')
@@ -368,131 +345,74 @@ onMounted(() => {
   }
 })
 
-onUnmounted(() => {
-  Object.values(charts).forEach(c => c?.destroy())
-})
-
+onUnmounted(() => { Object.values(charts).forEach(c => c?.destroy()) })
 watch(() => fin.fin.length, renderCharts)
-// Re-renderiza charts quando o tema muda
-watch(theme, () => {
-  renderCharts()
-})
+watch(theme, renderCharts)
 </script>
 
 <style scoped>
 .dash-page {
   padding: 1.25rem 1.5rem 2.5rem;
-  max-width: 1400px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
+  min-width: 0;
 }
 
-/* KPI grids */
-.kpi-grid {
-  display: grid;
-  gap: .75rem;
-}
+.kpi-grid { display: grid; gap: .75rem; }
 .kpi-grid--5 { grid-template-columns: repeat(5, 1fr); }
 .kpi-grid--4 { grid-template-columns: repeat(4, 1fr); }
 
-/* Follow-up card */
+/* Follow-up */
 .card--followup {
-  border-color: rgba(245, 158, 11, 0.35);
+  border-color: rgba(232, 168, 56, 0.3);
   background: var(--status-warning-subtle);
 }
-
 .followup-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
 }
-
 .followup-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: var(--font-display);
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--status-warning);
+  display: flex; align-items: center; gap: .5rem;
+  font-size: .875rem; font-weight: 700; color: var(--status-warning);
 }
 
-/* Charts */
+/* Charts — sem max-width para se adaptar ao container */
 .charts-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
+  min-width: 0;
 }
-
 .chart-card {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  display: flex; flex-direction: column; gap: .875rem;
+  min-width: 0;
 }
-
 .chart-title {
-  font-family: var(--font-display);
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.01em;
+  font-size: .9375rem; font-weight: 700;
+  color: var(--text-primary); letter-spacing: -.01em;
 }
-
 .chart-wrap {
-  height: 220px;
+  height: 200px;
   position: relative;
+  min-width: 0;
 }
 
-/* Section header */
-.sec-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 0.5rem;
-}
-
+/* Sec header */
+.sec-header { display: flex; align-items: center; margin-top: .25rem; }
 .sec-title {
-  font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  font-size: 0.75rem;
+  font-size: .68rem; font-weight: 700;
+  letter-spacing: .09em; text-transform: uppercase;
+  color: var(--text-tertiary);
 }
 
 /* Card header */
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+.card-header { display: flex; align-items: center; justify-content: space-between; }
+.card-title { font-size: .9375rem; font-weight: 700; color: var(--text-primary); }
 
-.card-title {
-  font-family: var(--font-display);
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-/* Empty row */
 .empty-row {
-  text-align: center;
-  color: var(--text-tertiary);
-  padding: 2rem !important;
-  font-size: 0.875rem;
-}
-
-/* Footer */
-.dash-footer {
-  text-align: center;
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  margin-top: 1rem;
+  text-align: center; color: var(--text-tertiary);
+  padding: 2rem !important; font-size: .875rem;
 }
 
 /* Responsive */
@@ -501,14 +421,14 @@ watch(theme, () => {
   .kpi-grid--4 { grid-template-columns: repeat(2, 1fr); }
 }
 
+@media (max-width: 900px) {
+  .charts-row { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 768px) {
-  .dash-page {
-    padding: 1.25rem 1rem 5rem;
-    gap: 1rem;
-  }
+  .dash-page { padding: 1rem 1rem 5rem; gap: 1rem; }
   .kpi-grid--5,
   .kpi-grid--4 { grid-template-columns: repeat(2, 1fr); }
-  .charts-row  { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
