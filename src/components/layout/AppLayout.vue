@@ -13,7 +13,7 @@
           <p class="sb-section-title">Principal</p>
           <button v-for="item in mainNav" :key="item.path"
             class="sb-item" :class="{ active: route.path === item.path }"
-            @click="go(item.path)"
+            @click="go(item.path)" :title="item.label"
           >
             <span class="sb-icon" v-html="item.icon"></span>
             <span class="sb-text">{{ item.label }}</span>
@@ -21,7 +21,8 @@
         </div>
         <div class="sb-section">
           <p class="sb-section-title">Ferramentas</p>
-          <button class="sb-item" :class="{ active: route.path === '/prospeccao' }" @click="go('/prospeccao')">
+          <button class="sb-item" :class="{ active: route.path === '/prospeccao' }"
+            @click="go('/prospeccao')" title="Prospecção">
             <span class="sb-icon" v-html="icons.search"></span>
             <span class="sb-text">Prospecção</span>
           </button>
@@ -29,7 +30,7 @@
       </nav>
 
       <div class="sb-footer">
-        <button class="sb-item" @click="toggleTheme">
+        <button class="sb-item" @click="toggleTheme" :title="isDark ? 'Modo claro' : 'Modo escuro'">
           <span class="sb-icon">
             <svg v-if="isDark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
             <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -37,21 +38,21 @@
           <span class="sb-text">{{ isDark ? 'Modo claro' : 'Modo escuro' }}</span>
         </button>
 
+        <!-- Usuário: só nome + role, sem dot/ícone -->
         <div class="sb-user">
-          <div class="sb-user-dot">{{ userInitial }}</div>
           <div class="sb-user-info">
             <span class="sb-user-name">{{ auth.userName }}</span>
             <span class="sb-user-role">PRO</span>
           </div>
         </div>
 
-        <button class="sb-item sb-danger" @click="auth.logout()">
+        <!-- Sair: logout imediato -->
+        <button class="sb-item sb-danger" @click="handleLogout" title="Sair">
           <span class="sb-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           </span>
           <span class="sb-text">Sair</span>
         </button>
-        <p class="sb-dev">Desenvolvido por Sano Lab</p>
       </div>
     </aside>
 
@@ -59,12 +60,17 @@
   </div>
 
   <nav class="mobile-nav">
-    <button v-for="item in mobileNav" :key="item.path" class="mob-item" :class="{ active: route.path === item.path }" @click="go(item.path)">
+    <button v-for="item in mobileNav" :key="item.path"
+      class="mob-item" :class="{ active: route.path === item.path }"
+      @click="go(item.path)">
       <span v-html="item.icon"></span>
       <span>{{ item.short }}</span>
     </button>
     <button class="mob-item" @click="toggleTheme">
-      <span><svg v-if="isDark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg><svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+      <span>
+        <svg v-if="isDark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg>
+        <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </span>
       <span>Tema</span>
     </button>
   </nav>
@@ -75,8 +81,13 @@
         <div style="font-size:2rem;margin-bottom:.75rem">👋</div>
         <h2 style="margin-bottom:.375rem">Bem-vindo ao <span style="color:var(--accent)">SLAC</span></h2>
         <p style="margin-bottom:1.25rem;font-size:.875rem">Como quer ser chamado?</p>
-        <input ref="welcomeInput" v-model="welcomeName" class="form-input" type="text" placeholder="Seu nome" maxlength="40" @keydown.enter="saveWelcomeName" style="margin-bottom:.75rem" />
-        <button class="btn btn-primary" style="width:100%;justify-content:center" @click="saveWelcomeName">Entrar →</button>
+        <input ref="welcomeInput" v-model="welcomeName" class="form-input"
+          type="text" placeholder="Seu nome" maxlength="40"
+          @keydown.enter="saveWelcomeName"
+          style="margin-bottom:.75rem" />
+        <button class="btn btn-primary" style="width:100%;justify-content:center" @click="saveWelcomeName">
+          Entrar →
+        </button>
       </div>
     </div>
   </div>
@@ -99,6 +110,12 @@ const collapsed = ref(localStorage.getItem('slac-sidebar') === 'collapsed')
 function toggle() {
   collapsed.value = !collapsed.value
   localStorage.setItem('slac-sidebar', collapsed.value ? 'collapsed' : 'expanded')
+}
+
+// Logout imediato — redireciona antes de esperar o Supabase
+async function handleLogout() {
+  router.push('/login')
+  await auth.logout()
 }
 
 const userInitial = computed(() => (auth.userName || '?').charAt(0).toUpperCase())
@@ -127,8 +144,8 @@ const mobileNav = [
   { path: '/prospeccao', short: 'Prosp.', icon: icons.search },
 ]
 
-const welcomeInput = ref(null)
-const welcomeName  = ref('')
+const welcomeInput     = ref(null)
+const welcomeName      = ref('')
 const showWelcomeModal = ref(false)
 
 onMounted(async () => {
@@ -161,8 +178,8 @@ function go(path) { router.push(path) }
 
 /* ── Sidebar ── */
 .sidebar {
-  width: 200px;
-  min-width: 200px;
+  width: 196px;
+  min-width: 196px;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
   display: flex;
@@ -172,7 +189,6 @@ function go(path) { router.push(path) }
   top: 0;
   overflow: hidden;
   z-index: 50;
-  /* Transição só no width, sem will-change que causa layer */
   transition: width 250ms ease, min-width 250ms ease;
 }
 .collapsed .sidebar { width: 52px; min-width: 52px; }
@@ -184,18 +200,18 @@ function go(path) { router.push(path) }
   justify-content: center;
   padding: .875rem .75rem;
   border-bottom: 1px solid var(--border-subtle);
-  height: 56px;
+  height: 54px;
   flex-shrink: 0;
 }
 .sb-logo-btn {
-  background: none; border: none; cursor: pointer; padding: 0;
+  background: none; border: none; cursor: pointer; padding: .25rem;
   display: flex; align-items: center; justify-content: center;
   border-radius: 8px;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 200ms cubic-bezier(.34,1.56,.64,1);
+  transition: transform 180ms cubic-bezier(.34,1.56,.64,1);
 }
-.sb-logo-btn:active { transform: scale(.88); }
-.sb-logo { height: 30px; width: auto; display: block; }
+.sb-logo-btn:active { transform: scale(.86); }
+.sb-logo { height: 28px; width: auto; display: block; }
 
 /* Nav */
 .sb-nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: .375rem 0; }
@@ -203,10 +219,10 @@ function go(path) { router.push(path) }
 .sb-section-title {
   font-size: .6rem; font-weight: 700; letter-spacing: .09em;
   text-transform: uppercase; color: var(--text-tertiary);
-  padding: .375rem .5rem .2rem; margin: 0; white-space: nowrap;
-  overflow: hidden; opacity: 1;
-  transition: opacity 200ms ease, max-height 250ms ease;
-  max-height: 24px;
+  padding: .375rem .5rem .2rem; margin: 0;
+  white-space: nowrap; overflow: hidden;
+  opacity: 1; max-height: 24px;
+  transition: opacity 200ms ease, max-height 250ms ease, padding 250ms ease;
 }
 .collapsed .sb-section-title { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
 
@@ -245,52 +261,36 @@ function go(path) { router.push(path) }
 
 /* Footer */
 .sb-footer {
-  padding: .375rem .375rem .75rem;
+  padding: .375rem .375rem .625rem;
   border-top: 1px solid var(--border-subtle);
   display: flex; flex-direction: column; gap: .125rem; flex-shrink: 0;
 }
 
-/* Usuário — sem avatar, estilo iOS pill */
+/* Usuário — apenas texto, sem ícone */
 .sb-user {
-  display: flex; align-items: center; gap: .5rem;
-  padding: .375rem .5rem; border-radius: 8px; overflow: hidden;
+  padding: .375rem .5rem;
+  overflow: hidden;
 }
-.collapsed .sb-user { justify-content: center; }
-
-.sb-user-dot {
-  width: 26px; height: 26px; border-radius: 50%;
-  background: var(--accent); color: #fff;
-  font-size: .7rem; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; letter-spacing: 0;
-}
+.collapsed .sb-user { display: none; }
 
 .sb-user-info {
   display: flex; flex-direction: column; gap: .1rem;
-  min-width: 0; opacity: 1; max-width: 140px;
+  opacity: 1; max-width: 160px;
   transition: opacity 200ms ease, max-width 250ms ease;
 }
 .collapsed .sb-user-info { opacity: 0; max-width: 0; pointer-events: none; }
 
 .sb-user-name {
   font-size: .78rem; font-weight: 600; color: var(--text-primary);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;
 }
 .sb-user-role {
   font-size: .58rem; font-weight: 700; letter-spacing: .06em;
   color: var(--accent); text-transform: uppercase; line-height: 1;
 }
 
-.sb-dev {
-  font-size: .58rem; color: var(--text-tertiary); text-align: center;
-  opacity: .4; padding-top: .2rem; white-space: nowrap; overflow: hidden;
-  max-height: 16px; margin: 0;
-  transition: opacity 200ms ease, max-height 250ms ease;
-}
-.collapsed .sb-dev { opacity: 0; max-height: 0; }
-
 /* Main */
-.main { flex: 1; min-width: 0; }
+.main { flex: 1; min-width: 0; overflow-x: hidden; }
 
 /* Mobile */
 .mobile-nav {

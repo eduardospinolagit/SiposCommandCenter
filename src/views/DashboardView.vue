@@ -107,7 +107,7 @@
 
     <!-- ── KPIs Mapa ── -->
     <div class="sec-header">
-      <h2 class="sec-title">Progresso Sano Lab</h2>
+      <h2 class="sec-title">Progresso</h2>
     </div>
     <div class="kpi-grid kpi-grid--4">
       <div class="kpi-card">

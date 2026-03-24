@@ -147,13 +147,13 @@
           <thead>
             <tr>
               <th><input type="checkbox" class="cb" @change="toggleAll($event.target.checked)" /></th>
-              <th>Nome</th>
-              <th>Negócio</th>
+              <th class="th-sort" @click="toggleSort('nome')">Nome <span class="sort-icon">{{ sortKey==='nome' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</span></th>
+              <th class="th-sort" @click="toggleSort('negocio')">Negócio <span class="sort-icon">{{ sortKey==='negocio' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</span></th>
               <th>Telefone</th>
-              <th>Etapa</th>
-              <th>Prioridade</th>
-              <th>Follow-up</th>
-              <th>Valor</th>
+              <th class="th-sort" @click="toggleSort('etapa')">Etapa <span class="sort-icon">{{ sortKey==='etapa' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</span></th>
+              <th class="th-sort" @click="toggleSort('prioridade')">Prioridade <span class="sort-icon">{{ sortKey==='prioridade' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</span></th>
+              <th class="th-sort" @click="toggleSort('proximo_followup')">Follow-up <span class="sort-icon">{{ sortKey==='proximo_followup' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</span></th>
+              <th class="th-sort" @click="toggleSort('valor_estimado')">Valor <span class="sort-icon">{{ sortKey==='valor_estimado' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</span></th>
               <th></th>
             </tr>
           </thead>
@@ -401,6 +401,17 @@ const push  = usePushNotifications()
 const fmt   = fin.fmt
 
 const tab         = ref('kanban')
+const sortKey = ref('')
+const sortDir = ref('asc')
+
+function toggleSort(key) {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortKey.value = key
+    sortDir.value = 'asc'
+  }
+}
 const search      = ref('')
 const filterEtapa = ref('')
 const filterPri   = ref('')
@@ -433,6 +444,16 @@ const listaFiltrada = computed(() => {
   }
   if (filterEtapa.value) lista = lista.filter(l => l.etapa === filterEtapa.value)
   if (filterPri.value)   lista = lista.filter(l => l.prioridade === filterPri.value)
+  if (sortKey.value) {
+    const key = sortKey.value
+    const dir = sortDir.value === 'asc' ? 1 : -1
+    lista = [...lista].sort((a, b) => {
+      const va = a[key] ?? ''
+      const vb = b[key] ?? ''
+      if (typeof va === 'number') return (va - vb) * dir
+      return String(va).localeCompare(String(vb), 'pt-BR') * dir
+    })
+  }
   return lista
 })
 
@@ -921,6 +942,20 @@ onMounted(() => {
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
 /* drawer sem animação para performance */
+
+.th-sort {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.th-sort:hover { color: var(--accent); }
+.sort-icon {
+  font-size: .65rem;
+  color: var(--text-tertiary);
+  margin-left: .25rem;
+  opacity: .7;
+}
+.th-sort:hover .sort-icon { color: var(--accent); opacity: 1; }
 
 /* Responsive */
 @media (max-width: 1100px) {
