@@ -48,7 +48,7 @@ let savingTimer = null
 function showSaving() {
   saving.value = true
   clearTimeout(savingTimer)
-  savingTimer = setTimeout(() => { saving.value = false }, 12000)
+  savingTimer = setTimeout(() => { saving.value = false }, 4000)
 }
 function hideSaving() {
   clearTimeout(savingTimer)
@@ -66,13 +66,26 @@ async function handleVisibilityChange() {
   }
 }
 
+let keepAliveInterval: ReturnType<typeof setInterval> | null = null
+
 onMounted(async () => {
   initTheme()
   await auth.init()
   document.addEventListener('visibilitychange', handleVisibilityChange)
+
+  // Refresh a cada 10 minutos para manter sessão ativa em background
+  keepAliveInterval = setInterval(async () => {
+    try {
+      await sb.auth.refreshSession()
+    } catch (e) {
+      console.warn('[SLAC] keep-alive refresh falhou:', e)
+    }
+  }, 10 * 60 * 1000)
 })
+
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
+  if (keepAliveInterval) clearInterval(keepAliveInterval)
 })
 </script>
 

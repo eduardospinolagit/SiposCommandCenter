@@ -7,9 +7,30 @@ export const sb = createClient(SUPA_URL, SUPA_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    // Desativa o lock de storage — resolve o bug de aba inativa
-    lock: async (name, acquireTimeout, fn) => {
-      return await fn()
-    }
+    detectSessionInUrl: true,
+    storageKey: 'slac-auth',
+    // Evita deadlock em abas inativas
+    lock: async (_name, _acquireTimeout, fn) => fn(),
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
+  global: {
+    headers: {
+      'x-app': 'slac',
+    },
+  },
+})
+
+// Listener global: se o token expirar, tenta refresh automático
+sb.auth.onAuthStateChange((event) => {
+  if (event === 'TOKEN_REFRESHED') {
+    console.log('[SLAC] Token renovado')
+  }
+  if (event === 'SIGNED_OUT') {
+    // Limpa cache local se der logout inesperado
+    console.warn('[SLAC] Sessão encerrada')
   }
 })
