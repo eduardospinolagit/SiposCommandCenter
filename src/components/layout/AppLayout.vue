@@ -3,7 +3,7 @@
     <!-- SIDEBAR DESKTOP -->
     <aside class="sidebar">
       <div class="sb-logo" style="padding:16px 20px">
-        <img src="/logo.png" alt="Sano Lab" style="height:52px;width:auto;display:block;filter:invert(1) brightness(2)" />
+        <img src="/logo.png" alt="Sano Lab" style="height:52px;width:auto;display:block" />
       </div>
 
       <div class="sb-sec">

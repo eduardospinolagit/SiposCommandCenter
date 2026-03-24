@@ -57,7 +57,7 @@
               v-for="l in byEtapa(e.id)"
               :key="l.id"
               class="kb-card"
-              :style="l.needs_followup ? 'border-color:#f59e0b;box-shadow:0 0 0 1px rgba(245,158,11,.3)' : ''"
+              :style="getFU(l.id) ? 'border-color:#f59e0b;box-shadow:0 0 0 1px rgba(245,158,11,.3)' : ''"
               @click="openLead(l.id)"
             >
               <div class="kb-card-name">{{ l.nome }}</div>
@@ -376,6 +376,7 @@ const ETAPA_COLOR = { contato:'#3b82f6', interesse:'#f59e0b', demo:'#8b5cf6', ne
 const PRI_COLOR = { alta:'#ef4444', media:'#f59e0b', baixa:'#3b82f6' }
 
 function etapaLabel(e) { return ETAPA_LABEL[e] || e }
+function getFU(id) { return leads.leads.find(l => l.id === id)?.needs_followup || false }
 function etapaColor(e) { return ETAPA_COLOR[e] || '#555' }
 function priColor(p) { return PRI_COLOR[p] || '#999' }
 function fmtData(d) { return new Date(d).toLocaleDateString('pt-BR') }
