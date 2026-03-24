@@ -337,25 +337,27 @@
               <div class="conv-msg">{{ c.mensagem }}</div>
             </div>
           </div>
-          <div class="conv-add-row">
-            <select v-model="convCanal" class="form-select" style="flex:0 0 auto;width:auto;font-size:.8rem;padding:.4rem .7rem">
-              <option value="whatsapp">WhatsApp</option>
-              <option value="instagram">Instagram</option>
-              <option value="email">Email</option>
-              <option value="ligacao">Ligação</option>
-            </select>
-            <select v-model="convDir" class="form-select" style="flex:0 0 auto;width:auto;font-size:.8rem;padding:.4rem .7rem">
-              <option value="enviado">Enviado</option>
-              <option value="recebido">Recebido</option>
-            </select>
-          </div>
-          <div class="conv-add">
-            <textarea v-model="convMsg" class="form-textarea" placeholder="Registrar mensagem..." rows="2"
-              style="min-height:60px;font-size:.85rem"
-              @keydown.ctrl.enter="addConversa"></textarea>
-            <button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;margin-top:.5rem" @click="addConversa">
-              + Registrar
-            </button>
+          <div class="conv-composer">
+            <div class="conv-composer-selects">
+              <div class="conv-select-group">
+                <span class="conv-select-label">Canal</span>
+                <select v-model="convCanal" class="form-select conv-select">
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="instagram">Instagram</option>
+                  <option value="email">Email</option>
+                  <option value="ligacao">Ligação</option>
+                </select>
+              </div>
+              <div class="conv-select-group">
+                <span class="conv-select-label">Direção</span>
+                <select v-model="convDir" class="form-select conv-select">
+                  <option value="enviado">Enviado</option>
+                  <option value="recebido">Recebido</option>
+                </select>
+              </div>
+            </div>
+            <textarea v-model="convMsg" class="form-textarea conv-textarea" placeholder="Registrar mensagem..." rows="2" @keydown.ctrl.enter="addConversa"></textarea>
+            <button class="btn btn-primary btn-sm conv-btn" @click="addConversa">+ Registrar</button>
           </div>
         </div>
       </div>
@@ -903,7 +905,13 @@ onMounted(() => {
 .dir-out { color: var(--status-warning); }
 .conv-data { font-size: .68rem; color: var(--text-tertiary); margin-left: auto; }
 .conv-msg { font-size: .8rem; color: var(--text-primary); }
-.conv-add-row { display: flex; gap: .5rem; margin-bottom: .5rem; }
+.conv-composer { display: flex; flex-direction: column; gap: .5rem; margin-top: .5rem; }
+.conv-composer-selects { display: flex; gap: .625rem; }
+.conv-select-group { display: flex; flex-direction: column; gap: .25rem; flex: 1; }
+.conv-select-label { font-size: .65rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-tertiary); }
+.conv-select { font-size: .8rem; padding: .375rem .625rem; width: 100%; }
+.conv-textarea { min-height: 64px; font-size: .85rem; resize: none; }
+.conv-btn { width: 100%; justify-content: center; }
 
 /* Transitions */
 .sel-bar-enter-active, .sel-bar-leave-active { transition: all 200ms ease; }

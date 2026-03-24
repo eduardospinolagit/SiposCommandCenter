@@ -14,7 +14,7 @@
           </button>
         </div>
 
-        <div class="modal-body">
+        <div class="modal-body" style="overflow-y:auto;flex:1">
 
           <!-- Cliente -->
           <div class="form-group">
@@ -256,6 +256,9 @@ async function confirmar() {
 <style scoped>
 .fechar-modal {
   max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
 }
 
 .fechar-emoji {
@@ -268,6 +271,19 @@ async function confirmar() {
   color: var(--text-tertiary);
   margin-top: .25rem;
 }
+
+.fechar-modal .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: .375rem;
+  margin-bottom: 0;
+}
+.fechar-modal .modal-body > .form-group,
+.fechar-modal .modal-body > .bloco,
+.fechar-modal .modal-body > .preview-box {
+  margin-bottom: .875rem;
+}
+.fechar-modal .modal-body > .form-group:last-child { margin-bottom: 0; }
 
 /* Serviços */
 .servicos-grid {
