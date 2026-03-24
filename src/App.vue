@@ -67,24 +67,27 @@ async function handleVisibilityChange() {
     try {
       const { data, error } = await sb.auth.getSession()
       if (error || !data.session) {
-        await auth.logout()
-        router.push('/login')
+        // Sessão expirou — logout silencioso sem reinicializar
+        user_logout()
         return
       }
+      // Só renova token, sem setar loading
       await sb.auth.refreshSession()
     } catch (e) { console.warn('[SLAC] Erro ao renovar sessão:', e) }
   }
 }
 
+async function user_logout() {
+  await auth.logout()
+  router.push('/login')
+}
+
 // ── Auth: listener para redirecionar sem F5 ──
 sb.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' && session) {
-    // Já logou — se estiver na tela de login, redireciona
     if (router.currentRoute.value.path === '/login') {
       router.push('/dashboard')
     }
-    // Reinicializa estado do auth store
-    auth.init()
   }
   if (event === 'SIGNED_OUT') {
     router.push('/login')

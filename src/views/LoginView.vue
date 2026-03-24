@@ -17,8 +17,7 @@
     <div class="login-card">
       <div class="login-header">
         <img src="/logo.png" alt="SLAC" class="login-logo" />
-        <p class="login-name">SLAC <span class="login-beta">beta b0.2</span></p>
-        <p class="login-sub">Sano Lab · CRM</p>
+        <span class="login-beta">beta b0.2</span>
       </div>
 
       <div class="login-form">
@@ -129,24 +128,13 @@ async function doLogin() {
 }
 .login-logo { height: 52px; width: auto; }
 
-.login-name {
-  font-family: var(--font-display);
-  font-size: 1rem; font-weight: 700;
-  color: var(--text-primary); letter-spacing: -.02em;
-  display: flex; align-items: center; gap: .5rem;
-}
 .login-beta {
   font-size: .6rem; font-weight: 600;
   color: var(--accent); background: var(--accent-subtle);
   border: 1px solid var(--accent);
   border-radius: var(--radius-full);
-  padding: .1rem .45rem; letter-spacing: .04em;
+  padding: .15rem .5rem; letter-spacing: .04em;
   text-transform: lowercase;
-}
-
-.login-sub {
-  font-size: .72rem; color: var(--text-tertiary);
-  font-weight: 500; letter-spacing: .04em;
 }
 
 .login-form { display: flex; flex-direction: column; gap: 1rem; }

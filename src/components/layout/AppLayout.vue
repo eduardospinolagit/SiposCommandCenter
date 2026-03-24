@@ -41,7 +41,7 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
             </button>
           </div>
-          <span class="sb-by">by Sano</span>
+          <span class="sb-by">by Sano Lab ©</span>
         </div>
       </div>
     </aside>
@@ -265,8 +265,8 @@ function go(path) { router.push(path) }
 .sb-logo-btn:active { transform: scale(.86); }
 .sb-logo { height: 28px; width: auto; display: block; }
 
-.sb-nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: .5rem 0; }
-.sb-section { padding: 0 .5rem; margin-bottom: .25rem; }
+.sb-nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: .75rem 0; }
+.sb-section { padding: 0 .5rem; margin-bottom: .625rem; }
 .sb-section-label {
   font-size: .6rem; font-weight: 700; letter-spacing: .09em;
   text-transform: uppercase; color: var(--text-tertiary);
@@ -277,8 +277,8 @@ function go(path) { router.push(path) }
 .collapsed .sb-section-label { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
 
 .sb-item {
-  display: flex; align-items: center; gap: .5rem;
-  width: 100%; padding: .475rem .625rem;
+  display: flex; align-items: center; gap: .625rem;
+  width: 100%; padding: .6rem .625rem;
   border-radius: 8px; background: transparent; border: none;
   color: var(--text-secondary); font-family: var(--font-body);
   font-size: .825rem; font-weight: 500;
