@@ -18,8 +18,12 @@
 import { onMounted, onUnmounted, provide, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { sb } from '@/lib/supabase'
+import { useTheme } from '@/composables/useTheme'
 
 const auth = useAuthStore()
+
+// ── Tema dark/light — inicia aqui para evitar flash ──
+const { initTheme } = useTheme()
 
 // ── Toast global ──
 const toast = ref({ show: false, message: '', type: 'ok' })
@@ -55,11 +59,9 @@ async function handleVisibilityChange() {
     try {
       const { data, error } = await sb.auth.getSession()
       if (error || !data.session) {
-        // Sessão expirou — faz logout limpo
         await auth.logout()
         return
       }
-      // Força refresh do token se está próximo de expirar
       await sb.auth.refreshSession()
     } catch (e) {
       console.warn('Erro ao renovar sessão:', e)
@@ -68,6 +70,8 @@ async function handleVisibilityChange() {
 }
 
 onMounted(async () => {
+  // Aplica tema antes de qualquer render para evitar flash
+  initTheme()
   await auth.init()
   document.addEventListener('visibilitychange', handleVisibilityChange)
 })
