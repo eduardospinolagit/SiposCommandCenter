@@ -24,9 +24,10 @@ import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 
-// Toast global
+// ── Toast global ──
 const toast = ref({ show: false, message: '', type: 'ok' })
 let toastTimer = null
+
 function showToast(message, type = 'ok') {
   toast.value = { show: true, message, type }
   clearTimeout(toastTimer)
@@ -34,18 +35,22 @@ function showToast(message, type = 'ok') {
 }
 provide('toast', showToast)
 
-// Saving indicator
+// ── Saving indicator ──
+// Nunca fica preso — timeout de segurança de 10s
 const saving = ref(false)
 let savingTimer = null
+
 function showSaving() {
   saving.value = true
   clearTimeout(savingTimer)
-  savingTimer = setTimeout(() => { saving.value = false }, 8000)
+  savingTimer = setTimeout(() => { saving.value = false }, 10000)
 }
+
 function hideSaving() {
   clearTimeout(savingTimer)
   saving.value = false
 }
+
 provide('saving', { showSaving, hideSaving })
 
 onMounted(async () => {
