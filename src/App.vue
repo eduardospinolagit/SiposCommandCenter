@@ -1,17 +1,13 @@
 <template>
-  <!-- Loading inicial -->
   <div v-if="auth.loading" class="loading-screen">
     <div class="spin"></div>
     <p>Carregando SLAC...</p>
   </div>
 
-  <!-- App -->
   <router-view v-else />
 
-  <!-- Toast global -->
   <div class="toast" :class="[toast.type, { show: toast.show }]">{{ toast.message }}</div>
 
-  <!-- Saving indicator -->
   <div class="saving" :class="{ show: saving }">
     <div class="saving-dot"></div>
     Salvando...
@@ -36,14 +32,14 @@ function showToast(message, type = 'ok') {
 provide('toast', showToast)
 
 // ── Saving indicator ──
-// Nunca fica preso — timeout de segurança de 10s
 const saving = ref(false)
 let savingTimer = null
 
 function showSaving() {
   saving.value = true
   clearTimeout(savingTimer)
-  savingTimer = setTimeout(() => { saving.value = false }, 10000)
+  // Timeout de segurança — nunca fica preso
+  savingTimer = setTimeout(() => { saving.value = false }, 12000)
 }
 
 function hideSaving() {
@@ -53,7 +49,8 @@ function hideSaving() {
 
 provide('saving', { showSaving, hideSaving })
 
+// Auth init — só aqui, o router guard só verifica o estado
 onMounted(async () => {
-  if (!auth.user) await auth.init()
+  await auth.init()
 })
 </script>
