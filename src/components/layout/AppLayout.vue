@@ -321,7 +321,12 @@ function go(path) { router.push(path) }
   gap: .5rem;
   padding: .125rem .125rem;
 }
-.collapsed .theme-row { justify-content: center; }
+/* Colapsado: empilha pill + by Sano verticalmente */
+.collapsed .theme-row {
+  flex-direction: column;
+  align-items: center;
+  gap: .375rem;
+}
 
 .theme-pill {
   display: flex; align-items: center;
@@ -331,6 +336,12 @@ function go(path) { router.push(path) }
   padding: .2rem;
   gap: .1rem;
   flex-shrink: 0;
+}
+/* Colapsado: pill empilha os botões verticalmente */
+.collapsed .theme-pill {
+  flex-direction: column;
+  border-radius: 12px;
+  padding: .2rem;
 }
 .theme-opt {
   display: flex; align-items: center; justify-content: center;
