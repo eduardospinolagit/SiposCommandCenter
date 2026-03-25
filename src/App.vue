@@ -105,32 +105,22 @@ async function handleVisibilityChange() {
   }
 }
 
-// ── Auth state change: única fonte de verdade ──
-sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' && session) {
-    // Atualiza user na store sem setar loading
-    auth.user = session.user
-    if (!auth.userName) await auth.loadUserName()
-    // Redireciona se estiver na tela de login
-    if (router.currentRoute.value.path === '/login') {
-      router.push('/dashboard')
-    }
-  }
-
-  if (event === 'TOKEN_REFRESHED' && session) {
-    // Token renovado — garante que a store tem o user atualizado
-    auth.user = session.user
-  }
-
-  if (event === 'SIGNED_OUT') {
-    router.push('/login')
-  }
-})
-
 onMounted(async () => {
   initTheme()
   await auth.init()
   document.addEventListener('visibilitychange', handleVisibilityChange)
+
+  // Registrar DEPOIS do init para não interferir com o loading
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      if (router.currentRoute.value.path === '/login') {
+        router.push('/dashboard')
+      }
+    }
+    if (event === 'SIGNED_OUT') {
+      router.push('/login')
+    }
+  })
 })
 
 onUnmounted(() => {

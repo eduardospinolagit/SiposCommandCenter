@@ -3,9 +3,9 @@ import { ref, computed } from 'vue'
 import { sb } from '@/lib/supabase'
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref(null)
+  const user     = ref(null)
   const userName = ref('')
-  const loading = ref(true)
+  const loading  = ref(true)
 
   const isLoggedIn = computed(() => !!user.value)
 
@@ -13,27 +13,16 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     try {
       const { data: { session } } = await sb.auth.getSession()
-      if (session) {
+      if (session?.user) {
         user.value = session.user
         await loadUserName()
       }
     } catch (e) {
-      console.error('Auth init error:', e)
+      console.error('[SLAC] auth.init erro:', e)
     } finally {
+      // Garante que loading sempre vira false
       loading.value = false
     }
-
-    // Escuta mudanças de sessão
-    sb.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        user.value = session.user
-        await loadUserName()
-      }
-      if (event === 'SIGNED_OUT') {
-        user.value = null
-        userName.value = ''
-      }
-    })
   }
 
   async function loadUserName() {
@@ -45,11 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
         .eq('user_id', user.value.id)
         .eq('chave', 'user_nome')
         .maybeSingle()
-      if (data?.valor?.nome) {
-        userName.value = data.valor.nome
-      } else {
-        userName.value = user.value.email?.split('@')[0] || 'usuário'
-      }
+      userName.value = data?.valor?.nome || user.value.email?.split('@')[0] || 'usuário'
     } catch {
       userName.value = user.value.email?.split('@')[0] || 'usuário'
     }
@@ -68,11 +53,17 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function login(email, password) {
-    const { error } = await sb.auth.signInWithPassword({ email, password })
+    const { data, error } = await sb.auth.signInWithPassword({ email, password })
     if (error) throw error
+    if (data.session?.user) {
+      user.value = data.session.user
+      await loadUserName()
+    }
   }
 
   async function logout() {
+    user.value = null
+    userName.value = ''
     await sb.auth.signOut()
   }
 
