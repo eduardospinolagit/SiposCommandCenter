@@ -648,8 +648,8 @@ async function waEnviar() {
     waMensagem.value = ''
     waTemplateId.value = ''
     toast('Mensagem enviada!', 'ok')
-  } catch {
-    toast('Erro ao enviar. Verifique a integração Z-API.', 'err')
+  } catch (e: any) {
+    toast('Erro: ' + (e?.message || String(e)), 'err')
   } finally {
     waEnviando.value = false
   }
