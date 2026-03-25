@@ -41,9 +41,13 @@ const { initTheme } = useTheme()
 const toast = ref({ show: false, message: '', type: 'ok' })
 let toastTimer = null
 function showToast(message, type = 'ok') {
-  toast.value = { show: true, message, type }
+  // Se o pill de saving ainda está visível, espera ele sumir antes de mostrar o toast
+  const delay = saving.value ? 320 : 0
   clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => { toast.value.show = false }, 2800)
+  setTimeout(() => {
+    toast.value = { show: true, message, type }
+    toastTimer = setTimeout(() => { toast.value.show = false }, 2600)
+  }, delay)
 }
 provide('toast', showToast)
 
@@ -61,7 +65,7 @@ function hideSaving() {
 }
 provide('saving', { showSaving, hideSaving })
 
-// ── Pill computed ──
+// ── Pill: único elemento com key dinâmica ──
 const pillVisible = computed(() => saving.value || toast.value.show)
 const pillClass   = computed(() => saving.value ? 'ios-pill--saving' : `ios-pill--${toast.value.type}`)
 const pillKey     = computed(() => saving.value ? 'saving' : `toast-${toast.value.type}-${toast.value.message}`)

@@ -357,6 +357,9 @@ function go(path) { router.push(path) }
   font-size: .6rem; font-weight: 600;
   color: var(--text-tertiary); letter-spacing: .04em;
   white-space: nowrap;
+  overflow: hidden;
+  max-width: 90px;
+  text-overflow: ellipsis;
 }
 .collapsed .sb-by { display: none; }
 
