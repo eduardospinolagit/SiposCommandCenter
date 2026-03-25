@@ -51,20 +51,20 @@
     <!-- Toolbar: tabs + busca -->
     <div class="toolbar">
       <div class="tabs">
-        <button class="tab" :class="{ active: tab === 'kanban' }" @click="tab = 'kanban'">
+        <button class="tab" :class="{ active: tab === 'kanban' }" @click="changeTab('kanban')">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           Kanban
         </button>
-        <button class="tab" :class="{ active: tab === 'tabela' }" @click="tab = 'tabela'">
+        <button class="tab" :class="{ active: tab === 'tabela' }" @click="changeTab('tabela')">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           Tabela
         </button>
-        <button class="tab" :class="{ active: tab === 'followup' }" @click="tab = 'followup'">
+        <button class="tab" :class="{ active: tab === 'followup' }" @click="changeTab('followup')">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           Follow-up
           <span v-if="listaFollowUp.length" class="tab-badge tab-badge--orange">{{ listaFollowUp.length }}</span>
         </button>
-        <button class="tab" :class="{ active: tab === 'relead' }" @click="tab = 'relead'">
+        <button class="tab" :class="{ active: tab === 'relead' }" @click="changeTab('relead')">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           Relead
           <span v-if="listaRelead.length" class="tab-badge tab-badge--purple">{{ listaRelead.length }}</span>
@@ -111,6 +111,10 @@
             <div v-if="l.proximo_followup" class="kb-fu-bar">
               <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               {{ fmtDataHora(l.proximo_followup) }}
+            </div>
+            <div v-if="l.relead_data" class="kb-relead-bar">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              {{ fmtDataHora(l.relead_data) }}
             </div>
           </div>
           <button class="kb-add" @click="openNewEtapa(e.id)">
@@ -515,7 +519,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import FecharNegocioModal from '@/components/crm/FecharNegocioModal.vue'
 import { useLeadsStore, ETAPAS } from '@/stores/leads'
 import { useAuthStore } from '@/stores/auth'
@@ -529,6 +533,11 @@ const { run, toast } = useSaving()
 const fmt = fin.fmt
 
 const tab         = ref('kanban')
+function changeTab(t) {
+  const y = window.scrollY
+  tab.value = t
+  nextTick(() => window.scrollTo({ top: y, behavior: 'instant' }))
+}
 const search      = ref('')
 const filterEtapa = ref('')
 const filterPri   = ref('')
@@ -1106,8 +1115,26 @@ async function pedirNotificacao() {
   padding:.25rem .6rem;
   border-radius:0 0 var(--radius-md) var(--radius-md);
 }
-.kb-card{padding-bottom:1.75rem;}
-.kb-card:not(:has(.kb-fu-bar)){padding-bottom:.625rem;}
+.kb-card{padding-bottom:.625rem;}
+.kb-card:has(.kb-fu-bar){padding-bottom:1.75rem;}
+.kb-card:has(.kb-relead-bar){padding-bottom:1.75rem;}
+.kb-card:has(.kb-fu-bar):has(.kb-relead-bar){padding-bottom:3.25rem;}
+
+/* Barra roxa de relead no card */
+.kb-relead-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  display:flex;align-items:center;gap:.3rem;
+  font-size:.62rem;font-weight:600;
+  color:#ede9fe;
+  background:linear-gradient(135deg,#a78bfa,#8b5cf6);
+  padding:.25rem .6rem;
+  border-radius:0 0 var(--radius-md) var(--radius-md);
+}
+/* Quando as duas barras coexistem: relead sobe acima do fu-bar */
+.kb-card:has(.kb-fu-bar) .kb-relead-bar{
+  bottom:1.5rem;
+  border-radius:0;
+}
 
 /* Tab badge roxo */
 .tab-badge--purple{background:#8b5cf6;}
