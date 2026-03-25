@@ -44,7 +44,9 @@ const toast = ref({ show: false, message: '', type: 'ok' })
 let toastTimer = null
 function showToast(message, type = 'ok') {
   clearTimeout(toastTimer)
-  toast.value = { show: true, message, type }
+  // Remove checkmarks do texto — o ícone SVG já representa o estado
+  const clean = message.replace(/\s*[✓✗]\s*/g, '').trim()
+  toast.value = { show: true, message: clean, type }
   toastTimer = setTimeout(() => { toast.value.show = false }, 2600)
 }
 provide('toast', showToast)

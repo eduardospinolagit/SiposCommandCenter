@@ -371,7 +371,7 @@ function go(path) { router.push(path) }
   display: flex; align-items: center; gap: 1rem;
   padding: 0 1.25rem; height: 56px;
   background: var(--bg-base);
-  flex-shrink: 0; position: sticky; top: 0; z-index: 40;
+  flex-shrink: 0;
 }
 
 .topbar-search {
