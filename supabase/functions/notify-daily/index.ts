@@ -141,7 +141,10 @@ Deno.serve(async (_req) => {
   const hoje    = new Date(); hoje.setHours(0,0,0,0)
   const hojeStr = hoje.toISOString().split('T')[0]
 
-  const { data: subs, error: subErr } = await sb.from('push_subscriptions').select('*')
+  const { data: subs, error: subErr } = await sb
+    .from('push_subscriptions')
+    .select('*')
+    .eq('device', 'mobile')
   if (subErr) return new Response(JSON.stringify({ error: subErr.message }), { status:500 })
   if (!subs?.length) return new Response(JSON.stringify({ ok:true, enviados:0, msg:'Sem subscriptions' }))
 

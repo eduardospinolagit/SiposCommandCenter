@@ -60,11 +60,13 @@ export function usePushNotifications() {
       const subJson = sub.toJSON()
 
       // Salva no Supabase
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
       const { error } = await sb.from('push_subscriptions').upsert({
         user_id: auth.user.id,
         endpoint: subJson.endpoint,
         p256dh: subJson.keys?.p256dh,
         auth: subJson.keys?.auth,
+        device: isMobile ? 'mobile' : 'desktop',
       }, { onConflict: 'user_id,endpoint' })
 
       if (error) throw error
