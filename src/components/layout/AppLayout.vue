@@ -286,8 +286,8 @@ function go(path) { router.push(path) }
   -webkit-tap-highlight-color: transparent;
   transition: background 100ms ease, color 100ms ease;
 }
-.sb-item:hover { background: var(--accent-subtle); color: var(--accent); }
-.sb-item:hover .sb-icon { opacity: 1; }
+.sb-item:hover { background: var(--bg-overlay); color: var(--text-primary); }
+.sb-item:hover .sb-icon { opacity: .7; }
 .sb-item.active { background: var(--accent-subtle); color: var(--accent); font-weight: 600; }
 .sb-item.active .sb-icon { opacity: 1; }
 .collapsed .sb-item { justify-content: center; padding: .575rem; gap: 0; }
