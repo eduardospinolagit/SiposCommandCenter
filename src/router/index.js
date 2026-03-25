@@ -21,6 +21,8 @@ const routes = [
       { path: 'prospeccao',    name: 'Prospeccao',    component: () => import('@/views/ProspeccaoView.vue') },
       { path: 'configuracoes', name: 'Configuracoes', component: () => import('@/views/ConfiguracoesView.vue') },
       { path: 'work',          name: 'Work',          component: () => import('@/views/WorkView.vue') },
+      { path: 'slaczap',       name: 'SlacZap',       component: () => import('@/views/SlacZapView.vue') },
+      { path: 'contatos',      name: 'Contatos',      component: () => import('@/views/ContatosView.vue') },
       { path: 'logs',          name: 'Logs',          component: () => import('@/views/LogsView.vue') },
     ]
   },

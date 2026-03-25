@@ -7,6 +7,27 @@ export const useWaStore = defineStore('wa', () => {
   const templates  = ref([])
   const config     = ref({ instance_id: '' })
   const scriptBase = ref('')
+  const chats      = ref([]) // [{lead, lastMsg, lastAt, lastDirecao}]
+
+  async function loadChats() {
+    const { data: convs } = await sb
+      .from('conversas')
+      .select('lead_id, mensagem, data, direcao')
+      .eq('canal', 'whatsapp')
+      .eq('user_id', uid())
+      .order('data', { ascending: false })
+    if (!convs?.length) { chats.value = []; return }
+    const map = new Map()
+    for (const c of convs) {
+      if (!map.has(c.lead_id)) map.set(c.lead_id, c)
+    }
+    const { data: leadsData } = await sb
+      .from('leads').select('id, nome, telefone, etapa')
+      .in('id', [...map.keys()]).eq('user_id', uid())
+    chats.value = (leadsData || [])
+      .map(l => ({ lead: l, lastMsg: map.get(l.id)?.mensagem || '', lastAt: map.get(l.id)?.data || '', lastDirecao: map.get(l.id)?.direcao || '' }))
+      .sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt))
+  }
 
   async function loadTemplates() {
     const { data, error } = await sb
@@ -90,9 +111,9 @@ export const useWaStore = defineStore('wa', () => {
   }
 
   return {
-    templates, config, scriptBase,
+    templates, config, scriptBase, chats,
     loadTemplates, saveTemplate, deleteTemplate,
-    loadConfig, saveConfig,
+    loadConfig, saveConfig, loadChats,
     enviarMensagem, gerarScript,
   }
 })
