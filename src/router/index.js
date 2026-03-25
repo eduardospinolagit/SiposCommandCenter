@@ -21,6 +21,7 @@ const routes = [
       { path: 'prospeccao',    name: 'Prospeccao',    component: () => import('@/views/ProspeccaoView.vue') },
       { path: 'configuracoes', name: 'Configuracoes', component: () => import('@/views/ConfiguracoesView.vue') },
       { path: 'work',          name: 'Work',          component: () => import('@/views/WorkView.vue') },
+      { path: 'logs',          name: 'Logs',          component: () => import('@/views/LogsView.vue') },
     ]
   },
 ]

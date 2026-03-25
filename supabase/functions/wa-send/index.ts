@@ -5,14 +5,27 @@ const ZAPI_TOKEN    = Deno.env.get('ZAPI_TOKEN')!
 const SB_URL        = Deno.env.get('SUPABASE_URL')!
 const SB_SERVICE    = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
+async function log(sb: ReturnType<typeof createClient>, level: string, message: string, data?: unknown) {
+  try {
+    await sb.from('logs').insert({ level, source: 'wa-send', message, data: data ?? null })
+  } catch {}
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders() })
   }
 
+  const sb = createClient(SB_URL, SB_SERVICE)
+
   try {
-    const { lead_id, user_id, telefone, mensagem } = await req.json()
+    const body = await req.json()
+    const { lead_id, user_id, telefone, mensagem } = body
+
+    await log(sb, 'info', 'wa-send chamado', { lead_id, user_id, telefone: String(telefone).slice(-4).padStart(String(telefone).length, '*') })
+
     if (!lead_id || !telefone || !mensagem || !user_id) {
+      await log(sb, 'error', 'Parâmetros faltando', { lead_id, user_id, temTelefone: !!telefone, temMensagem: !!mensagem })
       return json({ error: 'lead_id, user_id, telefone e mensagem são obrigatórios' }, 400)
     }
 
@@ -20,27 +33,30 @@ Deno.serve(async (req) => {
     const tel = String(telefone).replace(/\D/g, '')
     const telZapi = tel.startsWith('55') ? tel : '55' + tel
 
+    const zapiUrl = `https://api.z-api.io/instances/${ZAPI_INSTANCE}/token/${ZAPI_TOKEN}/send-text`
+    await log(sb, 'info', 'Chamando Z-API', { url: zapiUrl.replace(ZAPI_TOKEN, '***'), phone: telZapi })
+
     // Envia pelo Z-API
-    const zapiRes = await fetch(
-      `https://api.z-api.io/instances/${ZAPI_INSTANCE}/token/${ZAPI_TOKEN}/send-text`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: telZapi, message: mensagem }),
-      }
-    )
+    const zapiRes = await fetch(zapiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: telZapi, message: mensagem }),
+    })
+
+    const zapiText = await zapiRes.text()
+    let zapiData: any = null
+    try { zapiData = JSON.parse(zapiText) } catch {}
 
     if (!zapiRes.ok) {
-      const err = await zapiRes.text()
-      console.error('[wa-send] Z-API erro:', err)
-      return json({ error: 'Falha ao enviar pelo WhatsApp', detail: err }, 502)
+      await log(sb, 'error', 'Z-API retornou erro', { status: zapiRes.status, body: zapiText })
+      return json({ error: 'Falha ao enviar pelo WhatsApp', detail: zapiText }, 502)
     }
 
-    const zapiData = await zapiRes.json()
+    await log(sb, 'info', 'Z-API resposta OK', { status: zapiRes.status, body: zapiData })
+
     const waMessageId = zapiData?.zaapId || zapiData?.messageId || null
 
     // Persiste em conversas
-    const sb = createClient(SB_URL, SB_SERVICE)
     const { error: dbError } = await sb.from('conversas').insert({
       id: 'wa_out_' + Date.now() + '_' + Math.random().toString(36).slice(2),
       user_id,
@@ -54,14 +70,16 @@ Deno.serve(async (req) => {
     })
 
     if (dbError) {
-      console.error('[wa-send] DB erro:', dbError)
+      await log(sb, 'error', 'Erro ao salvar conversa no DB', { error: dbError })
       return json({ error: 'Mensagem enviada mas falhou ao salvar' }, 500)
     }
 
+    await log(sb, 'info', 'Conversa salva com sucesso', { wa_message_id: waMessageId })
     return json({ ok: true, wa_message_id: waMessageId })
-  } catch (e) {
-    console.error('[wa-send] erro:', e)
-    return json({ error: 'Erro interno' }, 500)
+
+  } catch (e: any) {
+    await log(sb, 'error', 'Exceção não tratada em wa-send', { message: e?.message, stack: e?.stack })
+    return json({ error: 'Erro interno: ' + (e?.message || String(e)) }, 500)
   }
 })
 
