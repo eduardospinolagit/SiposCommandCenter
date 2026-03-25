@@ -15,8 +15,7 @@ export const ETAPAS = [
 export const useLeadsStore = defineStore('leads', () => {
   const leads = ref([])
   const conversas = ref([])
-    return auth.user.id
-  }
+
 
   async function load() {
     const { data, error } = await sb

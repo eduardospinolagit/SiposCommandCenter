@@ -9,8 +9,8 @@ export const useFinStore = defineStore('fin', () => {
   const meta = ref({ val: 2000, desc: '2 clientes Profissional', semanal: 500 })
 
   const fmt = v => 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    return auth.user.id
-  }
+
+
 
   async function load() {
     await Promise.all([loadFin(), loadPgto(), loadMeta()])

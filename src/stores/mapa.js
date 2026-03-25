@@ -80,6 +80,7 @@ const dadosDefault = [
 export const useMapaStore = defineStore('mapa', () => {
   const dados = ref(JSON.parse(JSON.stringify(dadosDefault)))
 
+
   async function load() {
     const { data, error } = await sb
       .from('configuracoes').select('*')
