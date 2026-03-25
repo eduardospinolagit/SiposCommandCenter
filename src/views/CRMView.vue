@@ -57,6 +57,11 @@
           Follow-up
           <span v-if="leads.followUpsAlerta.length" class="tab-badge">{{ leads.followUpsAlerta.length }}</span>
         </button>
+        <button class="tab" :class="{ active: tab === 'relead' }" @click="tab = 'relead'">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Relead
+          <span v-if="listaRelead.length" class="tab-badge tab-badge--purple">{{ listaRelead.length }}</span>
+        </button>
       </div>
       <div class="kb-search-box">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -90,14 +95,13 @@
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
             </div>
             <div class="kb-name">{{ l.nome }}</div>
-            <div class="kb-neg">{{ l.negocio || l.categoria || '—' }}</div>
             <div v-if="l.site_atual" class="kb-servico">{{ l.site_atual }}</div>
+            <div v-if="l.notas" class="kb-notas">{{ l.notas.slice(0,80) }}{{ l.notas.length > 80 ? '...' : '' }}</div>
             <div class="kb-footer">
-              <span class="kb-tel">{{ l.telefone }}</span>
               <span class="kb-pri" :class="`pri-${l.prioridade}`">{{ l.prioridade }}</span>
             </div>
-            <div v-if="l.proximo_followup" class="kb-fu">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <div v-if="l.proximo_followup" class="kb-fu-bar">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               {{ fmtDataHora(l.proximo_followup) }}
             </div>
           </div>
@@ -205,7 +209,6 @@
             <p class="card-modal-neg">{{ cardModal.negocio || cardModal.categoria || '—' }}</p>
           </div>
           <div class="card-modal-actions">
-            <button class="btn btn-primary btn-sm" @click="openLead(cardModal.id); cardModal = null">Editar</button>
             <button class="btn btn-ghost btn-icon" @click="cardModal = null">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
@@ -234,13 +237,102 @@
           </div>
         </div>
         <div class="card-modal-footer">
-          <a :href="'https://wa.me/55'+cardModal.telefone.replace(/\D/g,'')+'?text=Oi '+cardModal.nome+'!'" target="_blank" class="btn btn-secondary">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          <a :href="'https://wa.me/55'+cardModal.telefone.replace(/\D/g,'')+'?text=Oi '+cardModal.nome+'!'" target="_blank" class="btn btn-secondary btn-sm">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
             WhatsApp
           </a>
-          <button class="btn btn-primary" style="flex:1;justify-content:center" @click="openLead(cardModal.id); cardModal = null">
+          <!-- Follow-up 24h -->
+          <button class="btn btn-warning btn-sm" @click="followUp24h(cardModal); cardModal = null" title="Agendar follow-up para amanhã">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Follow-up 24h
+          </button>
+          <!-- Relead -->
+          <button class="btn btn-purple btn-sm" @click="openReleadModal(cardModal); cardModal = null" title="Marcar como Relead">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Relead
+          </button>
+          <!-- Editar -->
+          <button class="btn btn-ghost btn-icon btn-sm" @click="openLead(cardModal.id); cardModal = null" title="Editar lead">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Editar lead
+          </button>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <!-- RELEAD TAB -->
+  <div v-if="tab === 'relead'" class="fu-wrap">
+    <div v-if="!listaRelead.length" class="fu-empty">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      <p>Nenhum relead agendado</p>
+      <span>Leads com interesse que precisam de uma nova abordagem</span>
+    </div>
+    <div v-else class="fu-list">
+      <div v-for="l in listaRelead" :key="l.id"
+        class="fu-card fu-relead"
+        @click="openLead(l.id)">
+        <div class="fu-card-left">
+          <div class="fu-datetime">
+            <span class="fu-date">{{ fmtFuDate(l.relead_data) }}</span>
+            <span class="fu-time">{{ fmtFuTime(l.relead_data) }}</span>
+          </div>
+          <div class="fu-status-dot dot-purple"></div>
+        </div>
+        <div class="fu-card-body">
+          <div class="fu-nome">{{ l.nome }}</div>
+          <div class="fu-neg">{{ l.negocio || l.categoria || '—' }}</div>
+          <div class="fu-meta">
+            <span class="etapa-tag" :style="{ background: etapaColor(l.etapa)+'18', color: etapaColor(l.etapa) }">{{ etapaLabel(l.etapa) }}</span>
+            <span v-if="l.notas" class="fu-nota">{{ l.notas.slice(0, 60) }}{{ l.notas.length > 60 ? '...' : '' }}</span>
+          </div>
+        </div>
+        <div class="fu-card-right">
+          <a :href="'https://wa.me/55'+l.telefone.replace(/\D/g,'')" target="_blank" class="btn btn-secondary btn-sm" @click.stop>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp
+          </a>
+          <button class="btn btn-ghost btn-sm btn-icon" @click.stop="openLead(l.id)" title="Editar">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL RELEAD: escolher data -->
+  <Transition name="modal-fade">
+    <div v-if="releadModal" class="modal-backdrop" @click.self="releadModal = null">
+      <div class="relead-modal">
+        <div class="card-modal-header">
+          <div>
+            <h3 class="card-modal-name">Agendar Relead</h3>
+            <p class="card-modal-neg">{{ releadModal.nome }} — {{ releadModal.negocio || releadModal.categoria || '' }}</p>
+          </div>
+          <button class="btn btn-ghost btn-icon" @click="releadModal = null">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="card-modal-body">
+          <p style="font-size:.8125rem;color:var(--text-tertiary);margin:0 0 1rem">
+            Escolha quando abordar este lead novamente. Ele aparecerá na aba Relead no dia escolhido.
+          </p>
+          <div class="fu-datetime-input">
+            <input v-model="releadDate" class="form-input" type="date" style="flex:1.4" />
+            <input v-model="releadTime" class="form-input" type="time" style="flex:1" />
+          </div>
+          <!-- Atalhos rápidos -->
+          <div class="relead-shortcuts">
+            <button class="btn btn-ghost btn-sm" @click="setReleadShortcut(7)">1 semana</button>
+            <button class="btn btn-ghost btn-sm" @click="setReleadShortcut(14)">2 semanas</button>
+            <button class="btn btn-ghost btn-sm" @click="setReleadShortcut(30)">1 mês</button>
+            <button class="btn btn-ghost btn-sm" @click="setReleadShortcut(90)">3 meses</button>
+          </div>
+        </div>
+        <div class="card-modal-footer">
+          <button class="btn btn-secondary" @click="releadModal = null">Cancelar</button>
+          <button class="btn btn-purple" style="flex:1;justify-content:center" @click="confirmarRelead">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Agendar Relead
           </button>
         </div>
       </div>
@@ -706,6 +798,59 @@ async function addConversa() {
   convMsg.value=''
 }
 
+// ── Follow-up 24h ──
+async function followUp24h(lead) {
+  const ts = new Date(Date.now() + 24 * 60 * 60 * 1000)
+  const iso = ts.toISOString().slice(0, 16) + ':00'
+  const payload = { ...lead, proximo_followup: iso, updated_at: new Date().toISOString() }
+  await run(() => leads.upsert(payload), `Follow-up agendado para ${fmtDataHora(iso)} ✓`)
+  // Agenda notificação local
+  setTimeout(() => {
+    if (Notification.permission === 'granted') {
+      new Notification('SLAC · Follow-up', {
+        body: `${lead.nome}${lead.negocio ? ' — ' + lead.negocio : ''}`,
+        icon: '/icons/web-app-manifest-192x192.png',
+        tag: 'fu_' + lead.id
+      })
+    }
+  }, 24 * 60 * 60 * 1000)
+  tab.value = 'followup'
+}
+
+// ── Relead ──
+const releadModal = ref(null)
+const releadDate  = ref('')
+const releadTime  = ref('09:00')
+
+function openReleadModal(lead) {
+  releadModal.value = lead
+  // Default: 1 semana
+  const d = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  releadDate.value = d.toISOString().split('T')[0]
+  releadTime.value = '09:00'
+}
+
+function setReleadShortcut(days) {
+  const d = new Date(Date.now() + days * 24 * 60 * 60 * 1000)
+  releadDate.value = d.toISOString().split('T')[0]
+}
+
+async function confirmarRelead() {
+  if (!releadDate.value || !releadModal.value) { toast('Escolha uma data', 'err'); return }
+  const iso = `${releadDate.value}T${releadTime.value}:00`
+  const lead = releadModal.value
+  const payload = { ...lead, relead_data: iso, updated_at: new Date().toISOString() }
+  await run(() => leads.upsert(payload), `Relead agendado para ${fmtFuDate(iso)} ✓`)
+  releadModal.value = null
+  tab.value = 'relead'
+}
+
+const listaRelead = computed(() =>
+  leads.leads
+    .filter(l => l.relead_data)
+    .sort((a, b) => new Date(a.relead_data) - new Date(b.relead_data))
+)
+
 async function pedirNotificacao() {
   if(!('Notification' in window)){toast('Notificações não suportadas','err');return}
   const perm=await Notification.requestPermission()
@@ -856,6 +1001,40 @@ async function pedirNotificacao() {
 .fu-datetime-input{display:flex;align-items:center;gap:.375rem;}
 .fu-badge{font-size:.6rem;font-weight:700;background:var(--accent-subtle);color:var(--accent);border:1px solid var(--accent);border-radius:99px;padding:.1rem .4rem;letter-spacing:.03em;margin-left:.375rem;}
 .fu-hint{display:flex;align-items:center;gap:.375rem;font-size:.75rem;color:var(--status-warning);margin-top:.25rem;}
+
+/* Kanban card notas */
+.kb-notas{font-size:.7rem;color:var(--text-tertiary);margin-bottom:.375rem;line-height:1.4;font-style:italic;}
+
+/* Faixa amarela de follow-up no card */
+.kb-fu-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  display:flex;align-items:center;gap:.3rem;
+  font-size:.62rem;font-weight:600;
+  color:#92400e;
+  background:linear-gradient(135deg,#fbbf24,#f59e0b);
+  padding:.25rem .6rem;
+  border-radius:0 0 var(--radius-md) var(--radius-md);
+}
+.kb-card{padding-bottom:1.75rem;}
+.kb-card:not(:has(.kb-fu-bar)){padding-bottom:.625rem;}
+
+/* Tab badge roxo */
+.tab-badge--purple{background:#8b5cf6;}
+
+/* Botões novos */
+.btn-warning{background:rgba(245,158,11,.15);color:#d97706;border:1px solid rgba(245,158,11,.35);}
+.btn-warning:hover{background:rgba(245,158,11,.25);color:#b45309;}
+.btn-purple{background:rgba(139,92,246,.15);color:#7c3aed;border:1px solid rgba(139,92,246,.35);}
+.btn-purple:hover{background:rgba(139,92,246,.25);color:#6d28d9;}
+
+/* Relead modal */
+.relead-modal{background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:var(--radius-xl,16px);box-shadow:var(--shadow-lg);width:100%;max-width:400px;overflow:hidden;}
+.relead-shortcuts{display:flex;gap:.375rem;flex-wrap:wrap;margin-top:.75rem;}
+
+/* Relead card */
+.fu-relead{border-color:rgba(139,92,246,.25);}
+.fu-relead:hover{border-color:rgba(139,92,246,.5);}
+.dot-purple{background:#8b5cf6;}
 
 @media(max-width:1200px){.kanban-board{grid-template-columns:repeat(3,1fr);}}
 @media(max-width:768px){.kanban-board{grid-template-columns:repeat(2,1fr);}.drawer{width:100%;}.fu-card{flex-wrap:wrap;}.card-modal-grid{grid-template-columns:1fr;}}
