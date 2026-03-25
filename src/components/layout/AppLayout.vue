@@ -108,6 +108,54 @@
     </button>
   </nav>
 
+  <!-- Modal boas-vindas de volta -->
+  <Teleport to="body">
+    <Transition name="wb-modal">
+      <div v-if="showWelcomeBack" class="wb-backdrop" @click.self="showWelcomeBack = false" @keydown.esc="showWelcomeBack = false">
+        <div class="wb-card">
+          <button class="wb-close" @click="showWelcomeBack = false">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+
+          <div class="wb-header">
+            <span class="wb-label">Bem-vindo de volta</span>
+            <h2 class="wb-name">{{ auth.userName }}</h2>
+            <span class="wb-date">{{ wbDate }}</span>
+          </div>
+
+          <div class="wb-stats">
+            <div class="wb-stat">
+              <span class="wb-stat-val" style="color:var(--status-info)">{{ wbStats.total }}</span>
+              <span class="wb-stat-label">Leads</span>
+            </div>
+            <div class="wb-stat">
+              <span class="wb-stat-val" :style="{ color: wbStats.fuHoje > 0 ? 'var(--status-warning)' : 'var(--text-secondary)' }">{{ wbStats.fuHoje }}</span>
+              <span class="wb-stat-label">Follow-ups</span>
+            </div>
+            <div class="wb-stat">
+              <span class="wb-stat-val" style="color:var(--accent)">{{ wbStats.fechados }}</span>
+              <span class="wb-stat-label">Fechados</span>
+            </div>
+          </div>
+
+          <div class="wb-row wb-row--accent">
+            <span class="wb-row-label">Receita do mês</span>
+            <span class="wb-row-val" style="color:var(--accent)">{{ wbStats.recMes }}</span>
+          </div>
+          <div class="wb-row">
+            <span class="wb-row-label">Pipeline</span>
+            <span class="wb-row-val">{{ wbStats.pipe }}</span>
+          </div>
+
+          <button class="btn btn-primary wb-btn" @click="showWelcomeBack = false">
+            Ir ao Dashboard
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
   <div v-if="showWelcomeModal" class="modal-backdrop">
     <div class="modal" style="max-width:400px;text-align:center">
       <div class="modal-body" style="padding:2rem 1.5rem">
@@ -126,12 +174,16 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useLeadsStore } from '@/stores/leads'
+import { useFinStore } from '@/stores/fin'
 import { useAppInit } from '@/composables/useAppInit'
 import { useTheme } from '@/composables/useTheme'
 
 const router = useRouter()
 const route  = useRoute()
 const auth   = useAuthStore()
+const leads  = useLeadsStore()
+const fin    = useFinStore()
 const { theme, toggleTheme } = useTheme()
 const isDark = computed(() => theme.value === 'dark')
 
@@ -211,7 +263,26 @@ function handleKeydown(e) {
 onMounted(() => document.addEventListener('keydown', handleKeydown))
 onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
 
-// Welcome
+// Welcome back modal
+const showWelcomeBack = ref(false)
+
+const wbDate = computed(() => {
+  return new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+})
+
+const wbStats = computed(() => {
+  const mesAtual = new Date().toISOString().slice(0, 7)
+  const periodo  = fin.calcPeriodo(mesAtual)
+  return {
+    total:   leads.stats.total,
+    fuHoje:  leads.stats.fuHoje,
+    fechados: leads.stats.fechados,
+    recMes:  fin.fmt(periodo.rec),
+    pipe:    fin.fmt(leads.stats.pipe),
+  }
+})
+
+// Welcome (primeiro acesso — pede nome)
 const welcomeInput     = ref(null)
 const welcomeName      = ref('')
 const showWelcomeModal = ref(false)
@@ -224,6 +295,9 @@ onMounted(async () => {
       showWelcomeModal.value = true
       await nextTick()
       welcomeInput.value?.focus()
+    } else if (sessionStorage.getItem('slac_show_welcome')) {
+      sessionStorage.removeItem('slac_show_welcome')
+      showWelcomeBack.value = true
     }
   }
 })
@@ -488,4 +562,92 @@ function go(path) { router.push(path) }
   .mobile-nav { display: flex; }
   .main { padding-bottom: 68px; }
 }
+
+
+/* ── Welcome back modal ── */
+.wb-backdrop {
+  position: fixed; inset: 0; z-index: 9000;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+[data-theme="light"] .wb-backdrop { background: rgba(200, 200, 210, 0.3); }
+
+.wb-card {
+  position: relative;
+  width: 320px;
+  padding: 1.625rem 1.75rem 1.5rem;
+  border-radius: 20px;
+  background: rgba(18, 18, 18, 0.38);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+[data-theme="light"] .wb-card {
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+.wb-close {
+  position: absolute; top: 1rem; right: 1rem;
+  background: rgba(255,255,255,.06); border: none; border-radius: 50%;
+  width: 26px; height: 26px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,.35); transition: background 120ms ease, color 120ms ease;
+}
+.wb-close:hover { background: rgba(255,255,255,.12); color: rgba(255,255,255,.7); }
+[data-theme="light"] .wb-close { background: rgba(0,0,0,.05); color: rgba(0,0,0,.3); }
+[data-theme="light"] .wb-close:hover { background: rgba(0,0,0,.1); color: rgba(0,0,0,.6); }
+
+.wb-header { margin-bottom: 1.125rem; }
+.wb-label {
+  display: block;
+  font-size: .65rem; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; color: rgba(255,255,255,.38);
+  margin-bottom: .25rem;
+}
+[data-theme="light"] .wb-label { color: rgba(0,0,0,.38); }
+.wb-name {
+  margin: 0 0 .2rem; font-size: 1.25rem; font-weight: 700;
+  color: var(--text-primary); letter-spacing: -.02em;
+}
+.wb-date { font-size: .72rem; color: rgba(255,255,255,.3); }
+[data-theme="light"] .wb-date { color: rgba(0,0,0,.3); }
+
+.wb-stats {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: .5rem; margin-bottom: .625rem;
+}
+.wb-stat {
+  display: flex; flex-direction: column; align-items: center; gap: .15rem;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px; padding: .625rem .375rem;
+}
+[data-theme="light"] .wb-stat {
+  background: rgba(0,0,0,.04); border-color: rgba(0,0,0,.07);
+}
+.wb-stat-val { font-size: 1.125rem; font-weight: 700; line-height: 1; }
+.wb-stat-label { font-size: .6rem; color: rgba(255,255,255,.35); }
+[data-theme="light"] .wb-stat-label { color: rgba(0,0,0,.38); }
+
+.wb-row {
+  display: flex; justify-content: space-between; align-items: center;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.06);
+  border-radius: 10px; padding: .5rem .75rem; margin-bottom: .5rem;
+}
+[data-theme="light"] .wb-row { background: rgba(0,0,0,.04); border-color: rgba(0,0,0,.07); }
+.wb-row--accent { background: rgba(34,197,94,.07); border-color: rgba(34,197,94,.15); }
+[data-theme="light"] .wb-row--accent { background: rgba(34,197,94,.07); border-color: rgba(34,197,94,.2); }
+.wb-row-label { font-size: .68rem; color: rgba(255,255,255,.38); }
+[data-theme="light"] .wb-row-label { color: rgba(0,0,0,.4); }
+.wb-row-val { font-size: .875rem; font-weight: 600; color: var(--text-primary); }
+
+.wb-btn { width: 100%; justify-content: center; gap: .5rem; margin-top: .875rem; }
+
+/* Animação — apenas opacidade */
+.wb-modal-enter-active { transition: opacity 280ms ease; }
+.wb-modal-leave-active { transition: opacity 180ms ease; }
+.wb-modal-enter-from   { opacity: 0; }
+.wb-modal-leave-to     { opacity: 0; }
 </style>

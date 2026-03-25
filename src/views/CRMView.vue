@@ -102,6 +102,7 @@
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
             </div>
             <div class="kb-name">{{ l.nome }}</div>
+            <div v-if="l.negocio" class="kb-negocio">{{ l.negocio }}</div>
             <div v-if="l.site_atual" class="kb-servico">{{ l.site_atual }}</div>
             <div v-if="l.notas" class="kb-notas">{{ l.notas.slice(0,80) }}{{ l.notas.length > 80 ? '...' : '' }}</div>
             <div class="kb-footer">
@@ -193,9 +194,12 @@
             </div>
           </div>
           <div class="fu-card-right">
-            <a :href="'https://wa.me/55'+l.telefone.replace(/\D/g,'')" target="_blank" class="btn btn-secondary btn-sm" @click.stop>
+            <button class="btn btn-primary btn-sm fu-concluido" @click.stop="concluirFollowUp(l)" title="Marcar follow-up como concluído">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Concluído
+            </button>
+            <a :href="'https://wa.me/55'+l.telefone.replace(/\D/g,'')" target="_blank" class="btn btn-secondary btn-sm btn-icon" @click.stop title="WhatsApp">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-              WhatsApp
             </a>
             <button class="btn btn-ghost btn-sm btn-icon" @click.stop="openLead(l.id)" title="Editar">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -238,9 +242,15 @@
             <div v-if="cardModal.valor_estimado" class="cm-item"><span class="cm-label">Valor estimado</span><span class="cm-val" style="color:var(--accent);font-weight:700">{{ fmt(cardModal.valor_estimado) }}</span></div>
             <div v-if="cardModal.proximo_followup" class="cm-item"><span class="cm-label">Follow-up</span><span class="cm-val" style="color:var(--status-warning)">{{ fmtDataHora(cardModal.proximo_followup) }}</span></div>
           </div>
-          <div v-if="cardModal.notas" class="cm-notas">
+          <div class="cm-notas">
             <span class="cm-label">Notas</span>
-            <p>{{ cardModal.notas }}</p>
+            <textarea
+              v-model="cardNotasEdit"
+              class="form-textarea cm-notas-textarea"
+              placeholder="Adicionar nota..."
+              rows="3"
+              @blur="salvarNotas"
+            ></textarea>
           </div>
         </div>
         <div class="card-modal-footer">
@@ -248,11 +258,21 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
             WhatsApp
           </a>
-          <!-- Follow-up 24h -->
-          <button class="btn btn-warning btn-sm" @click="followUp24h(cardModal); cardModal = null" title="Agendar follow-up para amanhã">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Follow-up 24h
-          </button>
+          <!-- Follow-up picker -->
+          <div class="fu-picker-wrap">
+            <button class="btn btn-warning btn-sm fu-picker-toggle" @click.stop="fuPickerOpen = !fuPickerOpen">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Follow-up
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" :style="{ transform: fuPickerOpen ? 'rotate(180deg)' : '', transition: 'transform 150ms' }"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <Transition name="fu-opts">
+              <div v-if="fuPickerOpen" class="fu-opts">
+                <button v-for="opt in fuOpts" :key="opt.h" class="fu-opt" @click.stop="agendarFollowUp(cardModal, opt.h); cardModal = null; fuPickerOpen = false">
+                  {{ opt.label }}
+                </button>
+              </div>
+            </Transition>
+          </div>
           <!-- Relead -->
           <button class="btn btn-purple btn-sm" @click="openReleadModal(cardModal); cardModal = null" title="Marcar como Relead">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
@@ -495,7 +515,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import FecharNegocioModal from '@/components/crm/FecharNegocioModal.vue'
 import { useLeadsStore, ETAPAS } from '@/stores/leads'
 import { useAuthStore } from '@/stores/auth'
@@ -805,7 +825,39 @@ async function addConversa() {
   convMsg.value=''
 }
 
-// ── Follow-up 24h ──
+// ── Notas inline no card modal ──
+const cardNotasEdit = ref('')
+watch(cardModal, l => { cardNotasEdit.value = l?.notas || '' })
+
+async function salvarNotas() {
+  if (!cardModal.value) return
+  const novas = cardNotasEdit.value.trim()
+  if (novas === (cardModal.value.notas || '').trim()) return
+  const atualizado = { ...cardModal.value, notas: novas }
+  cardModal.value = atualizado
+  await run(() => leads.upsert(atualizado), 'Nota salva')
+}
+
+// ── Follow-up ──
+const fuPickerOpen = ref(false)
+const fuOpts = [
+  { h: 3,  label: '3 horas'  },
+  { h: 6,  label: '6 horas'  },
+  { h: 12, label: '12 horas' },
+  { h: 24, label: '24 horas' },
+]
+
+async function concluirFollowUp(lead) {
+  await run(() => leads.upsert({ ...lead, proximo_followup: null }), 'Follow-up concluído')
+}
+
+async function agendarFollowUp(lead, horas) {
+  const iso = new Date(Date.now() + horas * 60 * 60 * 1000).toISOString().slice(0, 16) + ':00'
+  const idx = leads.leads.findIndex(l => l.id === lead.id)
+  if (idx !== -1) leads.leads[idx] = { ...leads.leads[idx], proximo_followup: iso }
+  run(() => leads.upsert({ ...lead, proximo_followup: iso, updated_at: new Date().toISOString() }), `Follow-up em ${horas}h agendado`)
+}
+
 async function followUp24h(lead) {
   const ts = new Date(Date.now() + 24 * 60 * 60 * 1000)
   const iso = ts.toISOString().slice(0, 16) + ':00'
@@ -922,7 +974,8 @@ async function pedirNotificacao() {
 .kb-card:hover{box-shadow:var(--shadow-md);border-color:var(--accent);transform:translateY(-1px);}
 .kb-drag-handle{position:absolute;top:.5rem;right:.5rem;color:var(--text-tertiary);opacity:0;transition:opacity 100ms ease;cursor:grab;}
 .kb-card:hover .kb-drag-handle{opacity:.5;}
-.kb-name{font-size:.82rem;font-weight:600;color:var(--text-primary);margin-bottom:.15rem;}
+.kb-name{font-size:.82rem;font-weight:600;color:var(--text-primary);margin-bottom:.1rem;}
+.kb-negocio{font-size:.7rem;color:var(--text-tertiary);margin-bottom:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .kb-neg{font-size:.72rem;color:var(--text-tertiary);margin-bottom:.375rem;}
 .kb-servico{font-size:.65rem;color:var(--status-info);margin-bottom:.375rem;}
 .kb-footer{display:flex;align-items:center;justify-content:space-between;}
@@ -970,9 +1023,11 @@ async function pedirNotificacao() {
 .fu-meta{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:.2rem;}
 .fu-nota{font-size:.75rem;color:var(--text-tertiary);font-style:italic;}
 .fu-card-right{display:flex;flex-direction:column;gap:.375rem;justify-content:center;flex-shrink:0;}
+.fu-concluido{gap:.375rem;}
 
 /* Card modal */
-.card-modal{background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:var(--radius-xl, 16px);box-shadow:var(--shadow-lg);width:100%;max-width:480px;overflow:hidden;}
+.card-modal{background:rgba(18,18,18,0.38);backdrop-filter:blur(32px) saturate(180%);-webkit-backdrop-filter:blur(32px) saturate(180%);border:1px solid rgba(255,255,255,0.08);box-shadow:0 28px 72px rgba(0,0,0,.55),0 1px 0 rgba(255,255,255,.05) inset;border-radius:var(--radius-xl, 16px);width:100%;max-width:480px;overflow:hidden;will-change:opacity;}
+[data-theme="light"] .card-modal{background:rgba(255,255,255,0.42);border:1px solid rgba(255,255,255,0.75);box-shadow:0 20px 60px rgba(0,0,0,.1),0 1px 0 rgba(255,255,255,.9) inset;}
 .card-modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:1.25rem 1.25rem .875rem;}
 .card-modal-name{font-size:1.125rem;font-weight:700;color:var(--text-primary);margin:0;}
 .card-modal-neg{font-size:.8125rem;color:var(--text-tertiary);margin:.2rem 0 0;}
@@ -983,13 +1038,19 @@ async function pedirNotificacao() {
 .cm-label{font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary);}
 .cm-val{font-size:.875rem;color:var(--text-primary);}
 .cm-notas{margin-top:.875rem;padding-top:.875rem;border-top:1px solid var(--border-subtle);}
-.cm-notas p{font-size:.8125rem;color:var(--text-secondary);margin:.25rem 0 0;line-height:1.5;}
+.cm-notas-textarea{
+  margin-top:.375rem;font-size:.8125rem;line-height:1.5;resize:vertical;min-height:68px;
+  background:rgba(255,255,255,.05) !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.cm-notas-textarea:focus{border-color:rgba(34,197,94,.4) !important;outline:none;box-shadow:0 0 0 3px rgba(34,197,94,.08);}
+[data-theme="light"] .cm-notas-textarea{background:rgba(0,0,0,.04) !important;border:1px solid rgba(0,0,0,.08) !important;}
+[data-theme="light"] .cm-notas-textarea:focus{border-color:rgba(34,197,94,.5) !important;}
 .card-modal-footer{display:flex;align-items:center;gap:.5rem;padding:.875rem 1.25rem;border-top:1px solid var(--border-default);}
-.modal-fade-enter-active,.modal-fade-leave-active{transition:opacity 180ms ease;}
+.modal-fade-enter-active,.modal-fade-leave-active{transition:opacity 200ms ease;}
 .modal-fade-enter-from,.modal-fade-leave-to{opacity:0;}
-.modal-fade-enter-active .card-modal,.modal-fade-leave-active .card-modal{transition:transform 180ms ease;}
-.modal-fade-enter-from .card-modal{transform:scale(.96) translateY(8px);}
-.modal-fade-leave-to .card-modal{transform:scale(.98);}
 
 /* Copy toast */
 .copy-toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:var(--radius-full);padding:.375rem .875rem;font-size:.8rem;color:var(--accent);font-weight:600;box-shadow:var(--shadow-md);z-index:9999;pointer-events:none;}
@@ -997,8 +1058,10 @@ async function pedirNotificacao() {
 .toast-anim-enter-from,.toast-anim-leave-to{opacity:0;transform:translateX(-50%) translateY(6px);}
 
 /* Drawer */
-.drawer-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;}
-.drawer{position:fixed;top:0;right:0;height:100vh;width:420px;max-width:95vw;background:var(--bg-elevated);border-left:1px solid var(--border-default);box-shadow:var(--shadow-lg);z-index:801;display:flex;flex-direction:column;overflow:hidden;}
+.drawer-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:800;}
+[data-theme="light"] .drawer-bg{background:rgba(200,200,210,0.3);}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:420px;max-width:95vw;background:rgba(18,18,18,0.38);backdrop-filter:blur(32px) saturate(180%);-webkit-backdrop-filter:blur(32px) saturate(180%);border-left:1px solid rgba(255,255,255,0.08);box-shadow:-8px 0 40px rgba(0,0,0,.5);z-index:801;display:flex;flex-direction:column;overflow:hidden;}
+[data-theme="light"] .drawer{background:rgba(255,255,255,0.42);border-left:1px solid rgba(255,255,255,0.75);box-shadow:-8px 0 40px rgba(0,0,0,.1);}
 .drawer-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border-default);flex-shrink:0;}
 .drawer-title{font-size:.9375rem;font-weight:700;color:var(--text-primary);}
 .drawer-body{flex:1;overflow-y:auto;padding:.875rem 1.25rem;display:flex;flex-direction:column;gap:.875rem;}
@@ -1050,6 +1113,16 @@ async function pedirNotificacao() {
 /* Botões novos */
 .btn-warning{background:rgba(245,158,11,.15);color:#d97706;border:1px solid rgba(245,158,11,.35);}
 .btn-warning:hover{background:rgba(245,158,11,.25);color:#b45309;}
+.fu-picker-wrap{position:relative;}
+.fu-picker-toggle{gap:.375rem;}
+.fu-opts{position:absolute;bottom:calc(100% + 6px);left:0;min-width:120px;background:rgba(18,18,18,0.6);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden;z-index:10;}
+[data-theme="light"] .fu-opts{background:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,.8);}
+.fu-opt{display:block;width:100%;padding:.5rem .875rem;background:transparent;border:none;font-family:var(--font-body);font-size:.8125rem;font-weight:500;color:var(--text-primary);text-align:left;cursor:pointer;transition:background 100ms ease;}
+.fu-opt:hover{background:rgba(245,158,11,.15);color:#d97706;}
+.fu-opts-enter-active{transition:all 180ms cubic-bezier(.34,1.56,.64,1);}
+.fu-opts-leave-active{transition:all 120ms ease;}
+.fu-opts-enter-from{opacity:0;transform:translateY(6px) scale(.97);}
+.fu-opts-leave-to{opacity:0;transform:translateY(4px);}
 .btn-purple{background:rgba(139,92,246,.15);color:#7c3aed;border:1px solid rgba(139,92,246,.35);}
 .btn-purple:hover{background:rgba(139,92,246,.25);color:#6d28d9;}
 

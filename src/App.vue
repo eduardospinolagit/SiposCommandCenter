@@ -92,6 +92,7 @@ onMounted(async () => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
   sb.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && session && router.currentRoute.value.path === '/login') {
+      sessionStorage.setItem('slac_show_welcome', '1')
       router.push('/dashboard')
     }
     if (event === 'SIGNED_OUT') router.push('/login')
@@ -132,18 +133,20 @@ onUnmounted(() => {
   letter-spacing: -.01em;
   white-space: nowrap;
   pointer-events: none;
-  background: rgba(28, 28, 30, 0.85);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255,255,255,.1);
-  box-shadow: 0 4px 24px rgba(0,0,0,.3), 0 1px 4px rgba(0,0,0,.2);
+  background: rgba(18, 18, 18, 0.38);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid rgba(255,255,255,.09);
+  box-shadow: 0 8px 32px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.05) inset;
   color: #fff;
 }
 
 [data-theme="light"] .ios-pill {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(0,0,0,.08);
-  box-shadow: 0 4px 24px rgba(0,0,0,.12), 0 1px 4px rgba(0,0,0,.08);
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid rgba(255,255,255,.75);
+  box-shadow: 0 8px 32px rgba(0,0,0,.1), 0 1px 0 rgba(255,255,255,.9) inset;
   color: #1c1c1e;
 }
 

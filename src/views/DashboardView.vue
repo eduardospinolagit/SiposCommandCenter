@@ -47,29 +47,28 @@
       </div>
     </div>
 
-    <!-- Alertas follow-up -->
-    <div v-if="leads.followUpsAlerta.length" class="card card--followup">
-      <div class="followup-header">
-        <div class="followup-title">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Follow-ups pendentes
-          <span class="badge badge-warning">{{ leads.followUpsAlerta.length }}</span>
+    <!-- Follow-ups de hoje -->
+    <div v-if="fuHoje.length" class="fu-hoje-card">
+      <div class="fu-hoje-head">
+        <div class="fu-hoje-titulo">
+          <span class="fu-hoje-dot-pulse"></span>
+          Follow-ups de hoje
+          <span class="fu-hoje-count">{{ fuHoje.length }}</span>
         </div>
-        <router-link to="/crm" class="btn btn-ghost btn-sm">Ver no CRM →</router-link>
+        <router-link to="/crm" class="btn btn-ghost btn-sm">CRM →</router-link>
       </div>
-      <div class="table-wrapper" style="border:none;border-radius:0;margin-top:.75rem">
-        <table>
-          <thead><tr><th>Lead</th><th>Negócio</th><th>Etapa</th><th>Follow-up</th><th></th></tr></thead>
-          <tbody>
-            <tr v-for="l in leads.followUpsAlerta.slice(0,5)" :key="l.id">
-              <td style="font-weight:600">{{ l.nome }}</td>
-              <td class="text-muted">{{ l.negocio || '—' }}</td>
-              <td><span class="badge badge-warning">{{ etapaLabel(l.etapa) }}</span></td>
-              <td style="color:var(--status-warning);font-size:.85rem">{{ fmtData(l.proximo_followup) }}</td>
-              <td><a :href="'https://wa.me/55'+l.telefone.replace(/\D/g,'')" target="_blank"><button class="btn btn-ghost btn-sm">WhatsApp</button></a></td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="fu-hoje-list">
+        <div v-for="l in fuHoje" :key="l.id" class="fu-hoje-item">
+          <span class="fu-hoje-hora">{{ fmtHora(l.proximo_followup) }}</span>
+          <div class="fu-hoje-info">
+            <span class="fu-hoje-nome">{{ l.nome }}</span>
+            <span v-if="l.negocio" class="fu-hoje-neg">{{ l.negocio }}</span>
+          </div>
+          <a :href="'https://wa.me/55'+l.telefone.replace(/\D/g,'')" target="_blank" class="btn btn-secondary btn-sm fu-hoje-wa">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp
+          </a>
+        </div>
       </div>
     </div>
 
@@ -178,8 +177,17 @@ const mesesDisponiveis = computed(() => {
 // f usa mesSel — string vazia = todos os meses (não filtra)
 const f = computed(() => fin.calcPeriodo(mesSel.value))
 
+const fuHoje = computed(() => {
+  const hoje = new Date().toDateString()
+  return leads.leads.filter(l => {
+    if (!l.proximo_followup || l.etapa === 'fechado' || l.etapa === 'perdido') return false
+    return new Date(l.proximo_followup).toDateString() === hoje
+  }).sort((a, b) => new Date(a.proximo_followup) - new Date(b.proximo_followup))
+})
+
 function etapaLabel(e) { return ETAPA_LABEL[e] || e }
 function fmtData(d)    { if (!d) return '—'; return new Date(d).toLocaleDateString('pt-BR') }
+function fmtHora(d)    { if (!d) return '—'; return new Date(d).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) }
 function safePercent(v, t) { return !t ? 0 : Math.round(v / t * 100) }
 
 function fmtDay(d)   { if (!d) return '--'; return d.split('-')[2] || '--' }
@@ -261,4 +269,56 @@ watch(theme, renderCharts)
 .chart-wrap  { height:200px; position:relative; min-width:0; }
 
 @media (max-width:900px) { .charts-row { grid-template-columns:1fr; } }
+
+/* Follow-ups de hoje */
+.fu-hoje-card {
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(232,168,56,.2);
+  background: rgba(232,168,56,.04);
+  padding: 1rem 1.25rem;
+}
+.fu-hoje-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: .875rem;
+}
+.fu-hoje-titulo {
+  display: flex; align-items: center; gap: .625rem;
+  font-size: .875rem; font-weight: 700; color: var(--text-primary);
+}
+.fu-hoje-count {
+  background: rgba(232,168,56,.18); color: var(--status-warning);
+  font-size: .65rem; font-weight: 700; border-radius: 99px;
+  padding: .1rem .5rem; letter-spacing: .02em;
+}
+.fu-hoje-dot-pulse {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--status-warning); flex-shrink: 0;
+  box-shadow: 0 0 0 0 rgba(232,168,56,.5);
+  animation: fu-pulse 2s ease-in-out infinite;
+}
+@keyframes fu-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(232,168,56,.5); }
+  50%      { box-shadow: 0 0 0 5px rgba(232,168,56,0); }
+}
+.fu-hoje-list { display: flex; flex-direction: column; gap: .375rem; }
+.fu-hoje-item {
+  display: flex; align-items: center; gap: .75rem;
+  padding: .5rem .625rem; border-radius: 8px;
+  transition: background 100ms ease;
+}
+.fu-hoje-item:hover { background: rgba(232,168,56,.06); }
+.fu-hoje-hora {
+  font-size: .72rem; font-weight: 700;
+  color: var(--status-warning); flex-shrink: 0; min-width: 40px;
+  font-variant-numeric: tabular-nums;
+}
+.fu-hoje-info { display: flex; flex-direction: column; gap: .05rem; flex: 1; min-width: 0; }
+.fu-hoje-nome { font-size: .875rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fu-hoje-neg  { font-size: .72rem; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fu-hoje-wa {
+  flex-shrink: 0; color: #25d366; opacity: .6;
+  display: flex; align-items: center;
+  transition: opacity 120ms ease;
+}
+.fu-hoje-wa:hover { opacity: 1; }
 </style>

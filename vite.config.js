@@ -10,9 +10,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'logo.png', 'icons/*.png'],
       manifest: {
-        name: 'SLAC — Sano Lab',
+        name: 'SLAC',
         short_name: 'SLAC',
-        description: 'Sano Lab Advanced CRM',
+        description: 'SLAC',
         theme_color: '#0a0a0a',
         background_color: '#0a0a0a',
         display: 'standalone',

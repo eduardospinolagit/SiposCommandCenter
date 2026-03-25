@@ -24,7 +24,7 @@
     </div>
 
     <!-- KPIs — só aparece quando há dados -->
-    <div v-if="allRows.length" class="kpi-grid kpi-grid--5">
+    <div v-if="allRows.length" class="kpi-grid kpi-grid--4">
       <div class="kpi-card">
         <span class="kpi-label">Total</span>
         <span class="kpi-value" style="color:var(--status-info)">{{ allRows.length }}</span>
@@ -44,14 +44,6 @@
         <span class="kpi-label">Sem site</span>
         <span class="kpi-value kpi-value--danger">{{ semSite }}</span>
         <span class="kpi-sub">oportunidade</span>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">Meta diária</span>
-        <div class="meta-input-wrap">
-          <input v-model.number="meta" class="meta-input" type="number" min="1" max="500" @change="salvarMeta" />
-          <span class="kpi-sub">/ dia</span>
-        </div>
-        <span class="kpi-sub" style="margin-top:.2rem">{{ etaText }}</span>
       </div>
     </div>
 
@@ -170,7 +162,7 @@
               :class="{ 'row-contatado': r._status==='contatado', 'row-sel': selected.has(r._id) }">
               <td @click.stop><input type="checkbox" class="cb" :checked="selected.has(r._id)" @change="toggleSel(r._id,$event.target.checked)" /></td>
               <td>
-                <div style="font-weight:500;color:var(--text-primary)">{{ r.nome }}</div>
+                <div style="font-weight:500;color:var(--text-primary);cursor:pointer" @click.stop="copiarNome(r.nome)" :title="'Copiar: '+r.nome">{{ r.nome }}</div>
                 <div v-if="r.site" class="text-muted" style="font-size:.72rem">{{ r.site }}</div>
               </td>
               <td class="text-muted text-sm">{{ r.categoria || '—' }}</td>
@@ -286,11 +278,21 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, inject } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { sb } from '@/lib/supabase'
 
-const auth = useAuthStore()
+const auth  = useAuthStore()
+const toast = inject('toast')
+
+async function copiarNome(nome) {
+  try {
+    await navigator.clipboard.writeText(nome)
+    toast(nome + ' copiado', 'ok')
+  } catch {
+    toast('Não foi possível copiar', 'error')
+  }
+}
 
 // ── State ──
 const allRows     = ref([])
@@ -302,7 +304,6 @@ const sortField   = ref('')
 const sortDir     = ref('asc')
 const selected    = ref(new Set())
 const page        = ref(1)
-const meta        = ref(50)
 const focoOpen    = ref(false)
 const focoLista   = ref([])
 const focoIdx     = ref(0)
@@ -342,13 +343,6 @@ const pendentes   = computed(() => allRows.value.filter(r=>r._status!=='contatad
 const contatados  = computed(() => allRows.value.filter(r=>r._status==='contatado').length)
 const semSite     = computed(() => allRows.value.filter(r=>!r.site).length)
 const pctTotal    = computed(() => allRows.value.length ? Math.round(contatados.value/allRows.value.length*100) : 0)
-
-const etaText = computed(() => {
-  const faltam = pendentes.value
-  if (!meta.value || !faltam) return ''
-  const dias = Math.ceil(faltam/meta.value)
-  return '~'+dias+' dia'+(dias!==1?'s':'')+' para zerar'
-})
 
 const indicadorMsg = computed(() => {
   const total=allRows.value.length, atual=contatados.value, faltam=total-atual, pct=pctTotal.value
@@ -429,8 +423,6 @@ async function carregarDados() {
       if (data?.valor) { allRows.value=data.valor; localStorage.setItem('slac_prosp_lista',JSON.stringify(data.valor)) }
     } catch {}
   }
-  const m=parseInt(localStorage.getItem('slac_prosp_meta')||'50',10)
-  if (m>0) meta.value=m
 }
 
 async function salvarDados() {
@@ -444,8 +436,6 @@ async function salvarDados() {
     } catch {}
   }
 }
-
-function salvarMeta() { if(meta.value>0) localStorage.setItem('slac_prosp_meta',meta.value) }
 
 // ── CSV ──
 function abrirCSV() { fileInput.value.value=''; fileInput.value.click() }
@@ -696,16 +686,6 @@ function fmtDataHora(d) {
 /* Paginação */
 .pagination { display:flex; align-items:center; gap:.25rem; justify-content:center; padding-top:.875rem; flex-wrap:wrap; }
 
-/* Meta input */
-.meta-input-wrap { display:flex; align-items:center; gap:.375rem; }
-.meta-input {
-  width:52px; padding:.25rem .5rem; text-align:center;
-  background:var(--bg-overlay); border:1px solid var(--border-default);
-  border-radius:var(--radius-md); color:var(--text-primary);
-  font-family:var(--font-display); font-size:.9375rem; font-weight:700;
-  outline:none;
-}
-.meta-input:focus { border-color:var(--accent); }
 
 /* Modo Foco — fullscreen */
 .foco-overlay {
