@@ -18,7 +18,9 @@ const routes = [
       { path: 'crm',          name: 'CRM',          component: () => import('@/views/CRMView.vue') },
       { path: 'financeiro',   name: 'Financeiro',   component: () => import('@/views/FinanceiroView.vue') },
       { path: 'recorrencias', name: 'Recorrencias', component: () => import('@/views/RecorrenciasView.vue') },
-      { path: 'prospeccao',   name: 'Prospeccao',   component: () => import('@/views/ProspeccaoView.vue') },
+      { path: 'prospeccao',    name: 'Prospeccao',    component: () => import('@/views/ProspeccaoView.vue') },
+      { path: 'configuracoes', name: 'Configuracoes', component: () => import('@/views/ConfiguracoesView.vue') },
+      { path: 'work',          name: 'Work',          component: () => import('@/views/WorkView.vue') },
     ]
   },
 ]

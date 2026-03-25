@@ -15,6 +15,7 @@ export const ETAPAS = [
 export const useLeadsStore = defineStore('leads', () => {
   const leads = ref([])
   const conversas = ref([])
+  const undoStack = ref([])
 
 
   async function load() {
@@ -37,7 +38,8 @@ export const useLeadsStore = defineStore('leads', () => {
     return conversas.value
   }
 
-  async function upsert(payload) {
+  // ── Internal (não empurra undo stack) ──
+  async function _upsert(payload) {
     const { error } = await sb.from('leads').upsert(
       { ...payload, user_id: uid() },
       { onConflict: 'id' }
@@ -48,12 +50,34 @@ export const useLeadsStore = defineStore('leads', () => {
     else leads.value.unshift({ ...payload, user_id: uid() })
   }
 
-  async function remove(id) {
-    // Remove da UI imediatamente
+  async function _remove(id) {
     leads.value = leads.value.filter(l => l.id !== id)
-    // Sincroniza Supabase em background
     sb.from('conversas').delete().eq('lead_id', id).then(() => {})
     sb.from('leads').delete().eq('id', id).eq('user_id', uid()).then(() => {})
+  }
+
+  // ── Public (rastreia undo) ──
+  async function upsert(payload) {
+    const prev = leads.value.find(l => l.id === payload.id)
+    undoStack.value.push({ action: 'upsert', prev: prev ? { ...prev } : null, id: payload.id })
+    await _upsert(payload)
+  }
+
+  async function remove(id) {
+    const lead = leads.value.find(l => l.id === id)
+    if (lead) undoStack.value.push({ action: 'remove', lead: { ...lead } })
+    await _remove(id)
+  }
+
+  async function undo() {
+    const entry = undoStack.value.pop()
+    if (!entry) return
+    if (entry.action === 'remove') {
+      await _upsert(entry.lead)
+    } else if (entry.action === 'upsert') {
+      if (entry.prev) await _upsert(entry.prev)   // restaura estado anterior
+      else await _remove(entry.id)                 // era novo, desfaz criação
+    }
   }
 
   async function addConversa(leadId, canal, direcao, mensagem) {
@@ -99,5 +123,5 @@ export const useLeadsStore = defineStore('leads', () => {
     }).sort((a, b) => new Date(a.proximo_followup) - new Date(b.proximo_followup))
   })
 
-  return { leads, conversas, load, loadConversas, upsert, remove, addConversa, getById, stats, followUpsAlerta }
+  return { leads, conversas, undoStack, load, loadConversas, upsert, remove, undo, addConversa, getById, stats, followUpsAlerta }
 })

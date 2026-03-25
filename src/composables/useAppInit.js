@@ -1,6 +1,7 @@
 import { useFinStore } from '@/stores/fin'
 import { useLeadsStore } from '@/stores/leads'
 import { useMapaStore } from '@/stores/mapa'
+import { useWorkStore } from '@/stores/work'
 import { useAuthStore } from '@/stores/auth'
 import { sb } from '@/lib/supabase'
 
@@ -12,6 +13,7 @@ export async function useAppInit() {
   const fin = useFinStore()
   const leads = useLeadsStore()
   const mapa = useMapaStore()
+  const work = useWorkStore()
 
   if (!auth.user) return
   if (initializedForUser === auth.user.id) return
@@ -22,6 +24,7 @@ export async function useAppInit() {
     fin.load(),
     leads.load(),
     mapa.load(),
+    work.load(),
   ])
 
   // Realtime — chamado diretamente (sem composable) para evitar problema de contexto Vue

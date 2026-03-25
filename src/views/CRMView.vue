@@ -108,6 +108,10 @@
             <div class="kb-footer">
               <span class="kb-pri" :class="`pri-${l.prioridade}`">{{ l.prioridade }}</span>
             </div>
+            <div v-if="work.leadsComWork.has(l.id)" class="kb-work-bar">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+              Em execução
+            </div>
             <div v-if="l.proximo_followup" class="kb-fu-bar">
               <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               {{ fmtDataHora(l.proximo_followup) }}
@@ -525,11 +529,13 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import FecharNegocioModal from '@/components/crm/FecharNegocioModal.vue'
 import { useLeadsStore, ETAPAS } from '@/stores/leads'
+import { useWorkStore } from '@/stores/work'
 import { useAuthStore } from '@/stores/auth'
 import { useFinStore } from '@/stores/fin'
 import { useSaving } from '@/composables/useSaving'
 
 const leads = useLeadsStore()
+const work  = useWorkStore()
 const auth  = useAuthStore()
 const fin   = useFinStore()
 const { run, toast } = useSaving()
@@ -539,7 +545,12 @@ const tab         = ref('kanban')
 function changeTab(t) {
   const y = window.scrollY
   tab.value = t
-  nextTick(() => window.scrollTo({ top: y, behavior: 'instant' }))
+  nextTick(() => {
+    window.scrollTo(0, y)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => window.scrollTo(0, y))
+    })
+  })
 }
 const search      = ref('')
 const filterEtapa = ref('')
@@ -963,7 +974,7 @@ async function pedirNotificacao() {
 .sel-bar-enter-from,.sel-bar-leave-to{opacity:0;transform:translateY(-6px);}
 
 /* Toolbar */
-.toolbar{display:flex;align-items:center;gap:.875rem;flex-wrap:wrap;}
+.toolbar{display:flex;align-items:center;gap:.875rem;flex-wrap:wrap;position:sticky;top:0;z-index:10;background:var(--bg-base);padding:.5rem 0;margin:-.5rem 0;}
 .tabs{display:flex;gap:.25rem;background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:.25rem;}
 .tab{display:flex;align-items:center;gap:.4rem;padding:.4rem .875rem;border-radius:var(--radius-md);background:transparent;border:none;font-family:var(--font-body);font-size:.82rem;font-weight:500;color:var(--text-tertiary);cursor:pointer;transition:background 100ms ease,color 100ms ease;position:relative;}
 .tab.active{background:var(--accent);color:#fff;}
@@ -1125,8 +1136,22 @@ async function pedirNotificacao() {
 .kb-card{padding-bottom:.625rem;}
 .kb-card:has(.kb-fu-bar){padding-bottom:1.75rem;}
 .kb-card:has(.kb-relead-bar){padding-bottom:1.75rem;}
+.kb-card:has(.kb-work-bar){padding-bottom:1.75rem;}
 .kb-card:has(.kb-fu-bar):has(.kb-relead-bar){padding-bottom:3.25rem;}
+.kb-card:has(.kb-fu-bar):has(.kb-work-bar){padding-bottom:3.25rem;}
+.kb-card:has(.kb-relead-bar):has(.kb-work-bar){padding-bottom:3.25rem;}
+.kb-card:has(.kb-fu-bar):has(.kb-relead-bar):has(.kb-work-bar){padding-bottom:4.75rem;}
 
+/* Barra azul de work no card */
+.kb-work-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  display:flex;align-items:center;gap:.3rem;
+  font-size:.62rem;font-weight:600;
+  color:#dbeafe;
+  background:linear-gradient(135deg,#60a5fa,#3b82f6);
+  padding:.25rem .6rem;
+  border-radius:0 0 var(--radius-md) var(--radius-md);
+}
 /* Barra roxa de relead no card */
 .kb-relead-bar{
   position:absolute;bottom:0;left:0;right:0;
@@ -1137,11 +1162,12 @@ async function pedirNotificacao() {
   padding:.25rem .6rem;
   border-radius:0 0 var(--radius-md) var(--radius-md);
 }
-/* Quando as duas barras coexistem: relead sobe acima do fu-bar */
-.kb-card:has(.kb-fu-bar) .kb-relead-bar{
-  bottom:1.5rem;
-  border-radius:0;
-}
+/* Empilhamento das barras */
+.kb-card:has(.kb-fu-bar) .kb-relead-bar{bottom:1.5rem;border-radius:0;}
+.kb-card:has(.kb-fu-bar) .kb-work-bar{bottom:1.5rem;border-radius:0;}
+.kb-card:has(.kb-relead-bar) .kb-work-bar{bottom:1.5rem;border-radius:0;}
+.kb-card:has(.kb-fu-bar):has(.kb-relead-bar) .kb-work-bar{bottom:3rem;border-radius:0;}
+.kb-card:has(.kb-fu-bar):has(.kb-work-bar) .kb-relead-bar{bottom:3rem;border-radius:0;}
 
 /* Tab badge roxo */
 .tab-badge--purple{background:#8b5cf6;}

@@ -25,6 +25,11 @@
             <span class="sb-icon" v-html="icons.search"></span>
             <span class="sb-text">Prospecção</span>
           </button>
+          <button class="sb-item" :class="{ active: route.path === '/work' }"
+            @click="go('/work')" title="Work">
+            <span class="sb-icon" v-html="icons.work"></span>
+            <span class="sb-text">Work</span>
+          </button>
         </div>
       </nav>
 
@@ -76,12 +81,17 @@
               <div v-if="userMenuOpen" class="user-dropdown">
                 <div class="user-dropdown-header">
                   <span class="ud-name">{{ auth.userName }}</span>
-                  <span class="ud-role">PRO</span>
+                  <span class="ud-role" :class="`ud-role--${auth.role}`">{{ auth.roleLabel }}</span>
                 </div>
                 <div class="ud-divider"></div>
                 <button class="ud-item" @click="go('/configuracoes'); userMenuOpen = false">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                   Configurações
+                </button>
+                <button class="ud-item" @click="handleUndo" :class="{ 'ud-undo-active': leads.undoStack.length }">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                  Desfazer
+                  <span v-if="leads.undoStack.length" class="ud-undo-badge">{{ leads.undoStack.length }}</span>
                 </button>
                 <button class="ud-item ud-danger" @click="handleLogout">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -168,16 +178,19 @@
       </div>
     </div>
   </div>
+
+  <ConfigModal v-model="configOpen" />
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, inject } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useLeadsStore } from '@/stores/leads'
 import { useFinStore } from '@/stores/fin'
 import { useAppInit } from '@/composables/useAppInit'
 import { useTheme } from '@/composables/useTheme'
+import ConfigModal from '@/components/layout/ConfigModal.vue'
 
 const router = useRouter()
 const route  = useRoute()
@@ -186,6 +199,8 @@ const leads  = useLeadsStore()
 const fin    = useFinStore()
 const { theme, toggleTheme } = useTheme()
 const isDark = computed(() => theme.value === 'dark')
+const toast       = inject('toast')
+const configOpen  = ref(false)
 
 const collapsed = ref(localStorage.getItem('slac-sidebar') === 'collapsed')
 function toggle() {
@@ -209,6 +224,13 @@ async function handleLogout() {
   await auth.logout()
 }
 
+async function handleUndo() {
+  if (!leads.undoStack.length) { toast?.('Nada para desfazer', 'warn'); return }
+  userMenuOpen.value = false
+  await leads.undo()
+  toast?.('Alteração desfeita', 'ok')
+}
+
 const icons = {
   dashboard:    `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>`,
   crm:          `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
@@ -216,6 +238,7 @@ const icons = {
   recorrencias: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`,
   mapa:         `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>`,
   search:       `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+  work:         `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>`,
 }
 
 const mainNav = [
@@ -231,6 +254,7 @@ const mobileNav = [
   { path: '/financeiro', short: 'Fin.',   icon: icons.financeiro },
 
   { path: '/prospeccao', short: 'Prosp.', icon: icons.search },
+  { path: '/work',       short: 'Work',   icon: icons.work },
 ]
 
 // Search
@@ -243,6 +267,7 @@ const allRoutes = [
   { path: '/recorrencias', label: 'Recorrências', desc: 'Contratos mensais',        icon: icons.recorrencias },
 
   { path: '/prospeccao',   label: 'Prospecção',   desc: 'Importar e prospectar',    icon: icons.search },
+  { path: '/work',         label: 'Work',         desc: 'Serviços em execução',      icon: icons.work },
 ]
 
 function onSearchInput() {
@@ -259,6 +284,11 @@ function runSearch() {
 function handleKeydown(e) {
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); document.querySelector('.topbar-input')?.focus() }
   if (e.key === 'Escape') { searchQuery.value = ''; searchResults.value = []; userMenuOpen.value = false }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+    const active = document.activeElement
+    const isEditing = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)
+    if (!isEditing) { e.preventDefault(); handleUndo() }
+  }
 }
 onMounted(() => document.addEventListener('keydown', handleKeydown))
 onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
@@ -340,7 +370,7 @@ function go(path) { router.push(path) }
 .sb-logo { height: 28px; width: auto; display: block; }
 
 .sb-nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: .75rem 0; }
-.sb-section { padding: 0 .5rem; margin-bottom: .625rem; }
+.sb-section { padding: 0 .5rem; margin-bottom: .625rem; display: flex; flex-direction: column; gap: .25rem; }
 .sb-section-label {
   font-size: .6rem; font-weight: 700; letter-spacing: .09em;
   text-transform: uppercase; color: var(--text-tertiary);
@@ -352,7 +382,7 @@ function go(path) { router.push(path) }
 
 .sb-item {
   display: flex; align-items: center; gap: .625rem;
-  width: 100%; padding: .6rem .625rem;
+  width: 100%; padding: .75rem .625rem;
   border-radius: 8px; background: transparent; border: none;
   color: var(--text-secondary); font-family: var(--font-body);
   font-size: .825rem; font-weight: 500;
@@ -522,7 +552,28 @@ function go(path) { router.push(path) }
 }
 .user-dropdown-header { padding: .625rem .875rem .375rem; display: flex; flex-direction: column; gap: .15rem; }
 .ud-name { font-size: .875rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; }
-.ud-role { font-size: .6rem; font-weight: 700; letter-spacing: .07em; color: var(--accent); text-transform: uppercase; }
+.ud-role {
+  font-size: .58rem; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; border-radius: 6px;
+  padding: .2rem .5rem;
+}
+.ud-role--pro {
+  background: linear-gradient(135deg, rgba(34,197,94,.18), rgba(34,197,94,.08));
+  color: #4ade80;
+  border: 1px solid rgba(34,197,94,.35);
+}
+.ud-role--elite {
+  background: linear-gradient(135deg, rgba(251,191,36,.22), rgba(245,158,11,.08));
+  color: #fbbf24;
+  border: 1px solid rgba(251,191,36,.4);
+  box-shadow: 0 0 8px rgba(251,191,36,.2);
+}
+.ud-role--admin {
+  background: linear-gradient(135deg, rgba(239,68,68,.2), rgba(220,38,38,.08));
+  color: #f87171;
+  border: 1px solid rgba(239,68,68,.4);
+  box-shadow: 0 0 8px rgba(239,68,68,.2);
+}
 .ud-divider { height: 1px; background: var(--border-default); }
 .ud-item {
   display: flex; align-items: center; gap: .5rem;
@@ -534,6 +585,13 @@ function go(path) { router.push(path) }
 }
 .ud-item:hover { background: var(--accent-subtle); color: var(--accent); }
 .ud-danger:hover { background: var(--status-danger-subtle); color: var(--status-danger); }
+.ud-undo-active { color: var(--status-warning); }
+.ud-undo-active:hover { background: rgba(245,158,11,.1); color: var(--status-warning); }
+.ud-undo-badge {
+  margin-left: auto; background: var(--status-warning); color: #000;
+  font-size: .6rem; font-weight: 700; padding: .1rem .35rem;
+  border-radius: 99px; line-height: 1.4;
+}
 
 .menu-pop-enter-active { transition: all 150ms cubic-bezier(.34,1.56,.64,1); }
 .menu-pop-leave-active { transition: all 100ms ease; }
