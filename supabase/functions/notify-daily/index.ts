@@ -177,7 +177,7 @@ Deno.serve(async (_req) => {
         enviados++
       } else {
         erros.push(`status ${r.status}`)
-        if (r.status === 410 || r.status === 404) await sb.from('push_subscriptions').delete().eq('id', sub.id)
+        if (r.status === 410) await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
       }
     } catch(e) {
       erros.push(`erro: ${String(e)}`)
