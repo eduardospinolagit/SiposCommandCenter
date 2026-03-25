@@ -803,7 +803,14 @@ async function followUp24h(lead) {
   const ts = new Date(Date.now() + 24 * 60 * 60 * 1000)
   const iso = ts.toISOString().slice(0, 16) + ':00'
   const payload = { ...lead, proximo_followup: iso, updated_at: new Date().toISOString() }
-  await run(() => leads.upsert(payload), `Follow-up agendado para ${fmtDataHora(iso)} ✓`)
+
+  // Atualiza localmente na store ANTES de ir pra aba (não espera o Supabase)
+  const idx = leads.leads.findIndex(l => l.id === lead.id)
+  if (idx !== -1) leads.leads[idx] = { ...leads.leads[idx], proximo_followup: iso }
+
+  // Persiste no Supabase em background
+  run(() => leads.upsert(payload), `Follow-up agendado para ${fmtDataHora(iso)} ✓`)
+
   // Agenda notificação local
   setTimeout(() => {
     if (Notification.permission === 'granted') {
@@ -814,6 +821,8 @@ async function followUp24h(lead) {
       })
     }
   }, 24 * 60 * 60 * 1000)
+
+  // Vai pra aba depois de atualizar localmente
   tab.value = 'followup'
 }
 
