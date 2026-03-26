@@ -211,7 +211,7 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             <div>
               <h2 class="upd-title">Atualizações</h2>
-              <span class="upd-sub">SLAC — Sano Lab Advanced CRM</span>
+              <span class="upd-sub">Desenvolvido por Sano Lab</span>
             </div>
           </div>
 
@@ -219,64 +219,62 @@
 
             <div class="upd-version">
               <div class="upd-ver-header">
-                <span class="upd-badge upd-badge--new">v1.3</span>
+                <span class="upd-badge upd-badge--new">0.3 beta</span>
                 <span class="upd-date">Março 2026</span>
               </div>
-              <p class="upd-ver-title">SlacZap — Integração WhatsApp</p>
+              <p class="upd-ver-title">SlacZap — WhatsApp integrado ao CRM</p>
               <ul class="upd-items">
-                <li>Chat ao vivo com leads via WhatsApp (Z-API)</li>
-                <li>Gravação e envio de áudio direto no browser</li>
+                <li>Chat ao vivo com leads via WhatsApp (servidor local Baileys)</li>
+                <li>Modal glass de lead com 5 seções: Contato, Anotações, Follow-up, Financeiro e Análise IA</li>
+                <li>Análise de lead por IA (Claude Haiku) com score, resumo e pontos de atenção</li>
+                <li>Gravação de áudio ao vivo com preview antes de enviar</li>
                 <li>Envio de imagens, documentos e arquivos de áudio</li>
-                <li>Painel de contato com dados CRM + Work + status</li>
-                <li>Indicadores visuais de follow-up, relead e work ativo</li>
-                <li>Exportar conversa em .txt</li>
-                <li>Painel Contatos com acesso rápido ao chat</li>
-                <li>Notificações push diárias de follow-up</li>
-                <li>Painel de Logs (admin) com diagnóstico em tempo real</li>
+                <li>Indicadores de follow-up, relead e work ativo na lista de conversas</li>
+                <li>Notificações push diárias de follow-up pendente</li>
               </ul>
             </div>
 
             <div class="upd-version">
               <div class="upd-ver-header">
-                <span class="upd-badge">v1.2</span>
+                <span class="upd-badge">0.2 beta</span>
                 <span class="upd-date">Fevereiro 2026</span>
               </div>
-              <p class="upd-ver-title">Work, Mapa & Melhorias</p>
+              <p class="upd-ver-title">Work & Mapa mental</p>
               <ul class="upd-items">
-                <li>Módulo Work: gestão de serviços por cliente com tarefas</li>
-                <li>Mapa mental de objetivos por categoria (ok/em andamento/futuro)</li>
-                <li>Relead automático: reagenda leads perdidos</li>
-                <li>Desfazer ações no CRM (undo stack)</li>
-                <li>Boas-vindas de volta com resumo do período ausente</li>
+                <li>Módulo Work: gestão de projetos/serviços por cliente</li>
+                <li>Mapa mental de objetivos por categoria (ok / em andamento / futuro)</li>
+                <li>Relead: reagenda lead perdido com nova data de contato</li>
+                <li>Desfazer última ação no CRM</li>
+                <li>Modal de boas-vindas com resumo de atividade no período ausente</li>
               </ul>
             </div>
 
             <div class="upd-version">
               <div class="upd-ver-header">
-                <span class="upd-badge">v1.1</span>
+                <span class="upd-badge">0.1 beta</span>
                 <span class="upd-date">Janeiro 2026</span>
               </div>
               <p class="upd-ver-title">Financeiro & Recorrências</p>
               <ul class="upd-items">
-                <li>Gestão de recorrências mensais com controle de pagamento</li>
-                <li>Fechamento de negócio com cálculo de parcelas</li>
-                <li>Gráficos de receita e despesas por período</li>
-                <li>Tema claro/escuro com persistência</li>
-                <li>PWA: instale o SLAC como app no celular</li>
+                <li>Módulo Financeiro: receitas, despesas e gráficos por período</li>
+                <li>Recorrências mensais com controle de pagamento por competência</li>
+                <li>Fechamento de negócio no CRM com cálculo de parcelas</li>
+                <li>Tema claro/escuro com persistência no localStorage</li>
+                <li>PWA: instale o SLAC como app no celular ou desktop</li>
               </ul>
             </div>
 
             <div class="upd-version">
               <div class="upd-ver-header">
-                <span class="upd-badge">v1.0</span>
+                <span class="upd-badge">0.0</span>
                 <span class="upd-date">Dezembro 2025</span>
               </div>
-              <p class="upd-ver-title">Lançamento inicial</p>
+              <p class="upd-ver-title">Lançamento — CRM base</p>
               <ul class="upd-items">
-                <li>CRM com kanban de leads (6 etapas) e follow-up</li>
-                <li>Prospecção: importar CSV + modo foco fullscreen</li>
-                <li>Dashboard com KPIs e gráficos</li>
-                <li>Busca global por leads e páginas</li>
+                <li>CRM com kanban de leads em 6 etapas e controle de follow-up</li>
+                <li>Prospecção via importação de CSV + modo foco fullscreen</li>
+                <li>Dashboard com KPIs, gráficos e transações recentes</li>
+                <li>Busca global por leads e páginas via atalho</li>
               </ul>
             </div>
 
