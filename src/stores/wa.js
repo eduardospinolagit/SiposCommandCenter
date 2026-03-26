@@ -14,8 +14,9 @@ export const useWaStore = defineStore('wa', () => {
   // ── Conexão local ──
   const connected      = ref(false)
   const hasQr          = ref(false)
-  const qrImage        = ref(null)
-  const serverOnline   = ref(false) // true quando o servidor local responde (mesmo que WA não conectado)
+  const qrImage        = ref(null)       // dark mode (verde sobre preto)
+  const qrImageLight   = ref(null)       // light mode (preto sobre branco)
+  const serverOnline   = ref(false)
   let _lastTokenSent = 0
 
   async function sendToken() {
@@ -35,20 +36,22 @@ export const useWaStore = defineStore('wa', () => {
     try {
       const r = await fetch(BASE_URL + '/status')
       const d = await r.json()
-      serverOnline.value = true
-      const wasConnected = connected.value
-      connected.value = d.connected
-      hasQr.value     = d.hasQr
-      qrImage.value   = d.qrImage
+      serverOnline.value  = true
+      const wasConnected  = connected.value
+      connected.value     = d.connected
+      hasQr.value         = d.hasQr
+      qrImage.value       = d.qrImage      || null
+      qrImageLight.value  = d.qrImageLight || null
       // Envia JWT ao tray quando conecta ou a cada 45min (antes do token expirar)
       if (d.connected && (!wasConnected || Date.now() - _lastTokenSent > 45 * 60 * 1000)) {
         await sendToken()
       }
     } catch {
-      serverOnline.value = false
-      connected.value    = false
-      hasQr.value        = false
-      qrImage.value      = null
+      serverOnline.value  = false
+      connected.value     = false
+      hasQr.value         = false
+      qrImage.value       = null
+      qrImageLight.value  = null
     }
   }
 
@@ -195,7 +198,7 @@ export const useWaStore = defineStore('wa', () => {
 
   return {
     templates, config, scriptBase, chats,
-    connected, hasQr, qrImage, serverOnline,
+    connected, hasQr, qrImage, qrImageLight, serverOnline,
     checkStatus, disconnect, sendToken,
     loadTemplates, saveTemplate, deleteTemplate,
     loadConfig, saveConfig, loadChats,

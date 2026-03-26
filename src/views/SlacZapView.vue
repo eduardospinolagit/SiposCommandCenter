@@ -3,10 +3,10 @@
 
     <!-- ═══ CONEXÃO ═══ -->
     <div v-if="!wa.connected" class="sz-connect-overlay">
-      <div v-if="wa.hasQr && wa.qrImage" class="sz-qr-wrap">
+      <div v-if="wa.hasQr && qrSrc" class="sz-qr-wrap">
         <p class="sz-qr-title">Conectar WhatsApp</p>
         <p class="sz-qr-sub">Abra o WhatsApp no celular → <strong>Dispositivos conectados</strong> → Escanear QR Code</p>
-        <img :src="wa.qrImage" class="sz-qr-img" alt="QR Code WhatsApp" />
+        <img :src="qrSrc" class="sz-qr-img" alt="QR Code WhatsApp" />
       </div>
       <div v-else-if="wa.serverOnline" class="sz-connecting">
         <div class="sz-spinner"></div>
@@ -527,6 +527,8 @@ const messagesEl  = ref(null)
 const inputEl     = ref(null)
 const listEl      = ref(null)
 const isMobile    = ref(window.innerWidth < 768)
+const isDarkTheme = ref(document.documentElement.getAttribute('data-theme') !== 'light')
+const qrSrc = computed(() => isDarkTheme.value ? wa.qrImage : (wa.qrImageLight || wa.qrImage))
 
 // Config modal
 const configModalOpen = ref(false)
@@ -955,7 +957,12 @@ async function pollMsgs() {
   }
 }
 
+const _themeObserver = new MutationObserver(() => {
+  isDarkTheme.value = document.documentElement.getAttribute('data-theme') !== 'light'
+})
+
 onMounted(async () => {
+  _themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
   window.addEventListener('resize', onResize)
   document.addEventListener('click', onDocClick, true)
 
@@ -997,6 +1004,7 @@ onMounted(async () => {
     .subscribe()
 })
 onUnmounted(() => {
+  _themeObserver.disconnect()
   window.removeEventListener('resize', onResize)
   document.removeEventListener('click', onDocClick, true)
   if (realtimeChannel) sb.removeChannel(realtimeChannel)
