@@ -1610,7 +1610,6 @@ async function checkFuAuto() {
 // ── Sugestão IA ──
 const aiSugestao    = ref('')
 // SDR — lock por chat (evita respostas paralelas para o mesmo lead)
-const sdrLocks = reactive({})
 
 const sdrForaMotivo = computed(() => {
   const day  = new Date().getDay()
@@ -1623,67 +1622,6 @@ const sdrForaMotivo = computed(() => {
   return `Fora do horário — SDR pausado até ${wa.sdrConfig.horaInicio}`
 })
 
-async function sdrAutoRespond(lead, cachedMsgs) {
-  if (!lead) return
-  if (!wa.sdrConfig.enabled) return
-  if (!wa.sdrIsInHours()) return
-  if (lead.etapa && !wa.sdrConfig.etapas.includes(lead.etapa)) return
-
-  const ck = wa.sdrChatKey(lead)
-  if (!wa.sdrChats[ck]?.active) return
-  if (sdrLocks[ck]) return
-  const count = wa.sdrChats[ck]?.msgCount || 0
-  if (count >= wa.sdrConfig.limiteMsg) { await wa.toggleSdrChat(lead); return }
-
-  sdrLocks[ck] = true
-  try {
-    let msgs = cachedMsgs
-    if (!msgs) {
-      // Chat não está aberto — busca histórico do Supabase (query builder imutável: sempre reatribuir)
-      let q = sb.from('conversas').select('direcao, mensagem, data')
-        .eq('canal', 'whatsapp').eq('user_id', auth.user.id)
-        .order('data', { ascending: false }).limit(20)
-      if (lead.id)            q = q.eq('lead_id', lead.id)
-      else if (lead.telefone) q = q.eq('telefone', lead.telefone.replace(/\D/g, ''))
-      const { data: rows, error: qErr } = await q
-      if (qErr) throw qErr
-      msgs = (rows || []).reverse()
-    }
-
-    const filteredMsgs = msgs
-      .filter(m => m.mensagem && !['[IMG]','[AUDIO]','[VIDEO]','[DOC:'].some(p => m.mensagem.startsWith(p)))
-      .slice(-20)
-      .map(m => ({ direcao: m.direcao, mensagem: m.mensagem }))
-
-    if (!filteredMsgs.length) return
-
-    const { data, error } = await sb.functions.invoke('sdr-responder', {
-      body: {
-        messages:   filteredMsgs,
-        leadInfo:   { nome: lead.nome, negocio: lead.negocio, categoria: lead.categoria, etapa: lead.etapa },
-        scriptBase: wa.scriptBase || '',
-      }
-    })
-    if (error) throw new Error(error.message || JSON.stringify(error))
-    if (data?.error) throw new Error(data.error)
-
-    if (data?.acao === 'responder' && data?.mensagem) {
-      await new Promise(r => setTimeout(r, 1000 + Math.random() * 2000))
-      await wa.enviarMensagem(lead.id, auth.user.id, lead.telefone, data.mensagem)
-      await wa.sdrIncrementMsg(lead)
-      wa.sdrAddLog({ chatKey: ck, leadNome: lead.nome, acao: 'respondeu', msg: data.mensagem })
-    } else if (data?.acao === 'escalar') {
-      await wa.toggleSdrChat(lead)
-      wa.sdrAddLog({ chatKey: ck, leadNome: lead.nome, acao: 'escalou', msg: data.motivo || 'Atenção humana necessária' })
-      toast(`SDR: ${lead.nome} precisa de atenção humana`, 'warn')
-    }
-  } catch (e) {
-    console.error('[SDR] erro:', e)
-    toast('SDR erro: ' + (e.message || 'desconhecido') + ' — verifique se a função sdr-responder foi deployada', 'error')
-  } finally {
-    delete sdrLocks[ck]
-  }
-}
 
 const aiTom         = ref('recomendado')
 const aiModo        = ref('resposta') // 'resposta' | 'followup'
@@ -2981,7 +2919,7 @@ async function openChat(chatLead) {
   scrollToUnreadOrBottom()
   nextTick(() => inputEl.value?.focus())
   clearInterval(msgPoller)
-  msgPoller = setInterval(pollMsgs, 1000)
+  msgPoller = setInterval(pollMsgs, 3000)
 }
 
 function closeChat() {
@@ -3205,10 +3143,8 @@ async function pollMsgs() {
         ...added,
       ].sort((a, b) => new Date(a.data) - new Date(b.data))
       scrollBottom()
-      // SDR: verifica mensagens recebidas novas
-      const recebidas = added.filter(m => m.direcao === 'recebido')
-      if (recebidas.length && activeLead.value) {
-        sdrAutoRespond(activeLead.value, waMsgs.value)
+      // Toca som para mensagens recebidas novas
+      if (added.some(m => m.direcao === 'recebido')) {
         playNotifSound()
       }
     }
@@ -3243,7 +3179,7 @@ onMounted(async () => {
     await wa.loadChats()
     await fetchUnreadCounts()
     await syncLastSeen()
-  }, 3000)
+  }, 15000)
 
   loading.value = true
   await Promise.all([wa.loadChats(), work.load()])
@@ -3302,14 +3238,7 @@ onMounted(async () => {
           setTimeout(fetchUnreadCounts, 500)
           playNotifSound()
         }
-        // SDR: dispara para QUALQUER mensagem recebida, independente do chat estar aberto
-        if (nova.direcao === 'recebido') {
-          const sdrLead = nova.lead_id
-            ? (leads.leads.find(l => l.id === nova.lead_id) || { id: nova.lead_id, telefone: nova.telefone, nome: nova.contato_nome })
-            : { id: null, telefone: nova.telefone, nome: nova.contato_nome }
-          // passa cache de msgs apenas se o chat estiver aberto (evita fetch desnecessário)
-          sdrAutoRespond(sdrLead, isActive ? [...waMsgs.value] : null)
-        }
+        // SDR é processado globalmente pelo useAppInit (_sdrProcess) — sem chamada duplicada aqui
       })
     .subscribe()
 })

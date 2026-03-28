@@ -141,8 +141,8 @@ export const useWaStore = defineStore('wa', () => {
       .eq('canal', 'whatsapp')
       .eq('user_id', uid())
       .order('data', { ascending: false })
-    console.log('[loadChats] convs:', convs?.length, '| error:', convErr?.message)
-    if (!convs?.length) { chats.value = []; return }
+      .limit(200)
+    if (convErr || !convs?.length) { if (!convErr) chats.value = []; return }
 
     const leadMap  = new Map() // lead_id  → última conversa
     const phoneMap = new Map() // telefone → última conversa (sem lead)
@@ -150,16 +150,14 @@ export const useWaStore = defineStore('wa', () => {
       if (c.lead_id) { if (!leadMap.has(c.lead_id))   leadMap.set(c.lead_id, c) }
       else if (c.telefone) { if (!phoneMap.has(c.telefone)) phoneMap.set(c.telefone, c) }
     }
-    console.log('[loadChats] leadMap:', leadMap.size, '| phoneMap:', phoneMap.size)
 
     const result = []
 
     // Contatos com lead no CRM
     if (leadMap.size) {
-      const { data: leadsData, error: leadsErr } = await sb
+      const { data: leadsData } = await sb
         .from('leads').select('id, nome, telefone, etapa')
         .in('id', [...leadMap.keys()]).eq('user_id', uid())
-      console.log('[loadChats] leadsData:', leadsData?.length, '| error:', leadsErr?.message)
       for (const l of (leadsData || [])) {
         const c = leadMap.get(l.id)
         result.push({ lead: l, lastMsg: c?.mensagem || '', lastAt: c?.data || '', lastDirecao: c?.direcao || '' })
