@@ -751,7 +751,7 @@
                     </p>
                   </div>
                   <button class="sz-sdr-pill" :class="{ 'sz-sdr-pill--on': wa.isFuAutoActive(slacOptsLead) }"
-                    @click="wa.toggleFuAutoChat(slacOptsLead, fuAutoHorasLocal)">
+                    @click="handleToggleFuAutoChat()">
                     <span class="sz-sdr-pill-thumb"></span>
                   </button>
                 </div>
@@ -2665,6 +2665,18 @@ async function saveFollowup() {
   toast('Follow-up salvo', 'ok')
   opcoesSLACOpen.value = false
   router.push('/crm?tab=followup')
+}
+
+async function handleToggleFuAutoChat() {
+  const lead = slacOptsLead.value
+  if (!lead) return
+  const wasActive = wa.isFuAutoActive(lead)
+  await wa.toggleFuAutoChat(lead, fuAutoHorasLocal.value)
+  // Ao ativar: agenda proximo_followup = agora + horas para aparecer na aba CRM
+  if (!wasActive && activeCrmLead.value) {
+    const fuAt = new Date(Date.now() + fuAutoHorasLocal.value * 3600000).toISOString()
+    await leads.upsert({ id: activeCrmLead.value.id, proximo_followup: fuAt })
+  }
 }
 
 const transacoesLead = computed(() => {
