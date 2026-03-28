@@ -173,10 +173,11 @@ export async function useAppInit() {
     })
     .on('postgres_changes', {
       event: 'INSERT', schema: 'public', table: 'conversas',
-      filter: 'user_id=eq.' + auth.user.id
     }, async (payload) => {
-      // Fallback Realtime (funciona se a tabela conversas tiver Realtime habilitado no Supabase)
       const nova = payload.new
+      // Filtra no callback — filtro server-side com uuid estava bloqueando eventos
+      if (nova.user_id !== auth.user.id) return
+      console.log('[Realtime] nova conversa INSERT:', { canal: nova.canal, direcao: nova.direcao, lead_id: nova.lead_id })
       if (nova.lead_id === leads.drawerLeadId) {
         leads.conversas.push(nova)
       }

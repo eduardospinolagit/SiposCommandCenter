@@ -3211,17 +3211,19 @@ onMounted(async () => {
       async (payload) => {
         if (payload.new?.chave === 'wa_last_seen') await syncLastSeen()
       })
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversas', filter: 'user_id=eq.' + auth.user.id },
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversas' },
       (payload) => {
         const upd = payload.new
+        if (upd.user_id !== auth.user.id) return
         if (!upd?.status || !upd?.id) return
         // Atualiza status da mensagem na conversa aberta
         const idx = waMsgs.value.findIndex(m => m.id === upd.id)
         if (idx !== -1) waMsgs.value[idx] = { ...waMsgs.value[idx], status: upd.status }
       })
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversas', filter: 'user_id=eq.' + auth.user.id },
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversas' },
       async (payload) => {
         const nova = payload.new
+        if (nova.user_id !== auth.user.id) return
         if (nova.canal !== 'whatsapp') return
         await wa.loadChats()
         const active = activeLead.value
