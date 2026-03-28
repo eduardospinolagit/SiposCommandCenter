@@ -43,19 +43,45 @@ export const useWaStore = defineStore('wa', () => {
     _persistUnread()
   }
 
-  const totalUnread = computed(() =>
-    Object.values(unreadCounts).reduce((a, b) => a + (b || 0), 0)
-  )
-  const notifChats = computed(() =>
-    chats.value
+  // Lê lastSeen do localStorage (não reativo, mas lido em cada recomputação)
+  function _getLastSeen() {
+    try { return JSON.parse(localStorage.getItem('slac-last-seen') || '{}') } catch { return {} }
+  }
+
+  // totalUnread: contadores explícitos (Realtime) + fallback por timestamp de lastSeen + chats
+  // Isso garante que o badge funciona mesmo sem Realtime — basta loadChats() ser chamado
+  const totalUnread = computed(() => {
+    const lastSeen = _getLastSeen()
+    let total = 0
+    for (const c of chats.value) {
+      const key = c.lead?.id || c.lead?.telefone || ''
+      if (!key) continue
+      // Contador explícito (via Realtime ou fetchUnreadCounts)
+      if ((unreadCounts[key] || 0) > 0) { total++; continue }
+      // Fallback por timestamp: última msg recebida é mais nova que o lastSeen
+      if (c.lastDirecao !== 'recebido') continue
+      const seen = lastSeen[key]
+      if (seen && c.lastAt && c.lastAt > seen) total++
+    }
+    return total
+  })
+
+  const notifChats = computed(() => {
+    const lastSeen = _getLastSeen()
+    return chats.value
       .map(c => {
         const key = c.lead?.id || c.lead?.telefone || ''
-        const unread = unreadCounts[key] || 0
+        if (!key) return null
+        let unread = unreadCounts[key] || 0
+        if (!unread && c.lastDirecao === 'recebido') {
+          const seen = lastSeen[key]
+          if (seen && c.lastAt && c.lastAt > seen) unread = 1
+        }
         return unread > 0 ? { lead: c.lead, lastMsg: c.lastMsg, lastAt: c.lastAt, unread } : null
       })
       .filter(Boolean)
       .sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt))
-  )
+  })
 
   // ── Conexão local ──
   const connected      = ref(false)

@@ -32,12 +32,12 @@ export async function useAppInit() {
     wa.loadChats().catch(() => {}),
   ])
 
-  // Polling WA global (a cada 30s para manter chats e status atualizados)
+  // Polling WA global (a cada 8s para manter chats e badge de notificações atualizados)
   if (waPollingTimer) clearInterval(waPollingTimer)
   waPollingTimer = setInterval(async () => {
     try { await wa.checkStatus() } catch {}
     try { await wa.loadChats() } catch {}
-  }, 30000)
+  }, 8000)
 
   // Realtime — chamado diretamente (sem composable) para evitar problema de contexto Vue
   if (realtimeChannel) {
