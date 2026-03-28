@@ -8,42 +8,68 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json()
+    const { messages, leadInfo } = await req.json()
     if (!messages?.length) {
       return json({ error: 'messages obrigatório' }, 400)
     }
 
-    const conversa = messages
-      .map((m: { direcao: string; mensagem: string; data: string }) =>
-        `[${m.direcao === 'enviado' ? 'Você' : 'Lead'}] ${m.mensagem}`
-      )
+    const MEDIA_PREFIXES = ['[IMG]', '[AUDIO]', '[VIDEO]', '[DOC:']
+    const conversa = (messages as { direcao: string; mensagem: string }[])
+      .filter(m => m.mensagem && !MEDIA_PREFIXES.some(p => m.mensagem.startsWith(p)))
+      .slice(-30)
+      .map(m => `[${m.direcao === 'enviado' ? 'Você' : 'Lead'}] ${m.mensagem}`)
       .join('\n')
+
+    const etapaLabel: Record<string, string> = {
+      contato:    'primeiro contato',
+      interesse:  'demonstrou interesse',
+      demo:       'em demonstração',
+      negociacao: 'em negociação',
+      fechado:    'cliente fechado',
+      perdido:    'negócio perdido',
+    }
+
+    const leadSection = leadInfo ? `
+DADOS DO LEAD:
+- Nome: ${leadInfo.nome || 'desconhecido'}
+- Negócio/nicho: ${leadInfo.negocio || 'não informado'}
+- Categoria: ${leadInfo.categoria || 'não informada'}
+- Cidade: ${leadInfo.cidade || 'não informada'}
+- Etapa no funil: ${etapaLabel[leadInfo.etapa] || leadInfo.etapa || 'não informada'}
+- Valor estimado: ${leadInfo.valor_estimado ? 'R$ ' + leadInfo.valor_estimado : 'não informado'}
+` : ''
 
     const anthropic = new Anthropic({ apiKey: ANTHROPIC_KEY })
     const msg = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 600,
+      max_tokens: 700,
       messages: [{
         role: 'user',
-        content: `Você é um assistente de vendas da Sano Lab, empresa que cria sites para pequenas empresas.
-Pacotes: Essencial R$797, Profissional R$1.097, Completo R$1.397.
+        content: `Você é um especialista em vendas da Sano Lab, empresa que cria sites para pequenas empresas.
+Pacotes: Essencial R$797 / Profissional R$1.097 / Completo R$1.397.
+${leadSection}
 Analise a conversa abaixo e retorne APENAS um JSON válido, sem markdown, com os campos:
-- score (integer 0-100): probabilidade de fechar negócio
-- resumo (string, máximo 2 frases): avaliação geral do lead
-- positivos (array de strings, máximo 4 itens): sinais positivos na conversa
-- atencao (array de strings, máximo 4 itens): pontos de atenção ou objeções
-- geradoEm (string ISO 8601): data/hora atual
+- score (integer 0-100): probabilidade de fechar negócio considerando o perfil do lead e a conversa
+- resumo (string, máximo 2 frases): avaliação objetiva do potencial do lead
+- positivos (array de strings, máximo 4): sinais positivos detectados
+- atencao (array de strings, máximo 4): objeções ou pontos de atenção
+- proximoPasso (string, máximo 1 frase): ação recomendada para avançar no funil
 
-Considere score alto (>70) quando o lead demonstra interesse claro, pergunta sobre preços, ou tem necessidade óbvia.
-Considere score baixo (<40) quando há objeções fortes, desinteresse ou sem resposta.
+Critérios de score:
+- >75: lead quente, alta chance de fechar
+- 50-75: lead morno, precisa de nutrição
+- 25-50: lead frio, baixo engajamento
+- <25: lead desinteressado ou perdido
 
 CONVERSA:
 ${conversa}`
       }]
     })
 
-    const text = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
-    const result = JSON.parse(text)
+    const raw = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
+    // Remove markdown code fences if present
+    const clean = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
+    const result = JSON.parse(clean)
     return json(result)
   } catch (e) {
     console.error('[analyze-lead] erro:', e)

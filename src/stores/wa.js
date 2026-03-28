@@ -1,15 +1,20 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 import { sb } from '@/lib/supabase'
 import { uid } from '@/utils/uid'
 
 const BASE_URL = 'http://localhost:3001'
 
 export const useWaStore = defineStore('wa', () => {
-  const templates  = ref([])
-  const config     = ref({ instance_id: '' })
-  const scriptBase = ref('')
-  const chats      = ref([]) // [{lead, lastMsg, lastAt, lastDirecao}]
+  const templates   = ref([])
+  const config      = ref({ instance_id: '' })
+  const scriptBase  = ref('')
+  const chats       = ref([]) // [{lead, lastMsg, lastAt, lastDirecao}]
+  const totalUnread = ref(0)
+  const notifChats  = ref([]) // [{ lead, lastMsg, lastAt, unread }]
+
+  function setTotalUnread(n) { totalUnread.value = n }
+  function setNotifChats(arr) { notifChats.value = arr }
 
   // ── Conexão local ──
   const connected      = ref(false)
@@ -187,6 +192,155 @@ export const useWaStore = defineStore('wa', () => {
     return data
   }
 
+  // ── SDR por IA ──
+  const sdrConfig = ref({
+    enabled: false,
+    etapas: ['contato', 'interesse'],
+    horaInicio: '08:00',
+    horaFim: '18:00',
+    diasSemana: [1, 2, 3, 4, 5],
+    limiteMsg: 15,
+  })
+  const sdrChats  = reactive({}) // chatKey → { active, msgCount }
+  const sdrLogs   = ref([])      // { chatKey, leadNome, acao, msg, ts }
+
+  function sdrChatKey(lead) {
+    return lead?.id ? `lead_${lead.id}` : `phone_${(lead?.telefone || '').replace(/\D/g, '')}`
+  }
+
+  function isSdrActive(lead) {
+    if (!lead) return false
+    if (!sdrConfig.value.enabled) return false
+    const key = sdrChatKey(lead)
+    return !!sdrChats[key]?.active
+  }
+
+  async function loadSdrConfig() {
+    const { data } = await sb
+      .from('configuracoes').select('chave, valor')
+      .eq('user_id', uid())
+      .in('chave', ['sdr_config', 'sdr_chats'])
+    if (!data) return
+    const cfgRow   = data.find(r => r.chave === 'sdr_config')
+    const chatsRow = data.find(r => r.chave === 'sdr_chats')
+    if (cfgRow?.valor)   Object.assign(sdrConfig.value, cfgRow.valor)
+    if (chatsRow?.valor) Object.assign(sdrChats, chatsRow.valor)
+  }
+
+  async function saveSdrConfig() {
+    const userId = uid()
+    await sb.from('configuracoes').upsert({
+      id: userId + '_sdr_config', user_id: userId,
+      chave: 'sdr_config', valor: { ...sdrConfig.value },
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'id' })
+  }
+
+  async function toggleSdrChat(lead) {
+    const key = sdrChatKey(lead)
+    if (sdrChats[key]?.active) {
+      sdrChats[key] = { active: false, msgCount: sdrChats[key].msgCount || 0 }
+    } else {
+      sdrChats[key] = { active: true, msgCount: sdrChats[key]?.msgCount || 0 }
+    }
+    const userId = uid()
+    await sb.from('configuracoes').upsert({
+      id: userId + '_sdr_chats', user_id: userId,
+      chave: 'sdr_chats', valor: { ...sdrChats },
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'id' })
+  }
+
+  async function sdrIncrementMsg(lead) {
+    const key = sdrChatKey(lead)
+    if (!sdrChats[key]) return
+    sdrChats[key].msgCount = (sdrChats[key].msgCount || 0) + 1
+    if (sdrChats[key].msgCount >= sdrConfig.value.limiteMsg) {
+      sdrChats[key].active = false
+    }
+    const userId = uid()
+    await sb.from('configuracoes').upsert({
+      id: userId + '_sdr_chats', user_id: userId,
+      chave: 'sdr_chats', valor: { ...sdrChats },
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'id' })
+  }
+
+  function sdrAddLog(entry) {
+    sdrLogs.value.unshift({ ...entry, ts: new Date().toISOString() })
+    if (sdrLogs.value.length > 100) sdrLogs.value.length = 100
+  }
+
+  function sdrIsInHours() {
+    const now  = new Date()
+    const day  = now.getDay() // 0=Dom … 6=Sab
+    const dias = sdrConfig.value.diasSemana
+    if (!dias.includes(day)) return false
+    const [hI, mI] = (sdrConfig.value.horaInicio || '00:00').split(':').map(Number)
+    const [hF, mF] = (sdrConfig.value.horaFim    || '23:59').split(':').map(Number)
+    const cur = now.getHours() * 60 + now.getMinutes()
+    return cur >= hI * 60 + mI && cur <= hF * 60 + mF
+  }
+
+  // ── Follow-up Automático ──
+  // fuAutoChats: { [chatKey]: { active: bool, horas: number, lastSentAt: string|null } }
+  const fuAutoChats = reactive({})
+
+  function fuAutoKey(lead) {
+    if (!lead) return null
+    return lead.id ? `lead_${lead.id}` : `phone_${(lead.telefone||'').replace(/\D/g,'')}`
+  }
+
+  function isFuAutoActive(lead) {
+    const k = fuAutoKey(lead)
+    return !!(k && fuAutoChats[k]?.active)
+  }
+
+  async function loadFuAutoConfig() {
+    try {
+      const { data } = await sb.from('configuracoes').select('valor')
+        .eq('user_id', uid()).eq('chave', 'fu_auto_chats').maybeSingle()
+      if (data?.valor) Object.assign(fuAutoChats, data.valor)
+    } catch {}
+  }
+
+  async function saveFuAutoConfig() {
+    try {
+      const userId = uid()
+      await sb.from('configuracoes').upsert({
+        id: userId + '_fu_auto_chats', user_id: userId,
+        chave: 'fu_auto_chats', valor: { ...fuAutoChats },
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' })
+    } catch {}
+  }
+
+  async function toggleFuAutoChat(lead, horas = 4) {
+    const k = fuAutoKey(lead)
+    if (!k) return
+    if (fuAutoChats[k]?.active) {
+      fuAutoChats[k] = { active: false, horas, lastSentAt: null }
+    } else {
+      fuAutoChats[k] = { active: true, horas, lastSentAt: null }
+    }
+    await saveFuAutoConfig()
+  }
+
+  async function setFuAutoHoras(lead, horas) {
+    const k = fuAutoKey(lead)
+    if (!k) return
+    if (!fuAutoChats[k]) fuAutoChats[k] = { active: false, horas, lastSentAt: null }
+    else fuAutoChats[k].horas = horas
+    await saveFuAutoConfig()
+  }
+
+  function markFuAutoSent(lead) {
+    const k = fuAutoKey(lead)
+    if (!k || !fuAutoChats[k]) return
+    fuAutoChats[k].lastSentAt = new Date().toISOString()
+    saveFuAutoConfig()
+  }
+
   async function gerarScript(userId, instagram, negocio, cidade) {
     const { data, error } = await sb.functions.invoke('gerar-script', {
       body: { user_id: userId, instagram, negocio, cidade }
@@ -197,11 +351,19 @@ export const useWaStore = defineStore('wa', () => {
   }
 
   return {
-    templates, config, scriptBase, chats,
+    templates, config, scriptBase, chats, totalUnread, notifChats, setTotalUnread, setNotifChats,
     connected, hasQr, qrImage, qrImageLight, serverOnline,
     checkStatus, disconnect, sendToken,
     loadTemplates, saveTemplate, deleteTemplate,
     loadConfig, saveConfig, loadChats,
     enviarMensagem, enviarArquivo, gerarScript,
+    // SDR
+    sdrConfig, sdrChats, sdrLogs,
+    sdrChatKey, isSdrActive,
+    loadSdrConfig, saveSdrConfig,
+    toggleSdrChat, sdrIncrementMsg, sdrAddLog, sdrIsInHours,
+    // Follow-up automático
+    fuAutoChats, fuAutoKey, isFuAutoActive,
+    loadFuAutoConfig, toggleFuAutoChat, setFuAutoHoras, markFuAutoSent,
   }
 })

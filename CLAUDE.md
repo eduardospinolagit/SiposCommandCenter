@@ -42,14 +42,16 @@ src/
   lib/
     supabase.js                    # Cliente Supabase singleton (persistSession, lock sem deadlock, realtime)
   utils/
-    uid.js                         # uid() centralizado — retorna auth.user.id (usado pelos 3 stores)
+    uid.js                         # uid() centralizado — retorna auth.user.id (usado pelos stores)
   stores/
     auth.js                        # Sessão Supabase, userName, isLoggedIn, loading
-    leads.js                       # Leads/CRM — ETAPAS kanban, stats, followUpsAlerta
+    leads.js                       # Leads/CRM — ETAPAS kanban, stats, followUpsAlerta, drawerLeadId
     fin.js                         # Financeiro — transações, recorrências, meta, calcPeriodo(), fmt()
     mapa.js                        # Mapa mental — objetivos por categoria com status
+    work.js                        # Serviços em andamento (work_items em configuracoes), leadsComWork
+    wa.js                          # WhatsApp — templates, config, chats, conexão local (localhost:3001)
   composables/
-    useAppInit.js                  # Carrega todas as stores + Realtime Supabase + BroadcastChannel
+    useAppInit.js                  # Carrega fin+leads+mapa+work em paralelo + Realtime + BroadcastChannel
     useTheme.js                    # Dark/light mode com localStorage e data-theme no documentElement
     useSaving.js                   # Wrapper run(fn, msg) com saving indicator + toast via inject
     useRealtime.js                 # Canal Supabase Realtime (legacy, não usado na UI)
@@ -65,6 +67,11 @@ src/
     RecorrenciasView.vue           # Controle mensal de recorrências com drawers
     ProspeccaoView.vue             # Importar CSV + Modo Foco fullscreen + tabela
     MapaView.vue                   # Mapa mental — status de objetivos por categoria
+    SlacZapView.vue                # WhatsApp: sidebar de chats + área de mensagens + modal de config/templates
+    WorkView.vue                   # Serviços em andamento: kanban/lista de work items por lead
+    ContatosView.vue               # Agenda de contatos vinculados a leads
+    LogsView.vue                   # Log de atividades e histórico
+    ConfiguracoesView.vue          # Configurações gerais da conta
 ```
 
 ---
@@ -76,8 +83,8 @@ Browser (SPA)
 ├── Vue 3 (Composition API + Pinia + Router)
 │   ├── App.vue — Toast pill + Saving + onAuthStateChange + session refresh ao voltar aba
 │   ├── AppLayout.vue — Sidebar + Topbar + mobile nav (pai de todas as views autenticadas)
-│   ├── Views — Dashboard, CRM, Financeiro, Recorrências, Prospecção, Mapa
-│   ├── Stores (Pinia) — auth, leads, fin, mapa
+│   ├── Views — Dashboard, CRM, Financeiro, Recorrências, Prospecção, Mapa, SlacZap, Work, Contatos, Logs, Configurações
+│   ├── Stores (Pinia) — auth, leads, fin, mapa, work, wa
 │   └── Composables — useAppInit, useTheme, useSaving
 ├── lib/supabase.js — cliente singleton
 └── Service Worker (PWA + Web Push)
@@ -98,8 +105,8 @@ Supabase (jqmnmudfxxdcjfradvcj)
 3. `App.vue` → listener `onAuthStateChange` do Supabase (redireciona login/logout)
 4. Router auth guard → aguarda `auth.loading === false` antes de decidir rota
 5. `AppLayout.vue` `onMounted` → `useAppInit()`:
-   - `Promise.all([fin.load(), leads.load(), mapa.load()])`
-   - Setup Realtime (postgres_changes em leads, financeiro, configuracoes)
+   - `Promise.all([fin.load(), leads.load(), mapa.load(), work.load()])`
+   - Setup Realtime (postgres_changes em leads, financeiro, configuracoes, conversas)
    - Setup `BroadcastChannel('slac_crm')` para sync entre abas (prospecção envia `lead_novo`)
 
 ---
@@ -113,6 +120,11 @@ Supabase (jqmnmudfxxdcjfradvcj)
   - `/financeiro` → FinanceiroView
   - `/recorrencias` → RecorrenciasView
   - `/prospeccao` → ProspeccaoView
+  - `/slaczap` → SlacZapView
+  - `/work` → WorkView
+  - `/contatos` → ContatosView
+  - `/logs` → LogsView
+  - `/configuracoes` → ConfiguracoesView
 
 **Regra:** todas as rotas autenticadas são `children` do AppLayout — nunca criar rota de nível raiz para views autenticadas.
 
@@ -147,12 +159,29 @@ Todos os stores importam `uid()` de `@/utils/uid.js` para filtrar por `user_id`.
 - `load()`, `save()`, `changeStatus(catId, itemId, status)`, `removeItem()`, `addItem()`
 - `stats` (computed) — contadores ok/doing/nope/future/total
 
+### work.js — `useWorkStore()`
+- `items[]` — serviços em andamento (salvo em `configuracoes` com chave `work_items`)
+- `addItem(leadId, servico, tarefas)`, `updateItem(updated)`, `removeItem(id)`, `load()`
+- `ativos` / `concluidos` (computed) — filtros por status
+- `leadsComWork` (computed) — `Set` de lead_ids com serviço ativo (usado no kanban CRM)
+
+### wa.js — `useWaStore()`
+- Integração WhatsApp via servidor local em `http://localhost:3001`
+- `connected`, `hasQr`, `qrImage`, `qrImageLight`, `serverOnline` — estado da conexão
+- `templates[]`, `config{}` (`instance_id`), `scriptBase`, `chats[]`
+- `checkStatus()`, `disconnect()`, `sendToken()` — gerenciam conexão com o tray
+- `loadChats()` — busca últimas conversas por lead_id ou telefone da tabela `conversas`
+- `enviarMensagem()`, `enviarArquivo()` — envio via servidor local
+- `loadTemplates()`, `saveTemplate()`, `deleteTemplate()` — CRUD tabela `wa_templates`
+- `loadConfig()`, `saveConfig()` — salva `wa_config` e `script_base` em `configuracoes`
+- `gerarScript()` — invoca Edge Function `gerar-script` via Supabase
+
 ---
 
 ## Composables
 
 ### useAppInit.js
-Chamado **uma única vez** por user_id no `AppLayout.onMounted`. Carrega todas as stores em paralelo, inicializa Realtime e BroadcastChannel.
+Chamado **uma única vez** por user_id no `AppLayout.onMounted`. Carrega `fin`, `leads`, `mapa` e `work` em paralelo. Inicializa canal Realtime (postgres_changes em `leads`, `financeiro`, `configuracoes`, `conversas`) e `BroadcastChannel('slac_crm')`.
 
 ### useSaving.js
 Wrapper para operações com feedback visual:
@@ -253,7 +282,7 @@ CSS do drawer fica em `<style scoped>` de cada view — copiar de `FinanceiroVie
 --text-primary: #f0f0f0
 --text-secondary: #888888
 --text-tertiary: #555555
---font-body: 'Plus Jakarta Sans'  /* Google Fonts, carregado no index.html */
+--font-body: 'Sora'  /* Google Fonts, carregado no index.html */
 ```
 
 Light mode: backgrounds brancos/cinzas claros, texto preto/cinza escuro — tokens já no `global.css`.
@@ -267,7 +296,8 @@ Light mode: backgrounds brancos/cinzas claros, texto preto/cinza escuro — toke
 | `leads` | CRM leads (tem coluna `relead_data timestamptz`) |
 | `financeiro` | Transações (tipo, descricao, cat, val, data, st, rec, cli, obs) |
 | `pagamentos` | Controle mensal de recorrências (chave = mes-ano) |
-| `configuracoes` | Settings por chave: meta, mapa, user_nome, prospecção lista |
+| `configuracoes` | Settings por chave: meta, mapa, user_nome, prospecção lista, wa_config, script_base, work_items |
+| `wa_templates` | Templates de mensagem WhatsApp por usuário |
 | `conversas` | Histórico de conversas de leads (canal, direcao, mensagem) |
 | `push_subscriptions` | Web Push (endpoint, p256dh, auth) |
 
@@ -281,6 +311,8 @@ Light mode: backgrounds brancos/cinzas claros, texto preto/cinza escuro — toke
 - VAPID Private: `6TB0NVCMWfrqetxRu_lneqjy4DisatDaoydUoG9iLHM`
 - VAPID Subject: `mailto:eduardospinolamkt@gmail.com`
 - Edge Function: `supabase/functions/notify-daily/index.ts`
+- Edge Function: `supabase/functions/gerar-script/index.ts` — gera script de prospecção via IA
+- Edge Function: `supabase/functions/analyze-lead/index.ts` — analisa qualidade de lead via IA (Claude API)
 
 ---
 
@@ -288,8 +320,30 @@ Light mode: backgrounds brancos/cinzas claros, texto preto/cinza escuro — toke
 
 - **Nunca** redefinir `.page-layout`, `.kpi-grid`, `.page-title` e similares nas views — já estão no `global.css`
 - Usar `<style scoped>` apenas para classes exclusivas da view
-- Charts (Chart.js via CDN) usam `window.Chart.defaults.font.family = 'Plus Jakarta Sans'`
+- Charts (Chart.js via CDN) usam `window.Chart.defaults.font.family = 'Sora'`
 - Tema muda via atributo `data-theme` no `<html>` — os tokens CSS respondem a isso
+
+### Light mode overrides em `<style scoped>` (CRÍTICO)
+
+**Nunca usar `:global()` para overrides de light mode em arquivos com `<style scoped>`.**
+
+```css
+/* ERRADO — especificidade 20pts, pode perder para a regra base scoped */
+:global([data-theme="light"]) .minha-classe { ... }
+
+/* CORRETO — especificidade 30pts, garante override */
+[data-theme="light"] .minha-classe { ... }
+```
+
+Sem `:global()`, Vue Scoped CSS compila para `[data-theme="light"] .minha-classe[data-v-xxx]` (30pts), que ganha da regra base `.minha-classe[data-v-xxx]` (20pts). Com `:global()`, resulta em `[data-theme="light"] .minha-classe` (20pts) — empate não garante override.
+
+### Anti-FOUC
+
+`index.html` tem script inline como **primeira coisa no `<head>`** que aplica `data-theme` do localStorage antes do Vue renderizar:
+```html
+<script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('slac-theme')||'dark')}catch(e){}</script>
+```
+Isso é necessário porque `App.vue onMounted` (onde `initTheme()` roda) executa **após** os componentes filhos já terem montado.
 
 ---
 

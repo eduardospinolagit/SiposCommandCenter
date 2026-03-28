@@ -50,7 +50,7 @@
       </div>
       <div class="kpi-card">
         <span class="kpi-label">Ticket médio</span>
-        <span class="kpi-value" style="color:var(--status-info)">{{ fmt(f.clis ? f.rec/f.clis : 0) }}</span>
+        <span class="kpi-value" style="color:var(--status-info)">{{ fmt(f.ticketMedio) }}</span>
         <span class="kpi-sub">por cliente</span>
       </div>
     </div>
@@ -225,7 +225,7 @@ const chartCat = ref(null)
 let charts = {}
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-const CHART_FONT = "'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif"
+const CHART_FONT = "'Sora', 'Helvetica Neue', Arial, sans-serif"
 const cats = ['Site','Google Meu Negócio','Tráfego','Automação','Manutenção','Ferramentas','Assinatura','Marketing','Outros']
 
 const mesesDisponiveis = computed(() => {

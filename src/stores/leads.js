@@ -59,7 +59,7 @@ export const useLeadsStore = defineStore('leads', () => {
     )
     if (error) throw error
     const idx = leads.value.findIndex(l => l.id === payload.id)
-    if (idx !== -1) leads.value[idx] = { ...payload, user_id: uid() }
+    if (idx !== -1) leads.value[idx] = { ...leads.value[idx], ...payload, user_id: uid() }
     else leads.value.unshift({ ...payload, user_id: uid() })
   }
 

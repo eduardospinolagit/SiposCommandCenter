@@ -85,8 +85,13 @@ export const useFinStore = defineStore('fin', () => {
     const rec = lista.filter(t => t.tipo === 'entrada' && t.st === 'recebido').reduce((a, t) => a + Number(t.val), 0)
     const pend = lista.filter(t => t.tipo === 'entrada' && t.st === 'pendente').reduce((a, t) => a + Number(t.val), 0)
     const sai = lista.filter(t => t.tipo === 'saida').reduce((a, t) => a + Number(t.val), 0)
-    const clis = new Set(lista.filter(t => t.tipo === 'entrada' && t.st === 'recebido' && t.cli).map(t => t.cli)).size
-    return { rec, pend, sai, lucro: rec - sai, clis, lista }
+    const porCli = {}
+    lista.filter(t => t.tipo === 'entrada' && (t.st === 'recebido' || t.st === 'pendente') && t.cli).forEach(t => {
+      porCli[t.cli] = (porCli[t.cli] || 0) + Number(t.val)
+    })
+    const clis = Object.keys(porCli).length
+    const ticketMedio = clis ? Object.values(porCli).reduce((a, v) => a + v, 0) / clis : 0
+    return { rec, pend, sai, lucro: rec - sai, clis, ticketMedio, lista }
   }
 
   function gastosData() {

@@ -163,7 +163,7 @@
               <!-- Células clicáveis copiam o valor -->
               <td class="td-copy" @click="copyText(l.nome)" title="Clique para copiar">{{ l.nome }}</td>
               <td class="td-copy text-muted" @click="copyText(l.negocio)" title="Clique para copiar">{{ l.negocio || '—' }}</td>
-              <td><a :href="'https://wa.me/55'+l.telefone.replace(/\D/g,'')" target="_blank" class="wa-link" @click.stop>{{ l.telefone }}</a></td>
+              <td><button class="wa-link" @click.stop="router.push('/slaczap?lead='+l.id)">{{ l.telefone }}</button></td>
               <td><span class="etapa-tag" :style="{ background: etapaColor(l.etapa)+'18', color: etapaColor(l.etapa) }">{{ etapaLabel(l.etapa) }}</span></td>
               <td><span class="kb-pri" :class="`pri-${l.prioridade}`">{{ l.prioridade }}</span></td>
               <td class="td-copy text-muted text-sm" @click="copyText(l.proximo_followup ? fmtDataHora(l.proximo_followup) : '')" title="Clique para copiar">{{ l.proximo_followup ? fmtDataHora(l.proximo_followup) : '—' }}</td>
@@ -206,9 +206,9 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               Concluído
             </button>
-            <a :href="'https://wa.me/55'+l.telefone.replace(/\D/g,'')" target="_blank" class="btn btn-secondary btn-sm btn-icon" @click.stop title="WhatsApp">
+            <button class="btn btn-secondary btn-sm btn-icon" @click.stop="router.push('/slaczap?lead='+l.id)" title="SlacZap">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            </a>
+            </button>
             <button class="btn btn-ghost btn-sm btn-icon" @click.stop="openLead(l.id)" title="Editar">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
@@ -248,9 +248,9 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               Concluído
             </button>
-            <a :href="'https://wa.me/55'+l.telefone.replace(/\D/g,'')" target="_blank" class="btn btn-secondary btn-sm btn-icon" @click.stop title="WhatsApp">
+            <button class="btn btn-secondary btn-sm btn-icon" @click.stop="router.push('/slaczap?lead='+l.id)" title="SlacZap">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            </a>
+            </button>
             <button class="btn btn-ghost btn-sm btn-icon" @click.stop="openLead(l.id)" title="Editar">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
@@ -278,7 +278,7 @@
         <div class="card-modal-body">
           <div class="card-modal-grid">
             <div class="cm-item"><span class="cm-label">Telefone</span>
-              <a :href="'https://wa.me/55'+cardModal.telefone.replace(/\D/g,'')" target="_blank" class="cm-val wa-link">{{ cardModal.telefone }}</a>
+              <button class="cm-val wa-link" @click="router.push('/slaczap?lead='+cardModal.id)">{{ cardModal.telefone }}</button>
             </div>
             <div class="cm-item"><span class="cm-label">Etapa</span>
               <span class="cm-val"><span class="etapa-tag" :style="{ background: etapaColor(cardModal.etapa)+'18', color: etapaColor(cardModal.etapa) }">{{ etapaLabel(cardModal.etapa) }}</span></span>
@@ -304,10 +304,10 @@
           </div>
         </div>
         <div class="card-modal-footer">
-          <a :href="'https://wa.me/55'+cardModal.telefone.replace(/\D/g,'')+'?text=Oi '+cardModal.nome+'!'" target="_blank" class="btn btn-secondary btn-sm">
+          <button class="btn btn-secondary btn-sm" @click="router.push('/slaczap?lead='+cardModal.id)">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            WhatsApp
-          </a>
+            SlacZap
+          </button>
           <!-- Follow-up picker -->
           <div class="fu-picker-wrap">
             <button class="btn btn-warning btn-sm fu-picker-toggle" @click.stop="fuPickerOpen = !fuPickerOpen">
@@ -560,10 +560,10 @@
 
     </div>
     <div class="drawer-footer">
-      <a :href="'https://wa.me/55'+form.telefone.replace(/\D/g,'')+'?text=Oi '+form.nome+'!'" target="_blank" class="btn btn-secondary">
+      <button class="btn btn-secondary" @click="router.push('/slaczap?lead='+currentLeadId)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        WhatsApp
-      </a>
+        SlacZap
+      </button>
       <button class="btn btn-primary" style="flex:1;justify-content:center" @click="salvar">Salvar</button>
       <button v-if="currentLeadId" class="btn btn-danger btn-icon" @click="deletar" title="Excluir">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
@@ -576,6 +576,7 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import FecharNegocioModal from '@/components/crm/FecharNegocioModal.vue'
 import { useLeadsStore, ETAPAS } from '@/stores/leads'
 import { useWorkStore } from '@/stores/work'
@@ -585,6 +586,7 @@ import { useWaStore } from '@/stores/wa'
 import { useSaving } from '@/composables/useSaving'
 import { usePushNotifications } from '@/composables/usePushNotifications'
 
+const router = useRouter()
 const wa = useWaStore()
 
 const leads = useLeadsStore()
@@ -1145,7 +1147,7 @@ async function pedirNotificacao() {
 .tabela-filters{display:flex;gap:.625rem;flex-wrap:wrap;align-items:center;}
 .cb{accent-color:var(--accent);cursor:pointer;width:14px;height:14px;}
 .row-sel td{background:var(--accent-subtle) !important;}
-.wa-link{color:var(--accent);font-size:.82rem;}
+.wa-link{color:var(--accent);font-size:.82rem;background:none;border:none;padding:0;cursor:pointer;}
 .td-copy{cursor:pointer;user-select:none;}
 .td-copy:hover{color:var(--accent);text-decoration:underline dotted;}
 .etapa-tag{display:inline-block;font-size:.7rem;font-weight:600;padding:.15rem .5rem;border-radius:var(--radius-full);text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;}

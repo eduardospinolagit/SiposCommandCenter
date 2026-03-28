@@ -40,6 +40,11 @@
             <span class="sb-icon" v-html="icons.work"></span>
             <span class="sb-text">Work</span>
           </button>
+          <button class="sb-item" :class="{ active: route.path === '/sdr' }"
+            @click="go('/sdr')" title="SDR por IA">
+            <span class="sb-icon" v-html="icons.sdr"></span>
+            <span class="sb-text">SDR IA</span>
+          </button>
           <button v-if="auth.isAdmin" class="sb-item" :class="{ active: route.path === '/logs' }"
             @click="go('/logs')" title="Logs">
             <span class="sb-icon" v-html="icons.logs"></span>
@@ -88,6 +93,41 @@
           </div>
         </div>
         <div class="topbar-right">
+          <div class="notif-wrap" ref="notifRef">
+            <button class="notif-bell" @click.stop="notifOpen = !notifOpen" :class="{ 'notif-bell--active': wa.totalUnread > 0 }" title="Notificações">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <span v-if="wa.totalUnread > 0" class="notif-badge">{{ wa.totalUnread > 99 ? '99+' : wa.totalUnread }}</span>
+            </button>
+            <Transition name="menu-pop">
+              <div v-if="notifOpen" class="notif-dropdown" @click.stop>
+                <div class="notif-header">
+                  <span class="notif-title">Notificações</span>
+                  <span v-if="wa.totalUnread > 0" class="notif-count">{{ wa.totalUnread }} não lida{{ wa.totalUnread > 1 ? 's' : '' }}</span>
+                </div>
+                <div v-if="!wa.notifChats.length" class="notif-empty">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-tertiary)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  <span>Nenhuma mensagem não lida</span>
+                </div>
+                <div v-else class="notif-list">
+                  <button v-for="n in wa.notifChats" :key="n.lead.id || n.lead.telefone"
+                    class="notif-item"
+                    @click="notifOpen = false; go(n.lead.id ? '/slaczap?lead=' + n.lead.id : '/slaczap?tel=' + (n.lead.telefone || '').replace(/\D/g,''))">
+                    <div class="notif-item-avatar" :style="{ background: notifAvatarColor(n.lead.nome) }">
+                      {{ notifInitials(n.lead.nome) }}
+                    </div>
+                    <div class="notif-item-info">
+                      <div class="notif-item-top">
+                        <span class="notif-item-nome">{{ n.lead.nome || n.lead.telefone }}</span>
+                        <span class="notif-item-time">{{ notifFmtTime(n.lastAt) }}</span>
+                      </div>
+                      <span class="notif-item-msg">{{ n.lastMsg || '(mídia)' }}</span>
+                    </div>
+                    <span class="notif-item-badge">{{ n.unread }}</span>
+                  </button>
+                </div>
+              </div>
+            </Transition>
+          </div>
           <div class="user-menu" ref="userMenuRef">
             <button class="user-avatar" @click="userMenuOpen = !userMenuOpen" :title="auth.userName">
               {{ userInitial }}
@@ -219,7 +259,29 @@
 
             <div class="upd-version">
               <div class="upd-ver-header">
-                <span class="upd-badge upd-badge--new">0.3 beta</span>
+                <span class="upd-badge upd-badge--new">0.4 beta</span>
+                <span class="upd-date">Março 2026</span>
+              </div>
+              <p class="upd-ver-title">Automações, IA e notificações</p>
+              <ul class="upd-items">
+                <li>SDR por IA: responde automaticamente mensagens recebidas no WhatsApp com base no script de vendas</li>
+                <li>Follow-up automático: envia mensagem de follow-up via IA se o lead não responder dentro do prazo configurado</li>
+                <li>Análise de conversão com IA no Dashboard: score do funil, insights, análise do script e performance por nicho</li>
+                <li>Salvar contato no CRM diretamente do chat do SlacZap (leads sem cadastro)</li>
+                <li>Botão "Contatar" na Prospecção com modal glass, sugestão de IA e envio via SlacZap</li>
+                <li>Todos os botões de WhatsApp do CRM e Prospecção abrem o SlacZap internamente</li>
+                <li>Notificações em tempo real: sino no topbar com badge de não lidas e dropdown por conversa</li>
+                <li>Som de notificação ao receber mensagem no WhatsApp</li>
+                <li>Agendamento de follow-up com fuso horário correto (UTC → local)</li>
+                <li>Follow-up automático e SDR unificados na aba Follow-up das Opções SLAC</li>
+                <li>Ticket médio calculado por cliente (soma todas as parcelas antes de calcular a média)</li>
+                <li>Análise de nichos: quais segmentos convertem mais no funil de vendas</li>
+              </ul>
+            </div>
+
+            <div class="upd-version">
+              <div class="upd-ver-header">
+                <span class="upd-badge">0.3 beta</span>
                 <span class="upd-date">Março 2026</span>
               </div>
               <p class="upd-ver-title">SlacZap — WhatsApp integrado ao CRM</p>
@@ -293,6 +355,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useLeadsStore } from '@/stores/leads'
 import { useFinStore } from '@/stores/fin'
+import { useWaStore } from '@/stores/wa'
 import { useAppInit } from '@/composables/useAppInit'
 import { useTheme } from '@/composables/useTheme'
 import ConfigModal from '@/components/layout/ConfigModal.vue'
@@ -302,6 +365,7 @@ const route  = useRoute()
 const auth   = useAuthStore()
 const leads  = useLeadsStore()
 const fin    = useFinStore()
+const wa     = useWaStore()
 const { theme, toggleTheme } = useTheme()
 const isDark = computed(() => theme.value === 'dark')
 const toast       = inject('toast')
@@ -318,8 +382,33 @@ const userMenuOpen = ref(false)
 const userMenuRef  = ref(null)
 const userInitial  = computed(() => (auth.userName || '?').charAt(0).toUpperCase())
 
+const notifOpen = ref(false)
+const notifRef  = ref(null)
+
+const _notifColors = ['#22c55e','#3b82f6','#a855f7','#f59e0b','#ef4444','#06b6d4','#ec4899']
+function notifAvatarColor(nome) {
+  if (!nome) return _notifColors[0]
+  let h = 0; for (const c of nome) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff
+  return _notifColors[Math.abs(h) % _notifColors.length]
+}
+function notifInitials(nome) {
+  if (!nome) return '?'
+  const parts = nome.trim().split(' ').filter(Boolean)
+  return parts.length >= 2 ? parts[0][0].toUpperCase() + parts[1][0].toUpperCase() : nome[0].toUpperCase()
+}
+function notifFmtTime(iso) {
+  if (!iso) return ''
+  const d = new Date(iso), now = new Date()
+  const diffMs = now - d
+  if (diffMs < 60000) return 'agora'
+  if (diffMs < 3600000) return Math.floor(diffMs / 60000) + 'min'
+  if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+}
+
 function handleClickOutside(e) {
   if (userMenuRef.value && !userMenuRef.value.contains(e.target)) userMenuOpen.value = false
+  if (notifRef.value && !notifRef.value.contains(e.target)) notifOpen.value = false
 }
 onMounted(() => document.addEventListener('click', handleClickOutside, true))
 onUnmounted(() => document.removeEventListener('click', handleClickOutside, true))
@@ -347,6 +436,7 @@ const icons = {
   work:         `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>`,
   logs:         `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
   slaczap:      `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.77.46 3.43 1.27 4.88L2 22l5.25-1.25A9.95 9.95 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm4.9 14.07c-.2.58-1.19 1.11-1.63 1.18-.44.06-1 .09-1.6-.1-.48-.15-.97-.36-1.45-.53-2.57-1.1-4.07-3.04-4.2-3.18-.12-.17-1.03-1.38-1.03-2.63s.65-1.86.89-2.12c.23-.25.5-.32.67-.32.17 0 .34 0 .48.01.16.01.36-.06.57.43.2.49.7 1.7.76 1.82.06.12.1.26.02.43-.08.16-.12.26-.24.4-.12.14-.26.32-.37.43-.12.12-.25.26-.1.5.14.24.63 1.05 1.36 1.7.94.84 1.73 1.1 1.98 1.22.24.12.39.1.53-.06.14-.16.62-.72.86-.96.24-.25.49-.2.82-.08.33.12 2.07.98 2.42 1.16.35.18.59.27.67.41.09.15.09.85-.11 1.43z"/></svg>`,
+  sdr:          `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M4 6h16v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"/><path d="M9 14l2 2 4-4"/></svg>`,
   contatos:     `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
 }
 
@@ -377,6 +467,7 @@ const allRoutes = [
 
   { path: '/prospeccao',   label: 'Prospecção',   desc: 'Importar e prospectar',    icon: icons.search },
   { path: '/work',         label: 'Work',         desc: 'Serviços em execução',      icon: icons.work },
+  { path: '/sdr',          label: 'SDR IA',       desc: 'Agente autônomo de vendas', icon: icons.sdr },
 ]
 
 function onSearchInput() {
@@ -642,6 +733,72 @@ function go(path) { router.push(path) }
 .search-result:hover .sr-label { color: var(--accent); }
 
 .topbar-right { display: flex; align-items: center; gap: .5rem; margin-left: auto; }
+
+.notif-wrap { position: relative; }
+.notif-bell {
+  position: relative; width: 32px; height: 32px; border-radius: 50%;
+  border: none; background: var(--bg-elevated); color: var(--text-secondary);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: color 150ms, background 150ms;
+}
+.notif-bell:hover { color: var(--text-primary); background: var(--bg-overlay); }
+.notif-bell--active { color: var(--accent); }
+.notif-bell--active svg { animation: bell-ring .5s ease; }
+@keyframes bell-ring {
+  0%, 100% { transform: rotate(0) }
+  20%       { transform: rotate(-12deg) }
+  40%       { transform: rotate(12deg) }
+  60%       { transform: rotate(-8deg) }
+  80%       { transform: rotate(8deg) }
+}
+.notif-badge {
+  position: absolute; top: -2px; right: -2px;
+  min-width: 16px; height: 16px; padding: 0 3px;
+  background: var(--status-danger); color: #fff;
+  font-size: .6rem; font-weight: 700; border-radius: 99px;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1; border: 1.5px solid var(--bg-base);
+}
+
+.notif-dropdown {
+  position: absolute; top: calc(100% + 8px); right: 0;
+  width: 320px; background: var(--bg-elevated);
+  border: 1px solid var(--border-default); border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.35); z-index: 9000; overflow: hidden;
+}
+.notif-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .75rem 1rem; border-bottom: 1px solid var(--border-subtle);
+}
+.notif-title { font-size: .8rem; font-weight: 700; color: var(--text-primary); }
+.notif-count { font-size: .7rem; font-weight: 600; color: var(--accent); background: var(--accent-subtle); padding: .15rem .5rem; border-radius: 99px; }
+.notif-empty {
+  display: flex; flex-direction: column; align-items: center; gap: .5rem;
+  padding: 2rem 1rem; font-size: .78rem; color: var(--text-tertiary);
+}
+.notif-list { max-height: 360px; overflow-y: auto; }
+.notif-item {
+  display: flex; align-items: center; gap: .75rem;
+  width: 100%; padding: .7rem 1rem; border: none; background: transparent;
+  cursor: pointer; text-align: left; transition: background 120ms;
+}
+.notif-item:hover { background: var(--bg-overlay); }
+.notif-item + .notif-item { border-top: 1px solid var(--border-subtle); }
+.notif-item-avatar {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .75rem; font-weight: 700; color: #fff;
+}
+.notif-item-info { flex: 1; min-width: 0; }
+.notif-item-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .15rem; }
+.notif-item-nome { font-size: .8rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notif-item-time { font-size: .68rem; color: var(--text-tertiary); flex-shrink: 0; }
+.notif-item-msg { font-size: .75rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.notif-item-badge {
+  flex-shrink: 0; min-width: 18px; height: 18px; padding: 0 4px;
+  background: var(--accent); color: #000; font-size: .62rem; font-weight: 700;
+  border-radius: 99px; display: flex; align-items: center; justify-content: center;
+}
 
 .user-menu { position: relative; }
 .user-avatar {

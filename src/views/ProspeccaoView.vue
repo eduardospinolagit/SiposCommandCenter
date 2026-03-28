@@ -149,7 +149,7 @@
               <th class="th-sort" @click="sortBy('nome')">Empresa</th>
               <th class="th-sort" @click="sortBy('categoria')">Categoria</th>
               <th class="th-sort" @click="sortBy('cidade')">Cidade</th>
-              <th>Telefone</th>
+              <th style="min-width:145px">Telefone</th>
               <th>Status</th>
               <th style="width:120px"></th>
             </tr>
@@ -168,9 +168,9 @@
               <td class="text-muted text-sm">{{ r.categoria || '—' }}</td>
               <td class="text-muted text-sm">{{ r.cidade || '—' }}</td>
               <td>
-                <a :href="'https://wa.me/55'+r.telefone" target="_blank" class="wa-link" @click.stop>
+                <button class="wa-link" @click.stop="router.push('/slaczap?lead='+r.id)">
                   {{ formatTel(r.telefone) }}
-                </a>
+                </button>
               </td>
               <td>
                 <span class="badge" :class="r._status==='contatado'?'badge-accent':'badge-warning'">
@@ -183,8 +183,8 @@
                   <button v-if="r._status!=='contatado'"
                     class="btn btn-primary btn-sm"
                     style="font-size:.72rem;padding:.3rem .6rem"
-                    @click="marcarContato(r._id)">
-                    Contatei
+                    @click="abrirModalContato(r)">
+                    Contatar
                   </button>
 
                   <button class="btn btn-ghost btn-icon btn-sm" style="color:var(--status-danger)" @click="excluirLead(r._id)">
@@ -256,13 +256,8 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
         </button>
 
-        <!-- WhatsApp -->
-        <a v-if="focoLead" :href="'https://wa.me/55'+focoLead.telefone" target="_blank" class="foco-btn foco-btn--wa" title="Abrir WhatsApp">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        </a>
-
-        <!-- Contatei -->
-        <button class="foco-btn foco-btn--ok" :disabled="focoContatando || !focoLead" @click="focoMarcar" title="Contatei">
+        <!-- Contatar -->
+        <button class="foco-btn foco-btn--ok" :disabled="focoContatando || !focoLead" @click="focoLead && abrirModalContato(focoLead)" title="Contatar lead">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
 
@@ -274,15 +269,65 @@
     </div>
   </Transition>
 
+  <!-- ═══ MODAL CONTATO ═══ -->
+  <Transition name="cont-modal">
+    <div v-if="contModalOpen" class="cont-overlay" @click.self="contModalOpen=false">
+      <div class="cont-modal">
+        <div class="cont-modal-header">
+          <div class="cont-modal-info">
+            <span class="cont-modal-nome">{{ contModalLead?.nome }}</span>
+            <span class="cont-modal-tel">{{ formatTel(contModalLead?.telefone) }}</span>
+          </div>
+          <button class="btn btn-ghost btn-icon btn-sm" @click="contModalOpen=false">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="cont-modal-body">
+          <textarea
+            v-model="contModalMsg"
+            class="form-textarea cont-modal-textarea"
+            placeholder="Digite a mensagem de abertura..."
+            rows="4"
+            :disabled="contModalSending"
+          ></textarea>
+
+          <div v-if="!wa.connected" class="cont-modal-warn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            SlacZap desconectado — só marcará como contatado, não enviará
+          </div>
+
+          <button class="btn btn-ghost btn-sm cont-modal-ia" @click="contModalGerarIA" :disabled="contModalAiLoading || contModalSending">
+            <svg v-if="!contModalAiLoading" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="cont-spin"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>
+            {{ contModalAiLoading ? 'Gerando...' : 'Sugestão IA' }}
+          </button>
+        </div>
+
+        <div class="cont-modal-footer">
+          <button class="btn btn-secondary" @click="contModalOpen=false" :disabled="contModalSending">Cancelar</button>
+          <button class="btn btn-primary" @click="contModalEnviar" :disabled="!contModalMsg.trim() || contModalSending">
+            <svg v-if="!contModalSending" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="cont-spin"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>
+            {{ contModalSending ? 'Enviando...' : (wa.connected ? 'Enviar e marcar' : 'Marcar como contatado') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Transition>
 
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch, inject } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useWaStore } from '@/stores/wa'
 import { sb } from '@/lib/supabase'
 
+const router = useRouter()
 const auth  = useAuthStore()
+const wa    = useWaStore()
 const toast = inject('toast')
 
 async function copiarNome(nome) {
@@ -291,6 +336,80 @@ async function copiarNome(nome) {
     toast(nome + ' copiado', 'ok')
   } catch {
     toast('Não foi possível copiar', 'error')
+  }
+}
+
+// ── Modal de contato ──
+const contModalOpen     = ref(false)
+const contModalLead     = ref(null)
+const contModalMsg      = ref('')
+const contModalAiLoading = ref(false)
+const contModalSending  = ref(false)
+
+function abrirModalContato(lead) {
+  contModalLead.value = lead
+  contModalMsg.value  = ''
+  contModalOpen.value = true
+}
+
+async function contModalGerarIA() {
+  if (!contModalLead.value) return
+  contModalAiLoading.value = true
+  try {
+    const lead = contModalLead.value
+    const { data, error } = await sb.functions.invoke('sugerir-resposta', {
+      body: {
+        messages: [{ direcao: 'interno', mensagem: 'Primeiro contato — lead ainda não foi abordado.' }],
+        leadInfo: { nome: lead.nome, negocio: lead.nome, categoria: lead.categoria, etapa: 'contato' },
+        scriptBase: wa.scriptBase || '',
+        tom: 'recomendado',
+        tipo: 'resposta',
+      }
+    })
+    if (error) throw new Error(error.message || JSON.stringify(error))
+    if (data?.error) throw new Error(data.error)
+    if (data?.sugestao) contModalMsg.value = data.sugestao
+  } catch (e) {
+    toast('Erro IA: ' + (e.message || 'tente novamente'), 'error')
+  } finally {
+    contModalAiLoading.value = false
+  }
+}
+
+async function contModalEnviar() {
+  const lead = contModalLead.value
+  if (!lead || !contModalMsg.value.trim()) return
+  contModalSending.value = true
+  try {
+    if (wa.connected) {
+      await wa.enviarMensagem(
+        lead.id || null,
+        auth.user.id,
+        lead.telefone,
+        contModalMsg.value.trim()
+      )
+    }
+    // Marca como contatado (tabela) ou avança no foco
+    const row = allRows.value.find(r => r._id === lead._id)
+    if (row) {
+      await marcarContato(row._id)
+      // Se estava no modo foco, avança
+      if (focoOpen.value) {
+        focoFlash.value = true; setTimeout(() => focoFlash.value = false, 500)
+        tocarSom()
+        focoLista.value = allRows.value.filter(r => r._status !== 'contatado')
+        setTimeout(() => {
+          if (focoIdx.value >= focoLista.value.length) focoOpen.value = false
+          focoContatando.value = false
+        }, 450)
+      }
+    }
+    contModalOpen.value = false
+    toast(wa.connected ? 'Mensagem enviada!' : 'Marcado como contatado', 'ok')
+  } catch (e) {
+    toast('Erro: ' + (e.message || 'tente novamente'), 'error')
+  } finally {
+    contModalSending.value = false
   }
 }
 
@@ -673,7 +792,7 @@ function fmtDataHora(d) {
 .cb { accent-color:var(--accent); cursor:pointer; width:14px; height:14px; }
 .row-contatado td { opacity:.5; }
 .row-sel td { background:var(--accent-subtle) !important; }
-.wa-link { color:var(--accent); font-size:.82rem; }
+.wa-link { color:var(--accent); font-size:.82rem; background:none; border:none; padding:0; cursor:pointer; }
 .th-sort { cursor:pointer; user-select:none; }
 .th-sort:hover { color:var(--accent); }
 
@@ -798,4 +917,69 @@ function fmtDataHora(d) {
 
 @media(max-width:768px) { .map-grid{grid-template-columns:1fr 1fr;} .page-layout{padding:1rem 1rem 5rem;} }
 @media(max-width:480px) { .map-grid{grid-template-columns:1fr;} }
+/* ── Modal de contato ── */
+.cont-overlay {
+  position: fixed; inset: 0; z-index: 1100;
+  background: rgba(0,0,0,.45); backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+.cont-modal {
+  background: rgba(255,255,255,.06);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px;
+  width: 100%; max-width: 400px;
+  display: flex; flex-direction: column; gap: 0;
+  box-shadow: 0 32px 80px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.1);
+}
+.cont-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .875rem 1rem .75rem;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.cont-modal-info { display: flex; flex-direction: column; gap: .1rem; }
+.cont-modal-nome { font-size: .9rem; font-weight: 700; color: var(--text-primary); }
+.cont-modal-tel  { font-size: .75rem; color: var(--text-tertiary); }
+.cont-modal-body {
+  padding: .875rem 1rem;
+  display: flex; flex-direction: column; gap: .625rem;
+}
+.cont-modal-textarea {
+  resize: vertical; min-height: 90px;
+  font-size: .875rem; line-height: 1.5;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  color: var(--text-primary);
+}
+.cont-modal-textarea:focus {
+  outline: none;
+  border-color: rgba(34,197,94,.4);
+  background: rgba(255,255,255,.07);
+}
+.cont-modal-warn {
+  display: flex; align-items: center; gap: .4rem;
+  font-size: .72rem; color: var(--status-warning);
+  background: rgba(232,168,56,.08);
+  border-radius: 6px; padding: .4rem .625rem;
+  border: 1px solid rgba(232,168,56,.15);
+}
+.cont-modal-ia {
+  align-self: flex-start;
+  color: var(--accent); gap: .375rem;
+  font-size: .8rem;
+}
+.cont-modal-footer {
+  display: flex; gap: .625rem; padding: .75rem 1rem .875rem;
+  border-top: 1px solid rgba(255,255,255,.07);
+  justify-content: flex-end;
+}
+.cont-spin { animation: cont-spin .9s linear infinite; }
+@keyframes cont-spin { to { transform: rotate(360deg); } }
+
+/* Transition modal */
+.cont-modal-enter-active, .cont-modal-leave-active { transition: all .18s ease; }
+.cont-modal-enter-from, .cont-modal-leave-to { opacity: 0; }
+.cont-modal-enter-from .cont-modal, .cont-modal-leave-to .cont-modal { transform: scale(.96) translateY(8px); }
 </style>
