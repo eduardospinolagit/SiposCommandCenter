@@ -153,6 +153,10 @@ export async function useAppInit() {
     sb.removeChannel(realtimeChannel)
   }
 
+  // Garante que o token JWT do usuário está no WebSocket Realtime antes de subscrever
+  const { data: { session } } = await sb.auth.getSession()
+  if (session?.access_token) sb.realtime.setAuth(session.access_token)
+
   realtimeChannel = sb.channel('slac-db-' + auth.user.id)
     .on('postgres_changes', {
       event: '*', schema: 'public', table: 'financeiro',
