@@ -264,7 +264,15 @@
             </div>
             <div class="cfg-divider"></div>
             <div class="form-group">
-              <label class="form-label">Script base de prospecção</label>
+              <div class="cfg-script-header">
+                <label class="form-label">Script base de prospecção</label>
+                <label class="btn btn-secondary btn-sm cfg-pdf-btn" :class="{ loading: pdfLoading }">
+                  <svg v-if="!pdfLoading" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                  <span v-if="pdfLoading" class="cfg-pdf-spinner"></span>
+                  {{ pdfLoading ? 'Lendo PDF...' : 'Importar PDF' }}
+                  <input type="file" accept=".pdf" style="display:none" @change="importarPdf" />
+                </label>
+              </div>
               <textarea v-model="waScriptBase" class="form-textarea" rows="10"
                 placeholder="Cole aqui seu script de vendas. A IA vai adaptar para cada lead com base no Instagram e Google do negócio.
 
@@ -314,6 +322,7 @@ Use {{nome}}, {{negocio}} e {{cidade}} como variáveis." />
 
 <script setup>
 import { ref, computed, onMounted, inject, watch } from 'vue'
+import * as pdfjsLib from 'pdfjs-dist'
 import { useAuthStore } from '@/stores/auth'
 import { useLeadsStore } from '@/stores/leads'
 import { useTheme } from '@/composables/useTheme'
@@ -355,6 +364,34 @@ watch(activeTab, async (tab) => {
 
 async function salvarWa() {
   await run(() => wa.saveConfig(waInstanceId.value, waScriptBase.value), 'Configurações salvas')
+}
+
+// PDF import
+const pdfLoading = ref(false)
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.mjs', import.meta.url).href
+
+async function importarPdf(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  e.target.value = ''
+  pdfLoading.value = true
+  try {
+    const buffer = await file.arrayBuffer()
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise
+    const parts = []
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i)
+      const content = await page.getTextContent()
+      parts.push(content.items.map(item => item.str).join(' '))
+    }
+    waScriptBase.value = parts.join('\n\n').trim()
+    toast('PDF importado — revise o texto antes de salvar', 'ok')
+  } catch (err) {
+    toast('Erro ao ler o PDF', 'error')
+    console.error(err)
+  } finally {
+    pdfLoading.value = false
+  }
 }
 
 // Perfil
@@ -484,6 +521,18 @@ function exportarLeads() {
 </script>
 
 <style scoped>
+/* Script header */
+.cfg-script-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .375rem; }
+.cfg-script-header .form-label { margin-bottom: 0; }
+.cfg-pdf-btn { display: flex; align-items: center; gap: .375rem; cursor: pointer; }
+.cfg-pdf-btn.loading { opacity: .7; pointer-events: none; }
+.cfg-pdf-spinner {
+  width: 11px; height: 11px; border-radius: 50%;
+  border: 2px solid var(--text-tertiary); border-top-color: var(--text-primary);
+  animation: spin .7s linear infinite; flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* Layout */
 .cfg-layout { display: grid; grid-template-columns: 200px 1fr; gap: 1.5rem; align-items: start; }
 @media (max-width: 640px) { .cfg-layout { grid-template-columns: 1fr; } }

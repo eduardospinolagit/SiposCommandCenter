@@ -24,6 +24,7 @@ const routes = [
       { path: 'slaczap',       name: 'SlacZap',       component: () => import('@/views/SlacZapView.vue') },
       { path: 'contatos',      name: 'Contatos',      component: () => import('@/views/ContatosView.vue') },
       { path: 'logs',          name: 'Logs',          component: () => import('@/views/LogsView.vue') },
+      { path: 'sdr',           name: 'SDR',           component: () => import('@/views/SDRView.vue') },
     ]
   },
 ]
