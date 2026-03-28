@@ -172,7 +172,7 @@ export async function useAppInit() {
     }, () => {
       fin.loadMeta()
       mapa.load()
-      wa.loadSdrConfig().catch(() => {})
+      wa.loadSdrConfig({ includeChats: false }).catch(() => {})
       wa.loadConfig().catch(() => {})
     })
     .on('postgres_changes', {

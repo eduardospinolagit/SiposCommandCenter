@@ -283,16 +283,19 @@ export const useWaStore = defineStore('wa', () => {
     return !!sdrChats[key]?.active
   }
 
-  async function loadSdrConfig() {
+  // includeChats=true apenas na carga inicial — o Realtime NÃO deve
+  // recarregar sdrChats para evitar race condition (sobrescrever active:true com valor antigo)
+  async function loadSdrConfig({ includeChats = true } = {}) {
+    const chaves = includeChats ? ['sdr_config', 'sdr_chats'] : ['sdr_config']
     const { data } = await sb
       .from('configuracoes').select('chave, valor')
       .eq('user_id', uid())
-      .in('chave', ['sdr_config', 'sdr_chats'])
+      .in('chave', chaves)
     if (!data) return
     const cfgRow   = data.find(r => r.chave === 'sdr_config')
     const chatsRow = data.find(r => r.chave === 'sdr_chats')
-    if (cfgRow?.valor)   Object.assign(sdrConfig.value, cfgRow.valor)
-    if (chatsRow?.valor) Object.assign(sdrChats, chatsRow.valor)
+    if (cfgRow?.valor)                    Object.assign(sdrConfig.value, cfgRow.valor)
+    if (includeChats && chatsRow?.valor)  Object.assign(sdrChats, chatsRow.valor)
   }
 
   async function saveSdrConfig() {
