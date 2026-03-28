@@ -182,10 +182,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, inject } from 'vue'
 import { useWaStore } from '@/stores/wa'
 
-const wa = useWaStore()
+const wa    = useWaStore()
+const toast = inject('toast')
 
 const saving = ref(false)
 
@@ -232,15 +233,22 @@ async function toggleGlobal() {
 
 async function saveConfig() {
   saving.value = true
-  Object.assign(wa.sdrConfig, {
-    etapas:     [...localConfig.etapas],
-    horaInicio: localConfig.horaInicio,
-    horaFim:    localConfig.horaFim,
-    diasSemana: [...localConfig.diasSemana],
-    limiteMsg:  localConfig.limiteMsg,
-  })
-  await wa.saveSdrConfig()
-  saving.value = false
+  try {
+    Object.assign(wa.sdrConfig, {
+      etapas:     [...localConfig.etapas],
+      horaInicio: localConfig.horaInicio,
+      horaFim:    localConfig.horaFim,
+      diasSemana: [...localConfig.diasSemana],
+      limiteMsg:  localConfig.limiteMsg,
+    })
+    await wa.saveSdrConfig()
+    toast('Configurações do SDR salvas', 'ok')
+  } catch (e) {
+    console.error('[SDR] saveConfig:', e)
+    toast('Erro ao salvar configurações', 'error')
+  } finally {
+    saving.value = false
+  }
 }
 
 const activeChatsCount = computed(() =>

@@ -350,7 +350,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick, inject } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, inject, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useLeadsStore } from '@/stores/leads'
@@ -384,6 +384,28 @@ const userInitial  = computed(() => (auth.userName || '?').charAt(0).toUpperCase
 
 const notifOpen = ref(false)
 const notifRef  = ref(null)
+
+// Som de notificação global (quando SlacZap não está aberto e chega mensagem)
+function _playNotifSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const t = ctx.currentTime
+    const osc1 = ctx.createOscillator(); const osc2 = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc1.connect(gain); osc2.connect(gain); gain.connect(ctx.destination)
+    osc1.frequency.setValueAtTime(880, t); osc2.frequency.setValueAtTime(1100, t + 0.12)
+    gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.15, t + 0.02)
+    gain.gain.linearRampToValueAtTime(0.08, t + 0.1); gain.gain.linearRampToValueAtTime(0.15, t + 0.14)
+    gain.gain.linearRampToValueAtTime(0, t + 0.28)
+    osc1.start(t); osc1.stop(t + 0.11); osc2.start(t + 0.12); osc2.stop(t + 0.28)
+    setTimeout(() => ctx.close(), 400)
+  } catch {}
+}
+watch(() => wa.totalUnread, (newVal, oldVal) => {
+  if (newVal > (oldVal || 0) && route.path !== '/slaczap') {
+    _playNotifSound()
+  }
+})
 
 const _notifColors = ['#22c55e','#3b82f6','#a855f7','#f59e0b','#ef4444','#06b6d4','#ec4899']
 function notifAvatarColor(nome) {

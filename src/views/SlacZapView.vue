@@ -2385,9 +2385,7 @@ function toggleNaoLido() {
     markAsRead(chat.lead, chat.lastAt)
   } else {
     // Marcar como não lido: força unreadCounts = 1 e remove lastSeenAt para garantir badge
-    const counts = { ...unreadCounts.value, [key]: 1 }
-    unreadCounts.value = counts
-    localStorage.setItem('slac-unread-counts', JSON.stringify(counts))
+    wa.storeSetUnread(key, 1)
     const seen = { ...lastSeenAt.value }
     delete seen[key]
     lastSeenAt.value = seen
@@ -2522,9 +2520,8 @@ function marcarTodasLidas() {
     if (key) newSeen[key] = now
   }
   lastSeenAt.value = newSeen
-  unreadCounts.value = {}
+  wa.storeClearAllUnread()
   localStorage.setItem('slac-last-seen', JSON.stringify(newSeen))
-  localStorage.setItem('slac-unread-counts', '{}')
   saveLastSeenRemote()
   toast('Todas as conversas marcadas como lidas', 'ok')
 }
@@ -2770,22 +2767,8 @@ const msgGroups = computed(() => {
 })
 
 // ── Não lidas ──
-const lastSeenAt   = ref(JSON.parse(localStorage.getItem('slac-last-seen')   || '{}'))
-const unreadCounts = ref(JSON.parse(localStorage.getItem('slac-unread-counts') || '{}'))
-
-watch([unreadCounts, () => wa.chats], ([counts]) => {
-  const total = Object.values(counts).reduce((a, b) => a + (b || 0), 0)
-  wa.setTotalUnread(total)
-  const notifs = wa.chats
-    .map(c => {
-      const key = chatKey(c.lead)
-      const unread = counts[key] || 0
-      return unread > 0 ? { lead: c.lead, lastMsg: c.lastMsg, lastAt: c.lastAt, unread } : null
-    })
-    .filter(Boolean)
-    .sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt))
-  wa.setNotifChats(notifs)
-}, { deep: true, immediate: true })
+// unreadCounts agora fica no wa store (global) — acessado via wa.unreadCounts
+const lastSeenAt = ref(JSON.parse(localStorage.getItem('slac-last-seen') || '{}'))
 
 function chatKey(lead) { return lead?.id || lead?.telefone || '' }
 
@@ -2817,12 +2800,7 @@ function markAsRead(lead, lastAt) {
   const ts = lastAt || new Date().toISOString()
   lastSeenAt.value = { ...lastSeenAt.value, [key]: ts }
   localStorage.setItem('slac-last-seen', JSON.stringify(lastSeenAt.value))
-  if (unreadCounts.value[key]) {
-    const c = { ...unreadCounts.value }
-    delete c[key]
-    unreadCounts.value = c
-    localStorage.setItem('slac-unread-counts', JSON.stringify(c))
-  }
+  wa.storeClearUnread(key)
   // salva no Supabase para sync cross-device
   saveLastSeenRemote()
 }
@@ -2861,20 +2839,14 @@ async function syncLastSeen() {
     lastSeenAt.value = merged
     localStorage.setItem('slac-last-seen', JSON.stringify(merged))
     // limpa contadores de chaves agora marcadas como lidas
-    const updatedCounts = { ...unreadCounts.value }
-    let countChanged = false
-    for (const key of Object.keys(updatedCounts)) {
+    for (const key of Object.keys({ ...wa.unreadCounts })) {
       const seen = merged[key]
       if (seen) {
         const chat = wa.chats.find(c => chatKey(c.lead) === key)
         if (!chat || !chat.lastAt || chat.lastAt <= seen) {
-          delete updatedCounts[key]; countChanged = true
+          wa.storeClearUnread(key)
         }
       }
-    }
-    if (countChanged) {
-      unreadCounts.value = updatedCounts
-      localStorage.setItem('slac-unread-counts', JSON.stringify(updatedCounts))
     }
   } catch { /* silent */ }
 }
@@ -2882,7 +2854,7 @@ async function syncLastSeen() {
 function isUnread(chat) {
   const key = chatKey(chat.lead)
   // Realtime: contador explícito garante prioridade
-  if ((unreadCounts.value[key] || 0) > 0) return true
+  if ((wa.unreadCounts[key] || 0) > 0) return true
   // Timestamp: só avalia se temos um ponto de referência de quando o chat foi aberto
   if (chat.lastDirecao !== 'recebido') return false
   const seen = lastSeenAt.value[key]
@@ -2891,16 +2863,11 @@ function isUnread(chat) {
 }
 
 function getUnreadCount(chat) {
-  return unreadCounts.value[chatKey(chat.lead)] || 0
+  return wa.unreadCounts[chatKey(chat.lead)] || 0
 }
 
 function incrementUnread(leadId, telefone) {
-  // usa o mesmo critério de chatKey: id preferido, senão telefone
-  const key = leadId || telefone || ''
-  if (!key) return
-  const c = { ...unreadCounts.value, [key]: (unreadCounts.value[key] || 0) + 1 }
-  unreadCounts.value = c
-  localStorage.setItem('slac-unread-counts', JSON.stringify(c))
+  wa.storeIncrementUnread(leadId || telefone || '')
 }
 
 const filteredChats = computed(() => {
@@ -3165,11 +3132,11 @@ async function fetchUnreadCounts() {
     const seen = lastSeenAt.value[key]
     if (!seen || !c.lead.id) return false
     return (c.lastDirecao === 'recebido' && !!c.lastAt && c.lastAt > seen) ||
-           (unreadCounts.value[key] > 0)
+           (wa.unreadCounts[key] > 0)
   })
   if (!candidates.length) return
 
-  const updated = { ...unreadCounts.value }
+  const updated = { ...wa.unreadCounts }
   await Promise.all(candidates.map(async (c) => {
     const key = chatKey(c.lead)
     let seen = lastSeenAt.value[key]
@@ -3199,8 +3166,7 @@ async function fetchUnreadCounts() {
       else delete updated[key]
     } catch { /* silent */ }
   }))
-  unreadCounts.value = updated
-  localStorage.setItem('slac-unread-counts', JSON.stringify(updated))
+  wa.storeSetAllUnread(updated)
 }
 
 // ── Realtime ──

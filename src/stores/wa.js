@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { sb } from '@/lib/supabase'
 import { uid } from '@/utils/uid'
 
@@ -10,11 +10,52 @@ export const useWaStore = defineStore('wa', () => {
   const config      = ref({ instance_id: '' })
   const scriptBase  = ref('')
   const chats       = ref([]) // [{lead, lastMsg, lastAt, lastDirecao}]
-  const totalUnread = ref(0)
-  const notifChats  = ref([]) // [{ lead, lastMsg, lastAt, unread }]
 
-  function setTotalUnread(n) { totalUnread.value = n }
-  function setNotifChats(arr) { notifChats.value = arr }
+  // ── Contagem de não lidas (global — persiste no localStorage) ──
+  const unreadCounts = reactive(JSON.parse(localStorage.getItem('slac-unread-counts') || '{}'))
+
+  function _persistUnread() {
+    localStorage.setItem('slac-unread-counts', JSON.stringify({ ...unreadCounts }))
+  }
+  function storeIncrementUnread(key) {
+    if (!key) return
+    unreadCounts[key] = (unreadCounts[key] || 0) + 1
+    _persistUnread()
+  }
+  function storeClearUnread(key) {
+    if (!key) return
+    delete unreadCounts[key]
+    _persistUnread()
+  }
+  function storeClearAllUnread() {
+    Object.keys(unreadCounts).forEach(k => delete unreadCounts[k])
+    _persistUnread()
+  }
+  function storeSetUnread(key, n) {
+    if (!key) return
+    if (n <= 0) delete unreadCounts[key]
+    else unreadCounts[key] = n
+    _persistUnread()
+  }
+  function storeSetAllUnread(obj) {
+    Object.keys(unreadCounts).forEach(k => delete unreadCounts[k])
+    Object.assign(unreadCounts, obj)
+    _persistUnread()
+  }
+
+  const totalUnread = computed(() =>
+    Object.values(unreadCounts).reduce((a, b) => a + (b || 0), 0)
+  )
+  const notifChats = computed(() =>
+    chats.value
+      .map(c => {
+        const key = c.lead?.id || c.lead?.telefone || ''
+        const unread = unreadCounts[key] || 0
+        return unread > 0 ? { lead: c.lead, lastMsg: c.lastMsg, lastAt: c.lastAt, unread } : null
+      })
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt))
+  )
 
   // ── Conexão local ──
   const connected      = ref(false)
@@ -351,7 +392,9 @@ export const useWaStore = defineStore('wa', () => {
   }
 
   return {
-    templates, config, scriptBase, chats, totalUnread, notifChats, setTotalUnread, setNotifChats,
+    templates, config, scriptBase, chats,
+    unreadCounts, totalUnread, notifChats,
+    storeIncrementUnread, storeClearUnread, storeClearAllUnread, storeSetUnread, storeSetAllUnread,
     connected, hasQr, qrImage, qrImageLight, serverOnline,
     checkStatus, disconnect, sendToken,
     loadTemplates, saveTemplate, deleteTemplate,

@@ -3,10 +3,12 @@ import { useLeadsStore } from '@/stores/leads'
 import { useMapaStore } from '@/stores/mapa'
 import { useWorkStore } from '@/stores/work'
 import { useAuthStore } from '@/stores/auth'
+import { useWaStore } from '@/stores/wa'
 import { sb } from '@/lib/supabase'
 
 let initializedForUser = null
 let realtimeChannel = null
+let waPollingTimer = null
 
 export async function useAppInit() {
   const auth = useAuthStore()
@@ -14,18 +16,28 @@ export async function useAppInit() {
   const leads = useLeadsStore()
   const mapa = useMapaStore()
   const work = useWorkStore()
+  const wa = useWaStore()
 
   if (!auth.user) return
   if (initializedForUser === auth.user.id) return
   initializedForUser = auth.user.id
 
-  // Carrega dados em paralelo
+  // Carrega dados em paralelo (WA com try/catch pois servidor pode estar offline)
   await Promise.all([
     fin.load(),
     leads.load(),
     mapa.load(),
     work.load(),
+    wa.checkStatus().catch(() => {}),
+    wa.loadChats().catch(() => {}),
   ])
+
+  // Polling WA global (a cada 30s para manter chats e status atualizados)
+  if (waPollingTimer) clearInterval(waPollingTimer)
+  waPollingTimer = setInterval(async () => {
+    try { await wa.checkStatus() } catch {}
+    try { await wa.loadChats() } catch {}
+  }, 30000)
 
   // Realtime — chamado diretamente (sem composable) para evitar problema de contexto Vue
   if (realtimeChannel) {
@@ -48,10 +60,16 @@ export async function useAppInit() {
     .on('postgres_changes', {
       event: 'INSERT', schema: 'public', table: 'conversas',
       filter: 'user_id=eq.' + auth.user.id
-    }, (payload) => {
+    }, async (payload) => {
       const nova = payload.new
       if (nova.lead_id === leads.drawerLeadId) {
         leads.conversas.push(nova)
+      }
+      // Notificações WA globais (funciona mesmo sem o SlacZap aberto)
+      if (nova.canal === 'whatsapp' && nova.direcao === 'recebido') {
+        const key = nova.lead_id || nova.telefone || ''
+        wa.storeIncrementUnread(key)
+        try { await wa.loadChats() } catch {}
       }
     })
     .subscribe()
