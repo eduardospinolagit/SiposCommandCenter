@@ -779,9 +779,9 @@
           <div class="sz-item-menu" :style="menuStyle" @click.stop>
             <button class="sz-item-menu-item" @click="openSlacOpts()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-              Opções SLAC
+              Opções
             </button>
-            <button class="sz-item-menu-item" @click="openSlacOpts('contato')">
+            <button class="sz-item-menu-item" @click="openSlacOpts()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               Ver Contato
             </button>
@@ -999,17 +999,6 @@ const isDarkTheme = ref(document.documentElement.getAttribute('data-theme') !== 
 
 const qrSrc = computed(() => isDarkTheme.value ? wa.qrImage : (wa.qrImageLight || wa.qrImage))
 
-// Config modal — estado global via wa store (SlacOptsModal renderizado no AppLayout)
-const opcoesSLACOpen  = computed({ get: () => wa.opcoesSLACOpen, set: v => { wa.opcoesSLACOpen = v } })
-const activeSection   = ref('contato')
-const slacOptsLead    = computed({ get: () => wa.slacOptsLead, set: v => { wa.slacOptsLead = v } })
-const analisando      = ref(false)
-const erroAnalise     = ref(null)
-const followupDate    = ref('')
-const followupObs     = ref('')
-const parcelasLocal   = ref([])
-const anotacoesText   = ref('')
-let anotacoesTimer    = null
 
 // Sidebar — filtros e painéis
 const chatFilter       = ref('tudo')
@@ -1142,7 +1131,6 @@ function bubbleMedia(mensagem) {
 }
 
 // ── Follow-up automático ──
-const fuAutoHorasLocal = ref(4) // valor local do select no modal
 
 // ── Salvar no CRM ──
 const salvandoCRM = ref(false)
@@ -1956,19 +1944,24 @@ function openItemMenu(id, event) {
   activeItemMenu.value = id
 }
 
-function openSlacOpts(section = 'contato') {
+function openSlacOpts() {
   const chat = menuChat.value
-  if (chat) {
-    slacOptsLead.value = leads.leads.find(l => l.id === chat.lead.id) || chat.lead
+  const id = chat?.lead?.id
+  if (id) {
+    leads.drawerLeadId = id
+  } else {
+    toast('Lead não salvo no CRM. Clique em "Salvar no CRM" primeiro.', 'warn')
   }
-  activeSection.value = section
-  opcoesSLACOpen.value = true
   activeItemMenu.value = null
 }
 
 function openSlacOptsFromToolbar() {
-  slacOptsLead.value = activeLead.value
-  opcoesSLACOpen.value = true
+  const id = activeLead.value?.id
+  if (id) {
+    leads.drawerLeadId = id
+  } else {
+    toast('Lead não salvo no CRM. Clique em "Salvar no CRM" primeiro.', 'warn')
+  }
 }
 
 function doTogglePin() {
@@ -2217,159 +2210,7 @@ const leadWorkItems = computed(() =>
   work.items.filter(i => i.lead_id === activeLead.value?.id)
 )
 
-// ── Config Modal ──
-const activeCrmLead = computed(() => {
-  const lead = slacOptsLead.value || activeLead.value
-  return lead?.id ? leads.leads.find(l => l.id === lead.id) ?? null : null
-})
 
-watch([opcoesSLACOpen, activeSection], () => {
-  if (!opcoesSLACOpen.value || !activeCrmLead.value) return
-  const l = activeCrmLead.value
-  if (activeSection.value === 'followup') {
-    followupDate.value = l.proximo_followup ? toLocalDatetimeInput(l.proximo_followup) : ''
-    followupObs.value  = l.followup_obs ?? ''
-    const fuKey = slacOptsLead.value && wa.fuAutoKey(slacOptsLead.value)
-    fuAutoHorasLocal.value = (fuKey && wa.fuAutoChats[fuKey]?.horas) || 4
-  }
-  if (activeSection.value === 'financeiro') {
-    parcelasLocal.value = JSON.parse(JSON.stringify(l.parcelas ?? []))
-  }
-  if (activeSection.value === 'anotacoes') {
-    anotacoesText.value = l.anotacoes ?? ''
-  }
-})
-
-watch(activeLead, () => {
-  opcoesSLACOpen.value = false
-  activeSection.value   = 'contato'
-  erroAnalise.value     = null
-})
-
-watch(opcoesSLACOpen, (val) => {
-  if (!val) slacOptsLead.value = null
-})
-
-function onEscModal(e) {
-  if (e.key === 'Escape') {
-    if (activeItemMenu.value) { activeItemMenu.value = null; return }
-    opcoesSLACOpen.value = false
-  }
-}
-watch(opcoesSLACOpen, (val) => {
-  if (val) document.addEventListener('keydown', onEscModal)
-  else     document.removeEventListener('keydown', onEscModal)
-})
-
-function saveField(field, value) {
-  if (!activeCrmLead.value || activeCrmLead.value[field] === value) return
-  leads.upsert({ id: activeCrmLead.value.id, [field]: value ?? null })
-}
-
-function onAnotacoesInput(val) {
-  clearTimeout(anotacoesTimer)
-  anotacoesTimer = setTimeout(() => {
-    if (!activeCrmLead.value) return
-    leads.upsert({ id: activeCrmLead.value.id, anotacoes: val || null })
-  }, 800)
-}
-
-function toLocalDatetimeInput(isoStr) {
-  if (!isoStr) return ''
-  const d = new Date(isoStr)
-  const offset = d.getTimezoneOffset() * 60000
-  return new Date(d.getTime() - offset).toISOString().slice(0, 16)
-}
-
-async function saveFollowup() {
-  if (!activeCrmLead.value) return
-  await leads.upsert({
-    id: activeCrmLead.value.id,
-    proximo_followup: followupDate.value ? new Date(followupDate.value).toISOString() : null,
-    followup_obs: followupObs.value || null,
-    followup_count: (activeCrmLead.value.followup_count ?? 0) + 1
-  })
-  toast('Follow-up salvo', 'ok')
-  opcoesSLACOpen.value = false
-  router.push('/crm?tab=followup')
-}
-
-async function handleToggleFuAutoChat() {
-  const lead = slacOptsLead.value
-  if (!lead) return
-  const wasActive = wa.isFuAutoActive(lead)
-  await wa.toggleFuAutoChat(lead, fuAutoHorasLocal.value)
-  // Ao ativar: agenda proximo_followup = agora + horas para aparecer na aba CRM
-  if (!wasActive && activeCrmLead.value) {
-    const fuAt = new Date(Date.now() + fuAutoHorasLocal.value * 3600000).toISOString()
-    await leads.upsert({ id: activeCrmLead.value.id, proximo_followup: fuAt })
-  }
-}
-
-async function saveFuAutoHoras() {
-  const lead = slacOptsLead.value
-  if (!lead) return
-  await wa.setFuAutoHoras(lead, fuAutoHorasLocal.value)
-  // Atualiza proximo_followup se FuAuto já está ativo
-  if (wa.isFuAutoActive(lead) && activeCrmLead.value) {
-    const fuAt = new Date(Date.now() + fuAutoHorasLocal.value * 3600000).toISOString()
-    await leads.upsert({ id: activeCrmLead.value.id, proximo_followup: fuAt })
-  }
-  toast('Configuração salva', 'ok')
-}
-
-const transacoesLead = computed(() => {
-  if (!activeCrmLead.value?.nome) return []
-  const nome = activeCrmLead.value.nome.toLowerCase()
-  return fin.fin
-    .filter(t => t.cli?.toLowerCase() === nome)
-    .slice(0, 10)
-})
-
-function adicionarParcela() {
-  parcelasLocal.value.push({
-    numero: parcelasLocal.value.length + 1,
-    valor: null,
-    vencimento: null,
-    pago: false
-  })
-}
-
-function saveParcelas() {
-  if (!activeCrmLead.value) return
-  leads.upsert({ id: activeCrmLead.value.id, parcelas: parcelasLocal.value })
-}
-
-function togglePago(idx) {
-  parcelasLocal.value[idx].pago = !parcelasLocal.value[idx].pago
-  saveParcelas()
-}
-
-async function analisarLead() {
-  if (!activeCrmLead.value) return
-  analisando.value  = true
-  erroAnalise.value = null
-  try {
-    let rawMsgs = waMsgs.value
-    // Carrega mensagens do DB se o chat do modal não está aberto
-    if (!rawMsgs.length || activeLead.value?.id !== activeCrmLead.value.id) {
-      const loaded = await leads.loadConversas(activeCrmLead.value.id, { noStore: true })
-      rawMsgs = (loaded || []).filter(c => c.canal === 'whatsapp')
-    }
-    const msgs = rawMsgs
-      .slice(-50)
-      .map(m => ({ direcao: m.direcao, mensagem: (m.mensagem || '').slice(0, 500), data: m.data }))
-    const { data, error } = await sb.functions.invoke('analyze-lead', {
-      body: { leadId: activeCrmLead.value.id, messages: msgs }
-    })
-    if (error) throw error
-    await leads.upsert({ id: activeCrmLead.value.id, analise_ia: data })
-  } catch {
-    erroAnalise.value = 'Erro ao analisar. Tente novamente.'
-  } finally {
-    analisando.value = false
-  }
-}
 
 // ── Time formatting ──
 function fmtTime(ts) {
@@ -2954,7 +2795,7 @@ onMounted(async () => {
     else { const lead = leads.leads.find(l => l.id === leadId); if (lead) openChat(lead) }
     if (route.query.opts) {
       const lead = leads.leads.find(l => l.id === leadId)
-      if (lead) { slacOptsLead.value = lead; opcoesSLACOpen.value = true }
+      if (lead?.id) { leads.drawerLeadId = lead.id }
     }
   } else if (telQuery) {
     const chat = wa.chats.find(c => c.lead.telefone?.replace(/\D/g, '').endsWith(telQuery) || telQuery.endsWith(c.lead.telefone?.replace(/\D/g, '') || ''))

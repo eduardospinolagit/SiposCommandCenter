@@ -347,7 +347,7 @@
   </Teleport>
 
   <ConfigModal v-model="configOpen" />
-  <SlacOptsModal />
+  <LeadDrawer />
 </template>
 
 <script setup>
@@ -360,7 +360,7 @@ import { useWaStore } from '@/stores/wa'
 import { useAppInit } from '@/composables/useAppInit'
 import { useTheme } from '@/composables/useTheme'
 import ConfigModal from '@/components/layout/ConfigModal.vue'
-import SlacOptsModal from '@/components/layout/SlacOptsModal.vue'
+import LeadDrawer from '@/components/crm/LeadDrawer.vue'
 
 const router = useRouter()
 const route  = useRoute()
