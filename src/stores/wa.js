@@ -389,7 +389,9 @@ export const useWaStore = defineStore('wa', () => {
     if (fuAutoChats[k]?.active) {
       fuAutoChats[k] = { active: false, horas, lastSentAt: null }
     } else {
-      fuAutoChats[k] = { active: true, horas, lastSentAt: null }
+      // Usa timestamp de ativação como baseline para evitar disparo imediato
+      // em conversas onde a última mensagem já tem mais tempo que o delay configurado
+      fuAutoChats[k] = { active: true, horas, lastSentAt: new Date().toISOString() }
     }
     await saveFuAutoConfig()
   }
