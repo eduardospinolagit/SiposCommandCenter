@@ -27,39 +27,38 @@
     </div>
 
     <!-- KPIs -->
-    <div class="kpi-grid kpi-grid--5">
-      <div class="kpi-card">
-        <span class="kpi-label">Receita</span>
-        <span class="kpi-value kpi-value--accent">{{ fmt(f.rec) }}</span>
-        <span class="kpi-sub">{{ listaFiltrada.filter(t=>t.tipo==='entrada'&&t.st==='recebido').length }} transações</span>
+    <div class="kpi-grid fin-kpi-grid">
+      <div class="kpi-card kpi-card--split">
+        <div class="kpi-split-half">
+          <span class="kpi-label">Recebido</span>
+          <div class="kpi-split-row">
+            <span class="kpi-value kpi-value--accent">{{ fmt(f.rec) }}</span>
+            <span class="kpi-sub">{{ listaFiltrada.filter(t=>t.tipo==='entrada'&&t.st==='recebido').length }} transações</span>
+          </div>
+        </div>
+        <div class="kpi-split-divider"></div>
+        <div class="kpi-split-half">
+          <span class="kpi-label">A receber</span>
+          <div class="kpi-split-row">
+            <span class="kpi-value kpi-value--warning">{{ fmt(f.pend) }}</span>
+            <span class="kpi-sub">{{ listaFiltrada.filter(t=>t.tipo==='entrada'&&t.st==='pendente').length }} pendentes</span>
+          </div>
+        </div>
       </div>
-      <div class="kpi-card">
-        <span class="kpi-label">A receber</span>
-        <span class="kpi-value kpi-value--warning">{{ fmt(f.pend) }}</span>
-        <span class="kpi-sub">pendente</span>
+      <div class="kpi-card kpi-card--lucro" :class="(f.rec + f.pend - f.sai) < 0 ? 'kpi-card--lucro-neg' : ''">
+        <span class="kpi-label">Lucro Projetado<InfoTip text="Receita recebida + a receber, menos todas as despesas. É o lucro caso todos os pagamentos pendentes se concretizem." /></span>
+        <span class="kpi-value kpi-value--white">{{ fmt(f.rec + f.pend - f.sai) }}</span>
+        <div class="kpi-rec-detail">
+          <span class="kpi-rec-item kpi-lucro-atual">Atual: {{ fmt(f.lucro) }}</span>
+        </div>
       </div>
       <div class="kpi-card">
         <span class="kpi-label">Despesas</span>
         <span class="kpi-value kpi-value--danger">{{ fmt(f.sai) }}</span>
         <span class="kpi-sub">{{ listaFiltrada.filter(t=>t.tipo==='saida').length }} transações</span>
       </div>
-      <div class="kpi-card kpi-card--lucro" :class="f.lucro < 0 ? 'kpi-card--lucro-neg' : ''">
-        <span class="kpi-label">Receita Total</span>
-        <span class="kpi-value kpi-value--white">{{ fmt(f.rec + f.pend) }}</span>
-        <div class="kpi-rec-detail">
-          <span class="kpi-rec-item">
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            {{ fmt(f.rec) }}
-          </span>
-          <span class="kpi-rec-sep">·</span>
-          <span class="kpi-rec-item kpi-rec-item--pend">
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            {{ fmt(f.pend) }}
-          </span>
-        </div>
-      </div>
       <div class="kpi-card">
-        <span class="kpi-label">Ticket médio</span>
+        <span class="kpi-label">Ticket médio<InfoTip text="Valor médio cobrado por cliente no período. Calculado dividindo a receita total pelo número de clientes que pagaram." /></span>
         <span class="kpi-value" style="color:var(--status-info)">{{ fmt(f.ticketMedio) }}</span>
         <span class="kpi-sub">por cliente</span>
       </div>
@@ -68,7 +67,14 @@
     <!-- Gráficos -->
     <div class="charts-row">
       <div class="card chart-card">
-        <h3 class="chart-title">Receita vs Despesa — ano</h3>
+        <div class="chart-card-header">
+          <h3 class="chart-title">Receita vs Despesa</h3>
+          <div class="chart-period-btns">
+            <button :class="['chart-period-btn', chartPeriodo==='30d'  && 'active']" @click="chartPeriodo='30d'">30 dias</button>
+            <button :class="['chart-period-btn', chartPeriodo==='90d'  && 'active']" @click="chartPeriodo='90d'">90 dias</button>
+            <button :class="['chart-period-btn', chartPeriodo==='todo' && 'active']" @click="chartPeriodo='todo'">Todo período</button>
+          </div>
+        </div>
         <div class="chart-wrap"><canvas ref="chartMen"></canvas></div>
       </div>
       <div class="card chart-card">
@@ -187,7 +193,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Recorrência</label>
+          <label class="form-label">Recorrência<InfoTip text="Define se este valor se repete. Transações mensais/anuais aparecem no módulo Recorrências para controle mensal de pagamentos." /></label>
           <select v-model="mForm.rec" class="form-select">
             <option value="unica">Pagamento único</option>
             <option value="mensal">Mensal</option>
@@ -195,7 +201,7 @@
           </select>
         </div>
         <div v-if="modalTipo==='entrada'" class="form-group">
-          <label class="form-label">Status</label>
+          <label class="form-label">Status<InfoTip text="Recebido = dinheiro já na conta. Pendente = fatura emitida mas aguardando pagamento do cliente." /></label>
           <select v-model="mForm.st" class="form-select">
             <option value="recebido">Recebido</option>
             <option value="pendente">Pendente</option>
@@ -219,6 +225,7 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useFinStore } from '@/stores/fin'
 import { useSaving } from '@/composables/useSaving'
 import { useTheme } from '@/composables/useTheme'
+import InfoTip from '@/components/ui/InfoTip.vue'
 
 const fin  = useFinStore()
 const { run, toast } = useSaving()
@@ -231,11 +238,53 @@ const catFil  = ref('')
 const sortKey = ref('data')
 const sortDir = ref('desc')
 
-const chartMen = ref(null)
-const chartCat = ref(null)
+const chartMen      = ref(null)
+const chartCat      = ref(null)
+const chartPeriodo  = ref('todo')
 let charts = {}
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+
+function getChartMenData() {
+  const hoje = new Date(); hoje.setHours(23,59,59,999)
+  const all  = fin.fin
+
+  if (chartPeriodo.value === '30d') {
+    const labels = [], rec = [], sai = []
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(hoje); d.setDate(d.getDate() - i)
+      const key = d.toISOString().slice(0,10)
+      labels.push(`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`)
+      rec.push(all.filter(t => t.tipo==='entrada' && t.st==='recebido' && t.data===key).reduce((a,t)=>a+Number(t.val),0))
+      sai.push(all.filter(t => t.tipo==='saida' && t.data===key).reduce((a,t)=>a+Number(t.val),0))
+    }
+    return { labels, rec, sai }
+  }
+
+  if (chartPeriodo.value === '90d') {
+    const labels = [], rec = [], sai = []
+    for (let w = 12; w >= 0; w--) {
+      const s = new Date(hoje); s.setDate(s.getDate() - w*7 - 6)
+      const e = new Date(hoje); e.setDate(e.getDate() - w*7)
+      const sk = s.toISOString().slice(0,10), ek = e.toISOString().slice(0,10)
+      labels.push(`${String(s.getDate()).padStart(2,'0')}/${String(s.getMonth()+1).padStart(2,'0')}`)
+      rec.push(all.filter(t => t.tipo==='entrada' && t.st==='recebido' && t.data>=sk && t.data<=ek).reduce((a,t)=>a+Number(t.val),0))
+      sai.push(all.filter(t => t.tipo==='saida' && t.data>=sk && t.data<=ek).reduce((a,t)=>a+Number(t.val),0))
+    }
+    return { labels, rec, sai }
+  }
+
+  // todo período — últimos 12 meses rolling
+  const labels = [], rec = [], sai = []
+  for (let i = 11; i >= 0; i--) {
+    const d   = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1)
+    const pre = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
+    labels.push(`${MESES[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`)
+    rec.push(all.filter(t => t.tipo==='entrada' && t.st==='recebido' && t.data?.startsWith(pre)).reduce((a,t)=>a+Number(t.val),0))
+    sai.push(all.filter(t => t.tipo==='saida' && t.data?.startsWith(pre)).reduce((a,t)=>a+Number(t.val),0))
+  }
+  return { labels, rec, sai }
+}
 const CHART_FONT = "'Sora', 'Helvetica Neue', Arial, sans-serif"
 const cats = ['Site','Google Meu Negócio','Tráfego','Automação','Manutenção','Ferramentas','Assinatura','Marketing','Outros']
 
@@ -363,15 +412,11 @@ function renderCharts() {
     const c = chartColors()
     if (chartMen.value) {
       if (charts.men) charts.men.destroy()
-      const rec = fin.mRec
-      const sai = Array.from({ length: 12 }, (_, i) => {
-        const m = String(i+1).padStart(2,'0')
-        return fin.fin.filter(t => t.tipo==='saida' && t.data?.includes('-'+m+'-')).reduce((a,t) => a+Number(t.val), 0)
-      })
+      const { labels, rec, sai } = getChartMenData()
       charts.men = new window.Chart(chartMen.value, {
         type: 'bar',
         data: {
-          labels: MESES,
+          labels,
           datasets: [
             { label:'Receita', data:rec, backgroundColor:'rgba(34,197,94,.2)', borderColor:'#22c55e', borderWidth:2, borderRadius:6, borderSkipped:false },
             { label:'Despesa', data:sai, backgroundColor:'rgba(239,68,68,.2)', borderColor:'#ef4444', borderWidth:2, borderRadius:6, borderSkipped:false }
@@ -436,14 +481,22 @@ onMounted(() => {
 onUnmounted(() => { Object.values(charts).forEach(c => c?.destroy()) })
 watch(() => fin.fin.length, renderCharts)
 watch(theme, renderCharts)
+watch(chartPeriodo, renderCharts)
 </script>
 
 <style scoped>
 /* Charts */
 .charts-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; min-width:0; }
 .chart-card { display:flex; flex-direction:column; gap:.875rem; min-width:0; }
+.chart-card-header { display:flex; align-items:center; justify-content:space-between; gap:.5rem; flex-wrap:wrap; }
 .chart-title { font-size:.9375rem; font-weight:700; color:var(--text-primary); }
 .chart-wrap  { height:200px; position:relative; min-width:0; }
+.chart-period-btns { display:flex; gap:2px; background:var(--bg-overlay); border-radius:var(--radius-md); padding:2px; }
+.chart-period-btn { padding:.25rem .6rem; font-size:.72rem; font-weight:600; font-family:var(--font-body); background:none; border:none; border-radius:calc(var(--radius-md) - 2px); color:var(--text-tertiary); cursor:pointer; transition:background .15s,color .15s; white-space:nowrap; }
+.chart-period-btn:hover { color:var(--text-secondary); }
+.chart-period-btn.active { background:var(--bg-elevated); color:var(--text-primary); }
+[data-theme="light"] .chart-period-btns { background:var(--bg-surface); }
+[data-theme="light"] .chart-period-btn.active { background:#fff; }
 
 /* Card header com filtros */
 .fin-filters { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
@@ -486,6 +539,17 @@ watch(theme, renderCharts)
 @media (max-width:1100px) { .kpi-grid--5 { grid-template-columns:repeat(3,1fr); } }
 @media (max-width:768px)  { .page-layout { padding:1rem 1rem 5rem; } .drawer { width:100%; } }
 
+.fin-kpi-grid { grid-template-columns: 2fr 1fr 1fr 1fr; }
+@media (max-width: 960px) { .fin-kpi-grid { grid-template-columns: 1fr 1fr 1fr; } }
+@media (max-width: 640px) { .fin-kpi-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 420px) { .fin-kpi-grid { grid-template-columns: 1fr; } }
+
+.kpi-card--split { flex-direction: row; align-items: stretch; padding: 0; gap: 0; }
+.kpi-split-half { display: flex; flex-direction: column; justify-content: center; gap: .25rem; flex: 1; padding: .875rem 1.1rem; min-width: 0; }
+.kpi-split-row { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
+.kpi-split-divider { width: 1px; background: var(--border-subtle); flex-shrink: 0; margin: .75rem 0; }
+[data-theme="light"] .kpi-split-divider { background: var(--border-default); }
+
 .kpi-card--lucro { background: var(--accent); border-color: var(--accent); }
 .kpi-card--lucro-neg { background: var(--status-danger); border-color: var(--status-danger); }
 .kpi-card--lucro .kpi-label { color: rgba(255,255,255,.7); }
@@ -495,6 +559,7 @@ watch(theme, renderCharts)
 
 .kpi-rec-detail { display: flex; align-items: center; gap: .3rem; flex-wrap: wrap; margin-top: .15rem; }
 .kpi-rec-item { display: inline-flex; align-items: center; gap: .25rem; font-size: .72rem; font-weight: 600; color: rgba(255,255,255,.85); }
+.kpi-lucro-atual { font-size: .7rem; font-weight: 500; color: rgba(255,255,255,.65); }
 .kpi-rec-item--pend { color: rgba(255,255,255,.6); }
 .kpi-rec-sep { font-size: .72rem; color: rgba(255,255,255,.4); }
 [data-theme="light"] .kpi-rec-item { color: rgba(0,0,0,.75); }

@@ -25,22 +25,12 @@
             <span class="sb-icon" v-html="icons.search"></span>
             <span class="sb-text">Prospecção</span>
           </button>
-          <button class="sb-item" :class="{ active: route.path === '/slaczap' }"
-            @click="go('/slaczap')" title="SlacZap">
-            <span class="sb-icon" v-html="icons.slaczap"></span>
-            <span class="sb-text">SlacZap</span>
-          </button>
-          <button class="sb-item" :class="{ active: route.path === '/contatos' }"
+<button class="sb-item" :class="{ active: route.path === '/contatos' }"
             @click="go('/contatos')" title="Contatos">
             <span class="sb-icon" v-html="icons.contatos"></span>
             <span class="sb-text">Contatos</span>
           </button>
-          <button class="sb-item" :class="{ active: route.path === '/work' }"
-            @click="go('/work')" title="Work">
-            <span class="sb-icon" v-html="icons.work"></span>
-            <span class="sb-text">Work</span>
-          </button>
-          <button class="sb-item" :class="{ active: route.path === '/sdr' }"
+<button class="sb-item" :class="{ active: route.path === '/sdr' }"
             @click="go('/sdr')" title="SDR por IA">
             <span class="sb-icon" v-html="icons.sdr"></span>
             <span class="sb-text">SDR IA</span>
@@ -259,7 +249,24 @@
 
             <div class="upd-version">
               <div class="upd-ver-header">
-                <span class="upd-badge upd-badge--new">0.4 beta</span>
+                <span class="upd-badge upd-badge--new">0.5 beta</span>
+                <span class="upd-date">Março 2026</span>
+              </div>
+              <p class="upd-ver-title">SDR aprimorado, logs completos e tooltips</p>
+              <ul class="upd-items">
+                <li>SDR com modo 24 horas — ignora horário e dias configurados</li>
+                <li>SDR corrigido: chats reais carregados, nomes de leads resolvidos, taxa de resposta sem falso vermelho</li>
+                <li>Sistema de logs completo: toda ação no SLAC gera registro com código, módulo e nível</li>
+                <li>Painel de Logs com filtro por módulo e nível, limpeza com log de auditoria</li>
+                <li>Tooltips explicativos (?) em todas as funções abstratas: KPIs, drawers, SDR, CRM, Financeiro e Recorrências</li>
+                <li>Mapa Mental removido do sistema</li>
+                <li>Zoom nativo de 90% aplicado ao SLAC</li>
+              </ul>
+            </div>
+
+            <div class="upd-version">
+              <div class="upd-ver-header">
+                <span class="upd-badge">0.4 beta</span>
                 <span class="upd-date">Março 2026</span>
               </div>
               <p class="upd-ver-title">Automações, IA e notificações</p>
@@ -291,7 +298,7 @@
                 <li>Análise de lead por IA (Claude Haiku) com score, resumo e pontos de atenção</li>
                 <li>Gravação de áudio ao vivo com preview antes de enviar</li>
                 <li>Envio de imagens, documentos e arquivos de áudio</li>
-                <li>Indicadores de follow-up, relead e work ativo na lista de conversas</li>
+                <li>Indicadores de follow-up, relead e tarefa ativa na lista de conversas</li>
                 <li>Notificações push diárias de follow-up pendente</li>
               </ul>
             </div>
@@ -301,10 +308,9 @@
                 <span class="upd-badge">0.2 beta</span>
                 <span class="upd-date">Fevereiro 2026</span>
               </div>
-              <p class="upd-ver-title">Work & Mapa mental</p>
+              <p class="upd-ver-title">Tarefas</p>
               <ul class="upd-items">
-                <li>Módulo Work: gestão de projetos/serviços por cliente</li>
-                <li>Mapa mental de objetivos por categoria (ok / em andamento / futuro)</li>
+                <li>Módulo Tarefas: gestão de projetos/serviços por cliente</li>
                 <li>Relead: reagenda lead perdido com nova data de contato</li>
                 <li>Desfazer última ação no CRM</li>
                 <li>Modal de boas-vindas com resumo de atividade no período ausente</li>
@@ -455,7 +461,6 @@ const icons = {
   crm:          `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
   financeiro:   `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
   recorrencias: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`,
-  mapa:         `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>`,
   search:       `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
   work:         `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>`,
   logs:         `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
@@ -469,7 +474,8 @@ const mainNav = [
   { path: '/crm',          label: 'CRM',          icon: icons.crm },
   { path: '/financeiro',   label: 'Financeiro',   icon: icons.financeiro },
   { path: '/recorrencias', label: 'Recorrências', icon: icons.recorrencias },
-
+  { path: '/slaczap',      label: 'SlacZap',      icon: icons.slaczap },
+  { path: '/work',         label: 'Tarefas',      icon: icons.work },
 ]
 const mobileNav = [
   { path: '/dashboard',  short: 'Dash',   icon: icons.dashboard },
@@ -477,7 +483,7 @@ const mobileNav = [
   { path: '/financeiro', short: 'Fin.',   icon: icons.financeiro },
 
   { path: '/prospeccao', short: 'Prosp.', icon: icons.search },
-  { path: '/work',       short: 'Work',   icon: icons.work },
+  { path: '/work',       short: 'Tar.',   icon: icons.work },
 ]
 
 // Search
@@ -490,7 +496,7 @@ const allRoutes = [
   { path: '/recorrencias', label: 'Recorrências', desc: 'Contratos mensais',        icon: icons.recorrencias },
 
   { path: '/prospeccao',   label: 'Prospecção',   desc: 'Importar e prospectar',    icon: icons.search },
-  { path: '/work',         label: 'Work',         desc: 'Serviços em execução',      icon: icons.work },
+  { path: '/work',         label: 'Tarefas',      desc: 'Tarefas e serviços',        icon: icons.work },
   { path: '/sdr',          label: 'SDR IA',       desc: 'Agente autônomo de vendas', icon: icons.sdr },
 ]
 
@@ -567,14 +573,14 @@ function go(path) { router.push(path) }
 </script>
 
 <style scoped>
-.layout { display:flex; min-height:100vh; background:var(--bg-base); }
+.layout { display:flex; flex: 1; height: 100%; background:var(--bg-base); }
 
 /* Sidebar */
 .sidebar {
   width: 196px; min-width: 196px;
   background: var(--sidebar-bg);
   display: flex; flex-direction: column;
-  height: 100vh; position: sticky; top: 0;
+  height: 100%; position: sticky; top: 0;
   overflow: hidden; z-index: 50;
   transition: width 250ms ease, min-width 250ms ease;
 }
@@ -594,6 +600,12 @@ function go(path) { router.push(path) }
 .sb-logo { height: 28px; width: auto; display: block; }
 
 .sb-nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: .75rem 0; }
+.sb-nav::-webkit-scrollbar { width: 3px; }
+.sb-nav::-webkit-scrollbar-track { background: transparent; }
+.sb-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 99px; }
+.sb-nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.15); }
+[data-theme="light"] .sb-nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
+[data-theme="light"] .sb-nav::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.18); }
 .sb-section { padding: 0 .5rem; margin-bottom: .625rem; display: flex; flex-direction: column; gap: .25rem; }
 .sb-section-label {
   font-size: .6rem; font-weight: 700; letter-spacing: .09em;

@@ -18,7 +18,7 @@
             </span>
           </template>
           <template v-else>
-            <p class="sz-modal-lead-name">Opções SLAC</p>
+            <p class="sz-modal-lead-name">Opções</p>
           </template>
           <button class="sz-modal-close" @click="close" aria-label="Fechar">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -441,23 +441,21 @@ const sdrForaMotivo = computed(() => {
 <style scoped>
 .sz-modal-overlay {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.25);
+  background: rgba(0,0,0,0.35);
   z-index: 200;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: stretch; justify-content: flex-end;
 }
 .sz-modal {
   display: flex; flex-direction: column;
-  width: min(680px, 95vw); height: min(580px, 92vh);
-  background: rgba(8,8,8,0.55);
-  backdrop-filter: blur(40px) saturate(1.6);
-  -webkit-backdrop-filter: blur(40px) saturate(1.6);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 16px;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.05);
+  width: min(420px, 96vw); height: 100%;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border-subtle);
+  border-radius: 0;
+  box-shadow: -8px 0 32px rgba(0,0,0,0.4);
   overflow: hidden;
 }
-[data-theme="light"] .sz-modal-overlay { background: rgba(0,0,0,0.15); }
-[data-theme="light"] .sz-modal { background: rgba(255,255,255,0.55); border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 24px 64px rgba(0,0,0,0.12); }
+[data-theme="light"] .sz-modal-overlay { background: rgba(0,0,0,0.2); }
+[data-theme="light"] .sz-modal { background: #fff; border-left-color: var(--border-default); box-shadow: -8px 0 32px rgba(0,0,0,0.1); }
 
 .sz-modal-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px 14px; border-bottom: 1px solid rgba(255,255,255,0.07); flex-shrink: 0; }
 [data-theme="light"] .sz-modal-header { border-bottom-color: var(--border-default); }
@@ -522,6 +520,10 @@ const sdrForaMotivo = computed(() => {
 .sz-typing span:nth-child(3) { animation-delay: .3s; }
 @keyframes sz-bounce { 0%, 80%, 100% { transform: scale(.8); opacity: .5; } 40% { transform: scale(1.1); opacity: 1; } }
 
-.sz-fade-enter-active, .sz-fade-leave-active { transition: opacity 0.15s ease; }
+.sz-fade-enter-active { transition: opacity 0.18s ease; }
+.sz-fade-leave-active { transition: opacity 0.15s ease; }
 .sz-fade-enter-from, .sz-fade-leave-to { opacity: 0; }
+.sz-fade-enter-active .sz-modal { transition: transform 0.22s cubic-bezier(.4,0,.2,1); }
+.sz-fade-leave-active .sz-modal { transition: transform 0.18s cubic-bezier(.4,0,.2,1); }
+.sz-fade-enter-from .sz-modal, .sz-fade-leave-to .sz-modal { transform: translateX(100%); }
 </style>

@@ -4,7 +4,7 @@
     <!-- Header -->
     <div class="page-header">
       <div>
-        <h1 class="page-title">SDR por IA</h1>
+        <h1 class="page-title">SDR por IA<InfoTip text="SDR (Sales Development Representative) é um agente de IA que responde leads automaticamente no WhatsApp, qualifica o interesse e escala para você quando necessário." /></h1>
         <p class="page-subtitle">Agente autônomo de vendas via WhatsApp</p>
       </div>
       <div class="page-actions">
@@ -21,7 +21,8 @@
     <div v-if="wa.sdrConfig.enabled" class="sdr-status-bar">
       <span class="sdr-status-dot"></span>
       SDR rodando · {{ activeChatsCount }} chat{{ activeChatsCount !== 1 ? 's' : '' }} ativo{{ activeChatsCount !== 1 ? 's' : '' }}
-      <span v-if="!wa.sdrIsInHours()" class="sdr-status-fora"> · Fora do horário configurado</span>
+      <span v-if="wa.sdrConfig.sempreAtivo" class="sdr-status-24h"> · 24 horas</span>
+      <span v-else-if="!wa.sdrIsInHours()" class="sdr-status-fora"> · Fora do horário configurado</span>
     </div>
 
     <!-- KPIs -->
@@ -37,12 +38,12 @@
         <p class="kpi-sub">enviadas pelo SDR</p>
       </div>
       <div class="kpi-card">
-        <p class="kpi-label">Escaladas hoje</p>
+        <p class="kpi-label">Escaladas hoje<InfoTip text="Conversas em que o SDR detectou complexidade ou objeção e parou de responder, sinalizando que você precisa entrar manualmente." /></p>
         <p class="kpi-value kpi-value--warning">{{ todayEscalated }}</p>
         <p class="kpi-sub">para atendimento humano</p>
       </div>
       <div class="kpi-card">
-        <p class="kpi-label">Taxa de resposta</p>
+        <p class="kpi-label">Taxa de resposta<InfoTip text="Percentual de mensagens respondidas pelo SDR sem precisar escalar. Quanto maior, menos intervenção manual foi necessária hoje." /></p>
         <p class="kpi-value" :class="taxaClass">{{ taxa }}%</p>
         <p class="kpi-sub">SDR vs escaladas</p>
       </div>
@@ -78,15 +79,28 @@
           <!-- Horários -->
           <div class="sdr-config-section">
             <p class="sdr-config-label">Horário de funcionamento</p>
-            <div class="sdr-horario-row">
+            <label class="sdr-24h-card" :class="{ 'sdr-24h-card--on': localConfig.sempreAtivo }">
+              <input type="checkbox" v-model="localConfig.sempreAtivo" style="display:none" />
+              <div class="sdr-24h-card-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div class="sdr-24h-card-text">
+                <span class="sdr-24h-card-title">Modo 24 horas</span>
+                <span class="sdr-24h-card-desc">Ignora horário e dias — SDR responde sempre</span>
+              </div>
+              <div class="sdr-24h-pill" :class="{ 'sdr-24h-pill--on': localConfig.sempreAtivo }">
+                {{ localConfig.sempreAtivo ? 'Ativo' : 'Desativado' }}
+              </div>
+            </label>
+            <div class="sdr-horario-row" :class="{ 'sdr-horario-row--disabled': localConfig.sempreAtivo }">
               <div class="sdr-horario-field">
                 <label class="form-label">Início</label>
-                <input type="time" class="form-input" v-model="localConfig.horaInicio" />
+                <input type="time" class="form-input" v-model="localConfig.horaInicio" :disabled="localConfig.sempreAtivo" />
               </div>
               <span class="sdr-horario-sep">até</span>
               <div class="sdr-horario-field">
                 <label class="form-label">Fim</label>
-                <input type="time" class="form-input" v-model="localConfig.horaFim" />
+                <input type="time" class="form-input" v-model="localConfig.horaFim" :disabled="localConfig.sempreAtivo" />
               </div>
             </div>
           </div>
@@ -94,10 +108,10 @@
           <!-- Dias da semana -->
           <div class="sdr-config-section">
             <p class="sdr-config-label">Dias da semana</p>
-            <div class="sdr-dias">
+            <div class="sdr-dias" :class="{ 'sdr-dias--disabled': localConfig.sempreAtivo }">
               <label v-for="d in DIAS" :key="d.id" class="sdr-dia-toggle"
-                :class="{ 'sdr-dia-toggle--on': localConfig.diasSemana.includes(d.id) }">
-                <input type="checkbox" :value="d.id" v-model="localConfig.diasSemana" style="display:none" />
+                :class="{ 'sdr-dia-toggle--on': localConfig.diasSemana.includes(d.id) && !localConfig.sempreAtivo, 'sdr-dia-toggle--always': localConfig.sempreAtivo }">
+                <input type="checkbox" :value="d.id" v-model="localConfig.diasSemana" style="display:none" :disabled="localConfig.sempreAtivo" />
                 {{ d.label }}
               </label>
             </div>
@@ -105,7 +119,7 @@
 
           <!-- Limite de mensagens -->
           <div class="sdr-config-section">
-            <p class="sdr-config-label">Limite de mensagens por chat</p>
+            <p class="sdr-config-label">Limite de mensagens por chat<InfoTip text="Após esse número de mensagens trocadas, o SDR para de responder automaticamente no chat e aguarda você assumir a conversa." /></p>
             <div style="display:flex;align-items:center;gap:.75rem">
               <input type="range" min="3" max="30" step="1" v-model.number="localConfig.limiteMsg"
                 class="sdr-range" />
@@ -184,8 +198,12 @@
 <script setup>
 import { ref, reactive, computed, onMounted, inject } from 'vue'
 import { useWaStore } from '@/stores/wa'
+import { useLeadsStore } from '@/stores/leads'
+import { slacLog } from '@/utils/log'
+import InfoTip from '@/components/ui/InfoTip.vue'
 
 const wa    = useWaStore()
+const leads = useLeadsStore()
 const toast = inject('toast')
 
 const saving = ref(false)
@@ -208,26 +226,29 @@ const DIAS = [
 ]
 
 const localConfig = reactive({
-  etapas:     ['contato', 'interesse'],
-  horaInicio: '08:00',
-  horaFim:    '18:00',
-  diasSemana: [1, 2, 3, 4, 5],
-  limiteMsg:  15,
+  etapas:      ['contato', 'interesse'],
+  horaInicio:  '08:00',
+  horaFim:     '18:00',
+  diasSemana:  [1, 2, 3, 4, 5],
+  limiteMsg:   15,
+  sempreAtivo: false,
 })
 
 onMounted(async () => {
-  await wa.loadSdrConfig({ includeChats: false })
+  await wa.loadSdrConfig({ includeChats: true })
   Object.assign(localConfig, {
-    etapas:     [...(wa.sdrConfig.etapas || ['contato', 'interesse'])],
-    horaInicio: wa.sdrConfig.horaInicio || '08:00',
-    horaFim:    wa.sdrConfig.horaFim    || '18:00',
-    diasSemana: [...(wa.sdrConfig.diasSemana || [1,2,3,4,5])],
-    limiteMsg:  wa.sdrConfig.limiteMsg  || 15,
+    etapas:      [...(wa.sdrConfig.etapas || ['contato', 'interesse'])],
+    horaInicio:  wa.sdrConfig.horaInicio  || '08:00',
+    horaFim:     wa.sdrConfig.horaFim     || '18:00',
+    diasSemana:  [...(wa.sdrConfig.diasSemana || [1,2,3,4,5])],
+    limiteMsg:   wa.sdrConfig.limiteMsg   || 15,
+    sempreAtivo: !!wa.sdrConfig.sempreAtivo,
   })
 })
 
 async function toggleGlobal() {
   wa.sdrConfig.enabled = !wa.sdrConfig.enabled
+  slacLog(wa.sdrConfig.enabled ? 'SDR-001' : 'SDR-002', `SDR global ${wa.sdrConfig.enabled ? 'ativado' : 'desativado'}`)
   await wa.saveSdrConfig()
 }
 
@@ -235,11 +256,12 @@ async function saveConfig() {
   saving.value = true
   try {
     Object.assign(wa.sdrConfig, {
-      etapas:     [...localConfig.etapas],
-      horaInicio: localConfig.horaInicio,
-      horaFim:    localConfig.horaFim,
-      diasSemana: [...localConfig.diasSemana],
-      limiteMsg:  localConfig.limiteMsg,
+      etapas:      [...localConfig.etapas],
+      horaInicio:  localConfig.horaInicio,
+      horaFim:     localConfig.horaFim,
+      diasSemana:  [...localConfig.diasSemana],
+      limiteMsg:   localConfig.limiteMsg,
+      sempreAtivo: localConfig.sempreAtivo,
     })
     await wa.saveSdrConfig()
     toast('Configurações do SDR salvas', 'ok')
@@ -256,12 +278,17 @@ const activeChatsCount = computed(() =>
 )
 
 const managedChats = computed(() => {
-  return Object.entries(wa.sdrChats).map(([key, val]) => ({
-    key,
-    nome: key.startsWith('lead_') ? key.replace('lead_', 'Lead #') : key.replace('phone_', ''),
-    active: val?.active,
-    msgCount: val?.msgCount,
-  }))
+  return Object.entries(wa.sdrChats).map(([key, val]) => {
+    let nome = key
+    if (key.startsWith('lead_')) {
+      const leadId = key.replace('lead_', '')
+      const lead = leads.leads.find(l => l.id === leadId)
+      nome = lead?.nome || lead?.empresa || `Lead #${leadId.slice(0, 8)}`
+    } else if (key.startsWith('phone_')) {
+      nome = key.replace('phone_', '') || key
+    }
+    return { key, nome, active: val?.active, msgCount: val?.msgCount }
+  })
 })
 
 const todayResponded = computed(() => {
@@ -281,6 +308,8 @@ const taxa = computed(() => {
 })
 
 const taxaClass = computed(() => {
+  const total = todayResponded.value + todayEscalated.value
+  if (!total) return ''
   if (taxa.value >= 70) return 'kpi-value--accent'
   if (taxa.value >= 40) return 'kpi-value--warning'
   return 'kpi-value--danger'
@@ -310,6 +339,7 @@ function fmtTs(ts) {
   animation: sdr-pulse 1.8s ease infinite;
 }
 .sdr-status-fora { color: var(--status-warning); }
+.sdr-status-24h  { color: var(--accent); opacity: .7; }
 
 /* Global toggle */
 .sdr-global-toggle {
@@ -377,10 +407,45 @@ function fmtTs(ts) {
 }
 
 /* Horário */
-.sdr-horario-row { display: flex; align-items: flex-end; gap: .625rem; }
+.sdr-horario-row { display: flex; align-items: flex-end; gap: .625rem; transition: opacity .2s; margin-top: .25rem; }
+.sdr-horario-row--disabled { opacity: .3; pointer-events: none; }
 .sdr-horario-field { display: flex; flex-direction: column; gap: .25rem; }
 .sdr-horario-field .form-input { width: 110px; }
 .sdr-horario-sep { font-size: .8rem; color: var(--text-tertiary); padding-bottom: .5rem; }
+
+/* 24h card */
+.sdr-24h-card {
+  display: flex; align-items: center; gap: .75rem; cursor: pointer; user-select: none;
+  border: 1px solid var(--border-subtle); border-radius: 8px; padding: .625rem .875rem;
+  background: var(--bg-elevated); transition: border-color .15s, background .15s;
+}
+.sdr-24h-card:hover { border-color: var(--text-tertiary); }
+.sdr-24h-card--on {
+  border-color: rgba(34,197,94,.4); background: rgba(34,197,94,.06);
+}
+.sdr-24h-card-icon {
+  width: 32px; height: 32px; border-radius: 7px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-overlay); color: var(--text-tertiary); transition: all .15s;
+}
+.sdr-24h-card--on .sdr-24h-card-icon { background: rgba(34,197,94,.12); color: var(--accent); }
+.sdr-24h-card-text { flex: 1; display: flex; flex-direction: column; gap: .1rem; }
+.sdr-24h-card-title { font-size: .82rem; font-weight: 600; color: var(--text-primary); transition: color .15s; }
+.sdr-24h-card--on .sdr-24h-card-title { color: var(--accent); }
+.sdr-24h-card-desc { font-size: .72rem; color: var(--text-tertiary); }
+.sdr-24h-pill {
+  font-size: .68rem; font-weight: 700; padding: .2rem .55rem; border-radius: 5px;
+  text-transform: uppercase; letter-spacing: .05em; flex-shrink: 0;
+  background: var(--bg-overlay); color: var(--text-tertiary); transition: all .15s;
+}
+.sdr-24h-pill--on { background: rgba(34,197,94,.15); color: var(--accent); }
+
+/* Dias disabled */
+.sdr-dias--disabled { opacity: .3; pointer-events: none; }
+.sdr-dia-toggle--always {
+  border-color: rgba(34,197,94,.2); color: var(--text-tertiary);
+  background: var(--bg-elevated);
+}
 
 /* Range */
 .sdr-range { flex: 1; accent-color: var(--accent); cursor: pointer; }

@@ -3,7 +3,7 @@
 
     <div class="page-header">
       <div>
-        <h1 class="page-title">Recorrências</h1>
+        <h1 class="page-title">Recorrências<InfoTip text="Receitas e despesas que se repetem todo mês (mensalidades de clientes, assinaturas, aluguel etc.). Aqui você controla quais já foram pagas em cada mês." /></h1>
         <p class="page-subtitle">Receitas e despesas fixas mensais</p>
       </div>
       <div class="page-actions">
@@ -31,7 +31,7 @@
         <span class="kpi-sub">por mês</span>
       </div>
       <div class="kpi-card">
-        <span class="kpi-label">Saldo líquido</span>
+        <span class="kpi-label">Saldo líquido<InfoTip text="Receita recorrente mensal menos as despesas fixas mensais. Representa o quanto sobra todo mês antes das transações avulsas." /></span>
         <span class="kpi-value" :class="kpis.saldo>=0?'kpi-value--accent':'kpi-value--danger'">{{ fmt(kpis.saldo) }}</span>
         <span class="kpi-sub">{{ kpis.saldo>=0?'positivo':'negativo' }}</span>
       </div>
@@ -58,7 +58,7 @@
       </div>
 
       <div v-else class="rec-list">
-        <div v-for="t in mensais" :key="t.id" class="rec-row">
+        <div v-for="t in mensais" :key="t.id" class="rec-row" :class="{ 'rec-row--vencida': isRecVencida(t) }">
           <div class="rec-tipo-dot" :class="t.tipo==='entrada'?'dot-entrada':'dot-saida'"></div>
           <div class="rec-info">
             <div class="rec-name">
@@ -67,6 +67,7 @@
             </div>
             <div class="rec-sub">
               {{ t.cat }}
+              <span v-if="t.vencimento_dia"> · vence dia {{ t.vencimento_dia }}</span>
               <span v-if="pgtoInfo(t.id)?.obs"> · {{ pgtoInfo(t.id).obs }}</span>
             </div>
           </div>
@@ -74,7 +75,10 @@
             {{ t.tipo==='entrada'?'+':'-' }}{{ fmt(t.val) }}
           </div>
           <div class="rec-status">
-            <span class="badge" :class="stBadge(pgtoInfo(t.id)?.st)">{{ stLabel(pgtoInfo(t.id)?.st) }}</span>
+            <span class="badge" :class="isRecVencida(t) ? 'badge-vencida' : stBadge(pgtoInfo(t.id)?.st)">
+              <svg v-if="isRecVencida(t)" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              {{ isRecVencida(t) ? 'Vencida' : stLabel(pgtoInfo(t.id)?.st) }}
+            </span>
           </div>
           <div class="rec-actions">
             <button class="btn btn-ghost btn-sm" @click="openPgto(t)">
@@ -169,15 +173,19 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Frequência</label>
+          <label class="form-label">Frequência<InfoTip text="Com que periodicidade este valor se repete. Mensal = aparece todo mês para confirmação. Anual = aparece uma vez por ano." /></label>
           <select v-model="novaRecForm.rec" class="form-select">
             <option value="mensal">Mensal</option>
             <option value="anual">Anual</option>
           </select>
         </div>
         <div class="form-group"><label class="form-label">Data de início</label><input v-model="novaRecForm.data" class="form-input" type="date" /></div>
+        <div class="form-group">
+          <label class="form-label">Dia de vencimento<InfoTip text="Em qual dia do mês este valor vence. Usado para alertas e ordenação na lista mensal." /></label>
+          <input v-model.number="novaRecForm.vencimento_dia" class="form-input" type="number" min="1" max="31" placeholder="Ex: 5 (todo dia 5)" />
+        </div>
         <div v-if="novaRecTipo==='entrada'" class="form-group">
-          <label class="form-label">Status inicial</label>
+          <label class="form-label">Status inicial<InfoTip text="Define se este mês já está quitado ao cadastrar. Útil para registrar clientes que já pagaram antes do cadastro no sistema." /></label>
           <select v-model="novaRecForm.st" class="form-select">
             <option value="recebido">Recebido</option>
             <option value="pendente">Pendente</option>
@@ -206,7 +214,7 @@
     </div>
     <div class="drawer-body">
       <div class="drawer-section">
-        <p class="drawer-section-title">Status do mês — {{ mesLabel }}</p>
+        <p class="drawer-section-title">Status do mês — {{ mesLabel }}<InfoTip text="Confirme aqui se este cliente já pagou no mês selecionado. O status fica salvo separadamente para cada mês." /></p>
         <div class="form-group">
           <label class="form-label">Status</label>
           <div class="st-opcoes">
@@ -233,6 +241,7 @@
 import { ref, computed } from 'vue'
 import { useFinStore } from '@/stores/fin'
 import { useSaving } from '@/composables/useSaving'
+import InfoTip from '@/components/ui/InfoTip.vue'
 
 const fin = useFinStore()
 const { run, toast } = useSaving()
@@ -277,14 +286,14 @@ const stOpcoes = [
 // Drawer nova recorrência
 const novaRecOpen  = ref(false)
 const novaRecTipo  = ref('entrada')
-const novaRecForm  = ref({ desc:'', val:'', cat:'Site', rec:'mensal', st:'recebido', cli:'', obs:'', data:'' })
+const novaRecForm  = ref({ desc:'', val:'', cat:'Site', rec:'mensal', st:'recebido', cli:'', obs:'', data:'', vencimento_dia:'' })
 
 function openNovaRec(tipo) {
   novaRecTipo.value = tipo
   novaRecForm.value = {
     desc:'', val:'', cat:'Site', rec:'mensal',
     st: tipo==='entrada' ? 'recebido' : 'pago',
-    cli:'', obs:'',
+    cli:'', obs:'', vencimento_dia:'',
     data: now.toISOString().split('T')[0]
   }
   novaRecOpen.value = true
@@ -305,10 +314,19 @@ async function saveNovaRec() {
     st:   novaRecForm.value.st,
     cli:  novaRecForm.value.cli,
     obs:  novaRecForm.value.obs,
+    vencimento_dia: novaRecForm.value.vencimento_dia || null,
   }
   fin.fin.unshift(tx)
   await run(() => fin.upsert(tx), 'Recorrência salva')
   novaRecOpen.value = false
+}
+
+function isRecVencida(t) {
+  if (!t.vencimento_dia) return false
+  const info = pgtoInfo(t.id)
+  if (info?.st === 'pago') return false
+  const vencDate = new Date(now.getFullYear(), parseInt(mesSel.value) - 1, t.vencimento_dia)
+  return vencDate < new Date(new Date().toDateString())
 }
 
 // Drawer pagamento
@@ -381,6 +399,11 @@ async function rmTx(id) {
 }
 .rec-status  { flex-shrink:0; }
 .rec-actions { flex-shrink:0; }
+
+/* Linha vencida */
+.rec-row--vencida { background: rgba(232,168,56,.04); }
+.rec-row--vencida .rec-tipo-dot { box-shadow: 0 0 0 2px rgba(232,168,56,.35); }
+.badge-vencida { background:rgba(232,168,56,.15); color:var(--status-warning); border:1px solid rgba(232,168,56,.3); display:inline-flex; align-items:center; gap:.3rem; }
 
 /* Frequência tag */
 .rec-freq-tag {

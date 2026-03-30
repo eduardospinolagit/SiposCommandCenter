@@ -324,6 +324,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useWaStore } from '@/stores/wa'
 import { sb } from '@/lib/supabase'
+import { slacLog } from '@/utils/log'
 
 const router = useRouter()
 const auth  = useAuthStore()
@@ -626,6 +627,7 @@ function importarDados() {
   const unicos=novos.filter(r=>!existTels.has(r.telefone))
   allRows.value=[...unicos,...allRows.value]
   salvarDados(); showMap.value=false
+  slacLog('PRO-001', `CSV importado: ${unicos.length} empresas adicionadas`, { total: novos.length, unicos: unicos.length })
 }
 
 function cancelarImport() { showMap.value=false }
@@ -654,6 +656,7 @@ async function marcarContato(id) {
         etapa:'contato', prioridade:'media',
         notas, created_at:row._contatado_em, updated_at:row._contatado_em
       },{onConflict:'id'})
+      slacLog('PRO-002', `Lead marcado como contatado: ${row.nome}`, { nome: row.nome, telefone: row.telefone })
       try { new BroadcastChannel('slac_crm').postMessage({type:'lead_novo'}) } catch {}
     } catch {}
   }

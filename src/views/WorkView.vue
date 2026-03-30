@@ -3,13 +3,13 @@
 
     <div class="page-header">
       <div>
-        <h1 class="page-title">Work</h1>
+        <h1 class="page-title">Tarefas</h1>
         <p class="page-subtitle">Serviços em execução por cliente</p>
       </div>
       <div class="page-actions">
         <button class="btn btn-primary" @click="openNew()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Novo trabalho
+          Nova tarefa
         </button>
       </div>
     </div>
@@ -24,10 +24,10 @@
       <div class="kpi-card">
         <span class="kpi-label">Clientes ativos</span>
         <span class="kpi-value kpi-value--accent">{{ clientesAtivos }}</span>
-        <span class="kpi-sub">com trabalho</span>
+        <span class="kpi-sub">com tarefas</span>
       </div>
       <div class="kpi-card">
-        <span class="kpi-label">Tarefas pendentes</span>
+        <span class="kpi-label">Tarefas pendentes<InfoTip text="Soma de todas as subtarefas marcadas como não concluídas dentro dos serviços em execução." /></span>
         <span class="kpi-value kpi-value--warning">{{ tarefasPendentesCount }}</span>
         <span class="kpi-sub">a concluir</span>
       </div>
@@ -38,16 +38,25 @@
       </div>
     </div>
 
-    <!-- TABS -->
-    <div class="tabs">
-      <button class="tab" :class="{ active: filtro === 'ativo' }" @click="filtro = 'ativo'">
-        Em execução
-        <span v-if="work.ativos.length" class="tab-badge" style="background:var(--status-info)">{{ work.ativos.length }}</span>
-      </button>
-      <button class="tab" :class="{ active: filtro === 'concluido' }" @click="filtro = 'concluido'">
-        Concluídos
-        <span v-if="work.concluidos.length" class="tab-badge">{{ work.concluidos.length }}</span>
-      </button>
+    <!-- TABS + BUSCA -->
+    <div class="work-toolbar">
+      <div class="tabs">
+        <button class="tab" :class="{ active: filtro === 'ativo' }" @click="filtro = 'ativo'">
+          Em execução
+          <span v-if="work.ativos.length" class="tab-badge" style="background:var(--status-info)">{{ work.ativos.length }}</span>
+        </button>
+        <button class="tab" :class="{ active: filtro === 'concluido' }" @click="filtro = 'concluido'">
+          Concluídos
+          <span v-if="work.concluidos.length" class="tab-badge">{{ work.concluidos.length }}</span>
+        </button>
+      </div>
+      <div class="work-search">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input v-model="searchQuery" class="work-search-input" placeholder="Buscar cliente ou serviço..." />
+        <button v-if="searchQuery" class="work-search-clear" @click="searchQuery = ''">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
     </div>
 
     <!-- CARDS agrupados por cliente -->
@@ -73,10 +82,21 @@
         <div class="wc-servicos">
           <div v-for="item in grupo.items" :key="item.id"
             class="wcs-bloco"
-            :class="{ 'wcs-bloco--done': item.status === 'concluido' }">
+            :class="{ 'wcs-bloco--done': item.status === 'concluido', 'wcs-bloco--dragging': dragSvcId === item.id, 'wcs-bloco--drag-over': dragSvcOver === item.id }"
+            draggable="true"
+            @dragstart="onDragStartSvc($event, item)"
+            @dragover="onDragOverSvc($event, item)"
+            @dragleave="onDragLeaveSvc"
+            @drop="onDropSvc($event, item)"
+            @dragend="onDragEndSvc">
 
             <!-- Header do serviço (clicável para colapsar) -->
             <div class="wcs-head" @click="toggleCollapse(item.id)">
+              <svg class="wcs-drag-handle" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" @mousedown.stop title="Arrastar">
+                <circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/>
+                <circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/>
+                <circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/>
+              </svg>
               <svg class="wcs-chevron" :class="{ 'wcs-chevron--open': !collapsedItems.has(item.id) }"
                 width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="6 9 12 15 18 9"/>
@@ -102,7 +122,20 @@
 
             <!-- Checklist -->
             <div class="wc-tasks">
-              <div v-for="t in item.tarefas" :key="t.id" class="wc-task" :class="{ 'wc-task--done': t.feito }">
+              <div v-for="t in item.tarefas" :key="t.id"
+                class="wc-task"
+                :class="{ 'wc-task--done': t.feito, 'wc-task--drag-over': dragTaskOver?.itemId === item.id && dragTaskOver?.taskId === t.id }"
+                draggable="true"
+                @dragstart="onDragStartTask($event, item, t)"
+                @dragover="onDragOverTask($event, item, t)"
+                @dragleave="onDragLeaveTask"
+                @drop="onDropTask($event, item, t)"
+                @dragend="onDragEndTask">
+                <svg class="wc-task-grip" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <circle cx="9" cy="6" r="1" fill="currentColor"/><circle cx="15" cy="6" r="1" fill="currentColor"/>
+                  <circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/>
+                  <circle cx="9" cy="18" r="1" fill="currentColor"/><circle cx="15" cy="18" r="1" fill="currentColor"/>
+                </svg>
                 <button class="wc-cb" :class="{ 'wc-cb--checked': t.feito }" @click="toggleTarefa(item, t.id)">
                   <svg v-if="t.feito" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 </button>
@@ -115,7 +148,15 @@
                   @blur="saveEditTask(item, t.id)"
                   @keydown.enter.prevent="saveEditTask(item, t.id)"
                   @keydown.esc="editingTask = null" />
-                <button class="wc-task-del" @click.stop="removerTarefa(item, t.id)" title="Remover">
+                <template v-if="confirmingTask?.itemId === item.id && confirmingTask?.taskId === t.id">
+                  <button class="wc-task-confirm wc-task-confirm--yes" @click.stop="confirmarRemoverTarefa(item, t.id)" title="Confirmar">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </button>
+                  <button class="wc-task-confirm wc-task-confirm--no" @click.stop="confirmingTask = null" title="Cancelar">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </template>
+                <button v-else class="wc-task-del" @click.stop="confirmingTask = { itemId: item.id, taskId: t.id }" title="Remover">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
               </div>
@@ -156,7 +197,16 @@
                 Concluir
               </button>
               <button v-else class="btn btn-secondary btn-sm wcs-btn-full" @click="reativarServico(item)">Reativar</button>
-              <button class="btn btn-ghost btn-sm btn-icon" @click="removerItem(item)" title="Excluir">
+              <template v-if="confirmingSvc === item.id">
+                <span class="wcs-confirm-text">Excluir?</span>
+                <button class="btn btn-danger btn-sm btn-icon" @click="confirmarRemoverItem(item)" title="Confirmar">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </button>
+                <button class="btn btn-ghost btn-sm btn-icon" @click="confirmingSvc = null" title="Cancelar">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </template>
+              <button v-else class="btn btn-ghost btn-sm btn-icon wcs-del-btn" @click="confirmingSvc = item.id" title="Excluir">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
               </button>
             </div>
@@ -171,8 +221,8 @@
     <!-- Empty -->
     <div v-else class="work-empty">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-      <p>{{ filtro === 'ativo' ? 'Nenhum serviço em execução' : 'Nenhum serviço concluído' }}</p>
-      <span v-if="filtro === 'ativo'">Clique em "Novo trabalho" para começar</span>
+      <p>{{ filtro === 'ativo' ? 'Nenhuma tarefa em execução' : 'Nenhuma tarefa concluída' }}</p>
+      <span v-if="filtro === 'ativo'">Clique em "Nova tarefa" para começar</span>
     </div>
 
   </div>
@@ -183,7 +233,7 @@
       <div class="work-modal">
 
         <div class="wm-header">
-          <h3 class="wm-title">Novo trabalho</h3>
+          <h3 class="wm-title">Nova tarefa</h3>
           <button class="btn btn-ghost btn-icon btn-sm" @click="fecharModal">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -295,28 +345,40 @@ import { ref, computed, nextTick, inject } from 'vue'
 import { useWorkStore } from '@/stores/work'
 import { useLeadsStore } from '@/stores/leads'
 import { useSaving } from '@/composables/useSaving'
+import InfoTip from '@/components/ui/InfoTip.vue'
 
 const work  = useWorkStore()
 const leads = useLeadsStore()
 const { run } = useSaving()
 
 // ── Filtro e grupos ──
-const filtro = ref('ativo')
+const filtro      = ref('ativo')
+const searchQuery = ref('')
+
 const listaFiltrada = computed(() => work.items.filter(i => i.status === filtro.value))
 
 const gruposCliente = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
   const seen = new Set()
   const groups = []
   for (const item of listaFiltrada.value) {
     if (!seen.has(item.lead_id)) {
       seen.add(item.lead_id)
       const lead = leads.leads.find(l => l.id === item.lead_id)
-      groups.push({
-        leadId: item.lead_id,
-        nome: lead?.nome || '—',
-        negocio: lead?.negocio || lead?.categoria || '',
-        items: listaFiltrada.value.filter(i => i.lead_id === item.lead_id)
-      })
+      const nome    = lead?.nome || '—'
+      const negocio = lead?.negocio || lead?.categoria || ''
+      const clientItems = listaFiltrada.value.filter(i => i.lead_id === item.lead_id)
+
+      if (q) {
+        const clienteMatch = nome.toLowerCase().includes(q) || negocio.toLowerCase().includes(q)
+        const itemsFiltrados = clienteMatch
+          ? clientItems
+          : clientItems.filter(i => i.servico.toLowerCase().includes(q))
+        if (!itemsFiltrados.length) continue
+        groups.push({ leadId: item.lead_id, nome, negocio, items: itemsFiltrados })
+      } else {
+        groups.push({ leadId: item.lead_id, nome, negocio, items: clientItems })
+      }
     }
   }
   return groups
@@ -395,10 +457,96 @@ async function salvarNotas(item, notas) {
   await work.updateItem({ ...item, notas })
 }
 
+// ── Drag & Drop — Serviços ──
+const dragSvcId   = ref(null)
+const dragSvcOver = ref(null)
+
+function onDragStartSvc(e, item) {
+  dragSvcId.value = item.id
+  e.dataTransfer.effectAllowed = 'move'
+}
+function onDragOverSvc(e, item) {
+  e.preventDefault()
+  e.stopPropagation()
+  if (item.id !== dragSvcId.value) dragSvcOver.value = item.id
+}
+function onDragLeaveSvc() { dragSvcOver.value = null }
+async function onDropSvc(e, targetItem) {
+  e.preventDefault()
+  e.stopPropagation()
+  const srcId = dragSvcId.value
+  if (!srcId || srcId === targetItem.id) { onDragEndSvc(); return }
+
+  const leadId = targetItem.lead_id
+  const allItems = [...work.items]
+  const clientIndices = allItems.reduce((acc, it, idx) => { if (it.lead_id === leadId) acc.push(idx); return acc }, [])
+  const clientItems = clientIndices.map(i => allItems[i])
+  const fromIdx = clientItems.findIndex(i => i.id === srcId)
+  const toIdx   = clientItems.findIndex(i => i.id === targetItem.id)
+  if (fromIdx === -1 || toIdx === -1) { onDragEndSvc(); return }
+
+  const reordered = [...clientItems]
+  const [moved] = reordered.splice(fromIdx, 1)
+  reordered.splice(toIdx, 0, moved)
+  clientIndices.forEach((gi, i) => { allItems[gi] = reordered[i] })
+
+  await work.reorderItems(allItems)
+  onDragEndSvc()
+}
+function onDragEndSvc() { dragSvcId.value = null; dragSvcOver.value = null }
+
+// ── Drag & Drop — Tarefas ──
+const dragTaskState = ref(null)
+const dragTaskOver  = ref(null)
+
+function onDragStartTask(e, item, task) {
+  e.stopPropagation()
+  dragTaskState.value = { itemId: item.id, taskId: task.id }
+  e.dataTransfer.effectAllowed = 'move'
+}
+function onDragOverTask(e, item, task) {
+  e.preventDefault()
+  e.stopPropagation()
+  if (dragTaskState.value?.itemId !== item.id) return
+  if (task.id !== dragTaskState.value.taskId) dragTaskOver.value = { itemId: item.id, taskId: task.id }
+}
+function onDragLeaveTask() { dragTaskOver.value = null }
+async function onDropTask(e, item, targetTask) {
+  e.preventDefault()
+  e.stopPropagation()
+  const state = dragTaskState.value
+  if (!state || state.itemId !== item.id || state.taskId === targetTask.id) { onDragEndTask(); return }
+
+  const tasks = [...item.tarefas]
+  const fromIdx = tasks.findIndex(t => t.id === state.taskId)
+  const toIdx   = tasks.findIndex(t => t.id === targetTask.id)
+  if (fromIdx === -1 || toIdx === -1) { onDragEndTask(); return }
+
+  const [moved] = tasks.splice(fromIdx, 1)
+  tasks.splice(toIdx, 0, moved)
+
+  await work.updateItem({ ...item, tarefas: tasks })
+  onDragEndTask()
+}
+function onDragEndTask() { dragTaskState.value = null; dragTaskOver.value = null }
+
 // ── Status ──
 async function concluirServico(item) { await run(() => work.updateItem({ ...item, status: 'concluido' }), 'Serviço concluído') }
 async function reativarServico(item) { await run(() => work.updateItem({ ...item, status: 'ativo' }), 'Serviço reativado') }
 async function removerItem(item)     { await run(() => work.removeItem(item.id), 'Removido') }
+
+// ── Confirmação de exclusão ──
+const confirmingSvc  = ref(null)
+const confirmingTask = ref(null)
+
+async function confirmarRemoverItem(item) {
+  confirmingSvc.value = null
+  await run(() => work.removeItem(item.id), 'Removido')
+}
+async function confirmarRemoverTarefa(item, taskId) {
+  confirmingTask.value = null
+  await work.updateItem({ ...item, tarefas: item.tarefas.filter(t => t.id !== taskId) })
+}
 
 // ── Modal ──
 const modalOpen          = ref(false)
@@ -469,6 +617,30 @@ async function criarItem() {
 </script>
 
 <style scoped>
+/* ── TOOLBAR ── */
+.work-toolbar { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; justify-content: space-between; }
+
+.work-search {
+  display: flex; align-items: center; gap: .5rem;
+  background: var(--bg-elevated); border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg); padding: .4rem .75rem;
+  width: calc(25% - 0.5625rem);
+  transition: border-color 120ms;
+}
+.work-search:focus-within { border-color: rgba(91,141,238,.5); }
+.work-search svg { color: var(--text-tertiary); flex-shrink: 0; }
+.work-search-input {
+  flex: 1; background: transparent; border: none; outline: none;
+  font-family: var(--font-body); font-size: .82rem; color: var(--text-primary);
+}
+.work-search-input::placeholder { color: var(--text-tertiary); }
+.work-search-clear {
+  background: transparent; border: none; cursor: pointer;
+  color: var(--text-tertiary); padding: 0; display: flex; align-items: center;
+  transition: color 100ms;
+}
+.work-search-clear:hover { color: var(--text-primary); }
+
 /* ── TABS ── */
 .tabs { display:flex; gap:.25rem; background:var(--bg-elevated); border:1px solid var(--border-default); border-radius:var(--radius-lg); padding:.25rem; align-self:flex-start; }
 .tab  { display:flex; align-items:center; gap:.4rem; padding:.4rem .875rem; border-radius:var(--radius-md); background:transparent; border:none; font-family:var(--font-body); font-size:.82rem; font-weight:500; color:var(--text-tertiary); cursor:pointer; transition:background 100ms ease,color 100ms ease; position:relative; white-space:nowrap; }
@@ -519,12 +691,21 @@ async function criarItem() {
   border-radius: var(--radius-md);
   padding: .75rem .875rem;
   display: flex; flex-direction: column; gap: .625rem;
-  transition: border-color 150ms;
+  transition: border-color 150ms, opacity 150ms, transform 150ms;
+  cursor: grab;
 }
 .wcs-bloco:hover { border-color: var(--border-default); }
 .wcs-bloco--done { opacity: .78; }
+.wcs-bloco--dragging { opacity: .4; cursor: grabbing; }
+.wcs-bloco--drag-over { border-color: var(--status-info); box-shadow: 0 0 0 2px rgba(91,141,238,.2); }
 
 /* Header do serviço — clicável */
+.wcs-drag-handle {
+  color: var(--text-tertiary); flex-shrink: 0; opacity: 0;
+  cursor: grab; transition: opacity 100ms;
+}
+.wcs-bloco:hover .wcs-drag-handle { opacity: 1; }
+
 .wcs-head {
   display: flex; align-items: center; gap: .5rem;
   cursor: pointer; user-select: none;
@@ -555,9 +736,16 @@ async function criarItem() {
 
 /* ── CHECKLIST ── */
 .wc-tasks { display: flex; flex-direction: column; gap: .15rem; }
-.wc-task  { display: flex; align-items: center; gap: .5rem; padding: .3rem .35rem; border-radius: var(--radius-md); transition: background 80ms; }
+.wc-task  { display: flex; align-items: center; gap: .5rem; padding: .3rem .35rem; border-radius: var(--radius-md); transition: background 80ms; cursor: grab; }
 .wc-task:hover { background: var(--bg-elevated); }
 .wc-task:hover .wc-task-del { opacity: 1; }
+.wc-task:hover .wc-task-grip { opacity: 1; }
+.wc-task--drag-over { background: rgba(91,141,238,.1); outline: 1px solid rgba(91,141,238,.35); outline-offset: -1px; }
+
+.wc-task-grip {
+  color: var(--text-tertiary); flex-shrink: 0; opacity: 0;
+  cursor: grab; transition: opacity 100ms;
+}
 
 .wc-cb {
   width: 15px; height: 15px; flex-shrink: 0;
@@ -580,7 +768,13 @@ async function criarItem() {
 }
 
 .wc-task-del { opacity: 0; background: transparent; border: none; cursor: pointer; color: var(--text-tertiary); padding: .1rem; display: flex; align-items: center; border-radius: 4px; transition: opacity 100ms, color 100ms; flex-shrink: 0; }
-.wc-task-del:hover { color: var(--status-danger); }
+.wc-task-del:hover { color: var(--status-danger); background: rgba(224,85,85,.12); }
+
+.wc-task-confirm { background: transparent; border: none; cursor: pointer; padding: .15rem; display: flex; align-items: center; border-radius: 4px; flex-shrink: 0; transition: background 100ms; }
+.wc-task-confirm--yes { color: var(--status-danger); }
+.wc-task-confirm--yes:hover { background: rgba(224,85,85,.12); }
+.wc-task-confirm--no  { color: var(--text-tertiary); }
+.wc-task-confirm--no:hover  { color: var(--text-primary); background: var(--bg-overlay); }
 
 .wc-task-add-row { display: flex; align-items: center; gap: .3rem; padding: .15rem .35rem; }
 .wc-task-add-input {
@@ -614,6 +808,8 @@ async function criarItem() {
 /* ── FOOTER SERVIÇO ── */
 .wcs-foot { display: flex; align-items: center; gap: .5rem; padding-top: .125rem; }
 .wcs-btn-full { flex: 1; justify-content: center; }
+.wcs-del-btn:hover { color: var(--status-danger) !important; background: rgba(224,85,85,.12) !important; }
+.wcs-confirm-text { font-size: .75rem; color: var(--text-secondary); white-space: nowrap; }
 
 /* ── EMPTY ── */
 .work-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .625rem; padding: 4rem 2rem; color: var(--text-tertiary); text-align: center; }

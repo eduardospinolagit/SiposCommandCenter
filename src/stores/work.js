@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { sb } from '@/lib/supabase'
 import { uid } from '@/utils/uid'
+import { slacLog } from '@/utils/log'
 
 export const useWorkStore = defineStore('work', () => {
   const items = ref([])
@@ -37,16 +38,30 @@ export const useWorkStore = defineStore('work', () => {
       created_at: new Date().toISOString()
     })
     await _save()
+    slacLog('WRK-001', `Serviço criado: ${servico}`, { lead_id: leadId, servico })
   }
 
   async function updateItem(updated) {
-    const idx = items.value.findIndex(i => i.id === updated.id)
+    const prev = items.value.find(i => i.id === updated.id)
+    const idx  = items.value.findIndex(i => i.id === updated.id)
     if (idx !== -1) items.value[idx] = { ...updated }
     await _save()
+    if (prev?.status !== 'concluido' && updated.status === 'concluido') {
+      slacLog('WRK-003', `Serviço concluído: ${updated.servico}`, { id: updated.id, lead_id: updated.lead_id, servico: updated.servico })
+    } else {
+      slacLog('WRK-002', `Serviço atualizado: ${updated.servico}`, { id: updated.id, lead_id: updated.lead_id })
+    }
   }
 
   async function removeItem(id) {
+    const item = items.value.find(i => i.id === id)
     items.value = items.value.filter(i => i.id !== id)
+    await _save()
+    slacLog('WRK-004', `Serviço removido: ${item?.servico || id}`, { id, servico: item?.servico, lead_id: item?.lead_id })
+  }
+
+  async function reorderItems(newOrder) {
+    items.value = [...newOrder]
     await _save()
   }
 
@@ -58,5 +73,5 @@ export const useWorkStore = defineStore('work', () => {
   const ativos    = computed(() => items.value.filter(i => i.status === 'ativo'))
   const concluidos = computed(() => items.value.filter(i => i.status === 'concluido'))
 
-  return { items, ativos, concluidos, leadsComWork, load, addItem, updateItem, removeItem }
+  return { items, ativos, concluidos, leadsComWork, load, addItem, updateItem, removeItem, reorderItems }
 })

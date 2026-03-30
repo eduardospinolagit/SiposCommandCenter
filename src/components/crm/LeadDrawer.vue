@@ -37,21 +37,25 @@
           <p class="drawer-section-title">Informações</p>
           <div class="form-group"><label class="form-label">Nome *</label><input v-model="form.nome" class="form-input" placeholder="Nome do responsável" /></div>
           <div class="form-group"><label class="form-label">Negócio</label><input v-model="form.negocio" class="form-input" placeholder="Ex: Salão da Maria" /></div>
-          <div class="form-group"><label class="form-label">Telefone *</label><input v-model="form.telefone" class="form-input" placeholder="(47) 99999-9999" /></div>
-          <div class="form-group">
-            <label class="form-label">Categoria</label>
-            <select v-model="form.categoria" class="form-select">
-              <option value="">Selecionar...</option>
-              <option>Academia</option><option>Salão de Beleza</option><option>Clínica</option>
-              <option>Restaurante</option><option>Pet Shop</option><option>Oficina Mecânica</option>
-              <option>Confecção</option><option>Advocacia</option><option>Personal Trainer</option><option>Outro</option>
-            </select>
+          <div class="dados-grid">
+            <div class="form-group"><label class="form-label">Telefone *</label><input v-model="form.telefone" class="form-input" placeholder="(47) 99999-9999" /></div>
+            <div class="form-group"><label class="form-label">Instagram</label><input v-model="form.instagram" class="form-input" placeholder="@perfil" /></div>
           </div>
-          <div class="form-group"><label class="form-label">Cidade</label><input v-model="form.cidade" class="form-input" placeholder="Ex: Brusque/SC" /></div>
-          <div class="form-group"><label class="form-label">Instagram</label><input v-model="form.instagram" class="form-input" placeholder="@perfil" /></div>
+          <div class="dados-grid">
+            <div class="form-group">
+              <label class="form-label">Categoria</label>
+              <select v-model="form.categoria" class="form-select">
+                <option value="">Selecionar...</option>
+                <option>Academia</option><option>Salão de Beleza</option><option>Clínica</option>
+                <option>Restaurante</option><option>Pet Shop</option><option>Oficina Mecânica</option>
+                <option>Confecção</option><option>Advocacia</option><option>Personal Trainer</option><option>Outro</option>
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label">Cidade</label><input v-model="form.cidade" class="form-input" placeholder="Ex: Brusque/SC" /></div>
+          </div>
         </div>
         <div class="drawer-section">
-          <p class="drawer-section-title">Funil</p>
+          <p class="drawer-section-title">Funil<InfoTip text="Posição do lead no processo de vendas — da abordagem inicial até o fechamento ou perda." /></p>
           <div class="form-group">
             <label class="form-label">Serviço de interesse</label>
             <select v-model="form.site_atual" class="form-select">
@@ -61,17 +65,19 @@
               <option>Automação WhatsApp</option><option>Manutenção</option><option>Pacote Completo</option><option>Outro</option>
             </select>
           </div>
-          <div class="form-group">
-            <label class="form-label">Etapa</label>
-            <select v-model="form.etapa" class="form-select">
-              <option v-for="e in ETAPAS" :key="e.id" :value="e.id">{{ e.label }}</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Prioridade</label>
-            <select v-model="form.prioridade" class="form-select">
-              <option value="alta">Alta</option><option value="media">Média</option><option value="baixa">Baixa</option>
-            </select>
+          <div class="dados-grid">
+            <div class="form-group">
+              <label class="form-label">Etapa</label>
+              <select v-model="form.etapa" class="form-select">
+                <option v-for="e in ETAPAS" :key="e.id" :value="e.id">{{ e.label }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Prioridade<InfoTip text="Urgência de atenção para este lead. Alta = contatar hoje, Média = esta semana, Baixa = quando possível." /></label>
+              <select v-model="form.prioridade" class="form-select">
+                <option value="alta">Alta</option><option value="media">Média</option><option value="baixa">Baixa</option>
+              </select>
+            </div>
           </div>
         </div>
         <div class="drawer-section">
@@ -79,7 +85,7 @@
           <div class="form-group"><textarea v-model="form.notas" class="form-textarea" placeholder="Observações, objeções, contexto..."></textarea></div>
         </div>
         <div v-if="histEtapas.length" class="drawer-section">
-          <p class="drawer-section-title">Histórico de etapas</p>
+          <p class="drawer-section-title">Histórico de etapas<InfoTip text="Registro automático de cada vez que este lead mudou de etapa no funil, com data e hora." /></p>
           <div v-for="h in histEtapas" :key="h.ts" class="hist-row">
             <span style="color:var(--accent)">{{ h.de }}</span>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -92,7 +98,7 @@
       <!-- ── ABA FOLLOW-UP ── -->
       <div v-show="drawerTab === 'followup'">
         <div class="drawer-section">
-          <p class="drawer-section-title">Follow-up manual</p>
+          <p class="drawer-section-title">Follow-up manual<InfoTip text="Agendamento de um contato futuro com este lead. Aparecerá no painel CRM na data marcada como alerta vermelho." /></p>
           <div class="form-group">
             <label class="form-label">Data e hora</label>
             <input type="datetime-local" class="form-input" v-model="drawerFollowupDate" />
@@ -101,14 +107,14 @@
             <label class="form-label">Contexto</label>
             <input type="text" class="form-input" v-model="drawerFollowupObs" placeholder="Ex.: ligar às 14h sobre proposta" />
           </div>
-          <button class="btn btn-primary btn-sm" style="width:fit-content" @click="drawerSaveFollowup">Salvar follow-up</button>
           <div v-if="drawerLead?.proximo_followup" class="fu-hint" style="margin-top:4px">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             Agendado: {{ fmtDataHora(drawerLead.proximo_followup) }}
           </div>
+          <button v-if="drawerLead?.proximo_followup" class="btn btn-danger btn-sm" style="margin-top:10px;width:fit-content" @click="drawerCancelarFollowup">Cancelar follow-up</button>
         </div>
         <div class="drawer-section">
-          <p class="drawer-section-title">Follow-up automático</p>
+          <p class="drawer-section-title">Follow-up automático<InfoTip text="Envia uma mensagem de retorno automaticamente via WhatsApp se o lead não responder dentro do prazo definido." /></p>
           <div class="sz-sdr-toggle-row">
             <div>
               <p class="sz-sdr-toggle-title">Ativar neste chat</p>
@@ -128,7 +134,6 @@
               </select>
               <span class="text-muted text-sm">após a última mensagem</span>
             </div>
-            <button class="btn btn-primary btn-sm" style="margin-top:8px;width:fit-content" @click="drawerSaveFuAutoHoras">Salvar</button>
           </div>
           <div v-if="drawerLead && wa.isFuAutoActive(drawerLead)" class="sz-sdr-active-info">
             <div class="sz-sdr-active-row"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Follow-up automático habilitado</div>
@@ -178,13 +183,13 @@
             </div>
           </div>
           <div class="form-group" style="margin-top:.75rem">
-            <label class="form-label">Valor estimado (R$)</label>
+            <label class="form-label">Valor estimado (R$)<InfoTip text="Quanto este lead pode gerar de receita se fechar. Usado no cálculo de Pipeline no dashboard." /></label>
             <input type="number" class="form-input" :value="drawerLead?.valor_estimado ?? form.valor_estimado ?? ''" @blur="e => { form.valor_estimado = e.target.value ? Number(e.target.value) : ''; saveField('valor_estimado', e.target.value ? Number(e.target.value) : null) }" placeholder="797" />
           </div>
         </div>
         <div class="drawer-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
-            <p class="drawer-section-title" style="margin:0">Parcelas</p>
+            <p class="drawer-section-title" style="margin:0">Parcelas<InfoTip text="Divisão do pagamento em múltiplas datas. Marque cada parcela como paga conforme receber." /></p>
             <button class="btn btn-ghost btn-sm" @click="drawerAdicionarParcela">+ Adicionar</button>
           </div>
           <div v-if="!drawerParcelasLocal.length" style="font-size:13px;color:var(--text-tertiary);padding:.25rem 0">Nenhuma parcela cadastrada.</div>
@@ -196,7 +201,7 @@
           </div>
         </div>
         <div class="drawer-section">
-          <p class="drawer-section-title">Transações vinculadas</p>
+          <p class="drawer-section-title">Transações vinculadas<InfoTip text="Entradas e saídas no Financeiro que têm o nome deste cliente no campo Cliente — vinculadas automaticamente por correspondência de nome." /></p>
           <p v-if="!drawerTransacoesLead.length" style="font-size:13px;color:var(--text-tertiary)">Nenhuma transação vinculada a este contato.</p>
           <div v-for="t in drawerTransacoesLead" :key="t.id" class="crmtx-row">
             <div class="crmtx-top">
@@ -216,7 +221,7 @@
       <!-- ── ABA IA ── -->
       <div v-show="drawerTab === 'ia'">
         <div class="drawer-section">
-          <p class="drawer-section-title">SDR por IA</p>
+          <p class="drawer-section-title">SDR por IA<InfoTip text="Agente de IA que responde este lead automaticamente no WhatsApp. Quando ativado aqui, o SDR assume a conversa dentro do horário configurado." /></p>
           <div v-if="!wa.sdrConfig.enabled" class="sz-sdr-section-warn">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             SDR desativado globalmente. Ative em <router-link to="/sdr" class="sz-sdr-link">SDR IA</router-link>.
@@ -241,7 +246,7 @@
           </div>
         </div>
         <div class="drawer-section">
-          <p class="drawer-section-title">Análise de conversa</p>
+          <p class="drawer-section-title">Análise de conversa<InfoTip text="A IA lê as últimas mensagens trocadas com este lead e gera um score de 0–100, pontos positivos e alertas sobre o potencial de fechamento." /></p>
           <div v-if="drawerAnalisando" style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:24px 0">
             <div class="sz-typing"><span></span><span></span><span></span></div>
             <p style="font-size:13px;color:var(--text-secondary)">Analisando conversa...</p>
@@ -286,7 +291,7 @@
       <!-- ── ABA HISTÓRICO / TIMELINE ── -->
       <div v-show="drawerTab === 'historico'">
         <div v-if="leads.drawerLeadId && !isNewLead" class="drawer-section">
-          <p class="drawer-section-title">Linha do tempo</p>
+          <p class="drawer-section-title">Linha do tempo<InfoTip text="Histórico completo deste lead: mensagens enviadas/recebidas em todos os canais e mudanças de etapa no funil, em ordem cronológica." /></p>
           <div class="conv-list">
             <div v-if="!drawerTimeline.length" class="conv-empty">Nenhum registro ainda</div>
             <template v-for="c in drawerTimeline" :key="c.id">
@@ -355,6 +360,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSaving } from '@/composables/useSaving'
 import { sb } from '@/lib/supabase'
 import FecharNegocioModal from './FecharNegocioModal.vue'
+import InfoTip from '@/components/ui/InfoTip.vue'
 
 const leads = useLeadsStore()
 const fin   = useFinStore()
@@ -552,7 +558,22 @@ async function salvar() {
     notas: form.value.notas, updated_at: new Date().toISOString()
   }
 
+  // Inclui follow-up manual para leads existentes
+  if (!isNewLead.value) {
+    payload.proximo_followup = drawerFollowupDate.value ? new Date(drawerFollowupDate.value).toISOString() : null
+    payload.followup_obs     = drawerFollowupObs.value || null
+  }
+
   await run(() => leads.upsert(payload), 'Salvo ✓')
+
+  // Salva configuração de horas do FuAuto
+  if (!isNewLead.value && drawerLead.value) {
+    await wa.setFuAutoHoras(drawerLead.value, drawerFuAutoHorasLocal.value)
+    if (wa.isFuAutoActive(drawerLead.value)) {
+      const fuAt = new Date(Date.now() + drawerFuAutoHorasLocal.value * 3600000).toISOString()
+      await leads.upsert({ id: drawerLead.value.id, proximo_followup: fuAt })
+    }
+  }
 
   if (vaiFicarFechado && !eraFechado) {
     fecharLead.value  = leads.leads.find(l => l.id === payload.id) || payload
@@ -572,6 +593,14 @@ async function deletar() {
 }
 
 // ── Follow-up ──
+async function drawerCancelarFollowup() {
+  if (!drawerLead.value) return
+  await leads.upsert({ id: drawerLead.value.id, proximo_followup: null, followup_obs: null })
+  drawerFollowupDate.value = ''
+  drawerFollowupObs.value  = ''
+  toast('Follow-up cancelado', 'ok')
+}
+
 async function drawerSaveFollowup() {
   if (!drawerLead.value) return
   await leads.upsert({
@@ -767,13 +796,20 @@ async function addConversa() {
   flex-direction: column;
   gap: .875rem;
 }
+.dados-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
+}
+.dados-grid .form-group { margin: 0; }
 .drawer-section {
   display: flex;
   flex-direction: column;
   gap: .5rem;
-  padding-bottom: .875rem;
+  padding-bottom: 1.25rem;
   border-bottom: 1px solid var(--border-subtle);
 }
+.drawer-section + .drawer-section { padding-top: 1.25rem; }
 .drawer-section:last-child { border-bottom: none; }
 .drawer-section-title {
   font-size: .62rem;

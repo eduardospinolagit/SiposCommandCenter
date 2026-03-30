@@ -1,6 +1,5 @@
 import { useFinStore } from '@/stores/fin'
 import { useLeadsStore } from '@/stores/leads'
-import { useMapaStore } from '@/stores/mapa'
 import { useWorkStore } from '@/stores/work'
 import { useAuthStore } from '@/stores/auth'
 import { useWaStore } from '@/stores/wa'
@@ -111,7 +110,6 @@ export async function useAppInit() {
   const auth = useAuthStore()
   const fin = useFinStore()
   const leads = useLeadsStore()
-  const mapa = useMapaStore()
   const work = useWorkStore()
   const wa = useWaStore()
 
@@ -123,7 +121,6 @@ export async function useAppInit() {
   await Promise.all([
     fin.load(),
     leads.load(),
-    mapa.load(),
     work.load(),
     wa.checkStatus().catch(() => {}),
     wa.loadChats().catch(() => {}),
@@ -171,7 +168,6 @@ export async function useAppInit() {
       filter: 'user_id=eq.' + auth.user.id
     }, () => {
       fin.loadMeta()
-      mapa.load()
       wa.loadSdrConfig({ includeChats: false }).catch(() => {})
       wa.loadConfig().catch(() => {})
     })

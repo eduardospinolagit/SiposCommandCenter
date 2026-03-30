@@ -28,14 +28,12 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useFinStore } from '@/stores/fin'
 import { useLeadsStore } from '@/stores/leads'
-import { useMapaStore } from '@/stores/mapa'
 import { useTheme } from '@/composables/useTheme'
 import { sb } from '@/lib/supabase'
 
 const auth   = useAuthStore()
 const fin    = useFinStore()
 const leads  = useLeadsStore()
-const mapa   = useMapaStore()
 const router = useRouter()
 const { initTheme } = useTheme()
 
@@ -79,7 +77,7 @@ provide('saving', { showSaving, hideSaving })
 // ── Sessão ──
 async function reloadData() {
   if (!auth.user) return
-  try { await Promise.all([fin.load(), leads.load(), mapa.load()]) }
+  try { await Promise.all([fin.load(), leads.load()]) }
   catch (e) { console.warn('[SLAC] reload falhou:', e) }
 }
 

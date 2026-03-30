@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WhatsApp × SLAC — Design</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:      #080808;
+      --surface: #0f0f0f;
+      --elevated:#161616;
+      --overlay: #1c1c1c;
+      --border:  rgba(255,255,255,.07);
+      --accent:  #22c55e;
+      --accent-s:rgba(34,197,94,.12);
+      --warn:    #e8a838;
+      --info:    #5b8dee;
+      --danger:  #e05555;
+      --purple:  #a78bfa;
+      --t1:      #f0f0f0;
+      --t2:      #888;
+      --t3:      #444;
+      --font:    'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--t1);
+      font-family: var(--font);
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    /* ── Progress ── */
+    .progress-bar {
+      position: fixed; top: 0; left: 0;
+      height: 2px; background: var(--accent);
+      transition: width .3s ease; z-index: 1000;
+    }
+
+    /* ── Deck ── */
+    .deck {
+      position: relative;
+      width: 100vw; height: 100vh;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      padding: 56px 72px;
+      opacity: 0; visibility: hidden;
+      transition: opacity .35s ease;
+      background: var(--bg);
+    }
+    .slide.active { opacity: 1; visibility: visible; }
+
+    /* ── Nav ── */
+    .nav {
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%);
+      display: flex; align-items: center; gap: 16px;
+      z-index: 1000;
+      background: rgba(255,255,255,.05);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 8px 16px;
+    }
+    .nav-btn {
+      background: none; border: none; color: var(--t2);
+      width: 32px; height: 32px; border-radius: 50%;
+      cursor: pointer; font-size: 16px; display: flex;
+      align-items: center; justify-content: center;
+      transition: all .2s;
+    }
+    .nav-btn:hover { color: var(--t1); background: rgba(255,255,255,.08); }
+    .slide-counter { color: var(--t2); font-size: 13px; font-weight: 500; min-width: 48px; text-align: center; }
+
+    /* ── Slide label ── */
+    .slide-label {
+      font-size: 11px; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    /* ── Slide 1 — Title ── */
+    .title-wrap { text-align: center; }
+    .title-logo {
+      width: 52px; height: 52px; background: var(--accent-s);
+      border-radius: 14px; display: flex; align-items: center;
+      justify-content: center; margin: 0 auto 24px;
+      font-size: 26px;
+    }
+    .title-main {
+      font-size: clamp(36px, 5vw, 64px);
+      font-weight: 800; line-height: 1.1;
+      background: linear-gradient(135deg, #f0f0f0 0%, var(--accent) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 16px;
+    }
+    .title-sub { font-size: 18px; color: var(--t2); font-weight: 400; max-width: 560px; line-height: 1.6; }
+    .title-pills { display: flex; gap: 10px; justify-content: center; margin-top: 28px; flex-wrap: wrap; }
+    .pill {
+      padding: 6px 14px; border-radius: 99px; font-size: 13px; font-weight: 600;
+      border: 1px solid var(--border);
+    }
+    .pill-green  { background: var(--accent-s); color: var(--accent); border-color: rgba(34,197,94,.25); }
+    .pill-blue   { background: rgba(91,141,238,.12); color: var(--info); border-color: rgba(91,141,238,.25); }
+    .pill-purple { background: rgba(167,139,250,.12); color: var(--purple); border-color: rgba(167,139,250,.25); }
+    .pill-orange { background: rgba(232,168,56,.12); color: var(--warn); border-color: rgba(232,168,56,.25); }
+
+    /* ── Slide 2 — Arquitetura ── */
+    .arch-wrap { width: 100%; max-width: 900px; }
+    .arch-title { font-size: 28px; font-weight: 700; margin-bottom: 36px; text-align: center; }
+    .arch-flow {
+      display: flex; align-items: stretch; gap: 0;
+      justify-content: center;
+    }
+    .arch-node {
+      background: var(--elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 18px;
+      text-align: center;
+      min-width: 140px;
+      flex: 1;
+      max-width: 160px;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .arch-node.accent { border-color: rgba(34,197,94,.3); background: rgba(34,197,94,.06); }
+    .arch-node.blue   { border-color: rgba(91,141,238,.3); background: rgba(91,141,238,.06); }
+    .arch-node.purple { border-color: rgba(167,139,250,.3); background: rgba(167,139,250,.06); }
+    .arch-node.orange { border-color: rgba(232,168,56,.3); background: rgba(232,168,56,.06); }
+    .arch-icon { font-size: 28px; }
+    .arch-name { font-size: 13px; font-weight: 700; color: var(--t1); }
+    .arch-desc { font-size: 11px; color: var(--t2); line-height: 1.5; }
+    .arch-arrow {
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 8px; color: var(--t3); font-size: 20px; flex-shrink: 0;
+    }
+    .arch-arrow.double { flex-direction: column; gap: 4px; font-size: 13px; color: var(--t3); }
+    .arch-arrow.double span { font-size: 11px; }
+
+    /* ── Slide 3 — Fases ── */
+    .phases-wrap { width: 100%; max-width: 900px; }
+    .phases-title { font-size: 28px; font-weight: 700; margin-bottom: 32px; text-align: center; }
+    .phase-list { display: flex; flex-direction: column; gap: 16px; }
+    .phase-row {
+      display: flex; align-items: flex-start; gap: 20px;
+      background: var(--elevated); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px 24px;
+      position: relative; overflow: hidden;
+    }
+    .phase-row::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; border-radius: 0 99px 99px 0;
+    }
+    .phase-row.p1::before { background: var(--accent); }
+    .phase-row.p2::before { background: var(--info); }
+    .phase-row.p3::before { background: var(--purple); }
+    .phase-num {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 800; flex-shrink: 0;
+    }
+    .p1 .phase-num { background: var(--accent-s); color: var(--accent); }
+    .p2 .phase-num { background: rgba(91,141,238,.12); color: var(--info); }
+    .p3 .phase-num { background: rgba(167,139,250,.12); color: var(--purple); }
+    .phase-content { flex: 1; }
+    .phase-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .phase-desc { font-size: 13px; color: var(--t2); line-height: 1.6; }
+    .phase-tags { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .phase-tag {
+      font-size: 11px; font-weight: 600; padding: 3px 10px;
+      border-radius: 99px; border: 1px solid var(--border);
+      background: var(--overlay); color: var(--t2);
+    }
+    .phase-status {
+      font-size: 11px; font-weight: 700; padding: 4px 12px;
+      border-radius: 99px; flex-shrink: 0; align-self: center;
+    }
+    .status-now  { background: var(--accent-s); color: var(--accent); }
+    .status-next { background: rgba(91,141,238,.12); color: var(--info); }
+    .status-fut  { background: rgba(167,139,250,.12); color: var(--purple); }
+
+    /* ── Slide 4 — UI Drawer ── */
+    .ui-wrap { width: 100%; max-width: 920px; display: flex; gap: 32px; align-items: flex-start; }
+    .ui-left { flex: 1; }
+    .ui-left h2 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+    .ui-left p  { font-size: 14px; color: var(--t2); line-height: 1.7; margin-bottom: 20px; }
+    .ui-points { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .ui-points li {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 14px; color: var(--t2); line-height: 1.5;
+    }
+    .ui-points li .dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+      margin-top: 6px; flex-shrink: 0;
+    }
+    .ui-points li strong { color: var(--t1); }
+
+    .mock-drawer {
+      width: 320px; flex-shrink: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      font-size: 13px;
+    }
+    .mock-header {
+      background: var(--elevated); padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .mock-header-name { font-weight: 700; font-size: 15px; color: var(--t1); margin-bottom: 2px; }
+    .mock-header-sub  { font-size: 12px; color: var(--t2); }
+    .mock-tabs {
+      display: flex; border-bottom: 1px solid var(--border);
+      background: var(--elevated);
+    }
+    .mock-tab {
+      flex: 1; padding: 10px 4px; text-align: center;
+      font-size: 12px; font-weight: 600; color: var(--t3);
+      cursor: pointer; border-bottom: 2px solid transparent;
+    }
+    .mock-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .mock-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; min-height: 200px; }
+    .mock-msg {
+      max-width: 80%; padding: 8px 12px; border-radius: 10px;
+      font-size: 12px; line-height: 1.5;
+    }
+    .mock-msg.out {
+      align-self: flex-end;
+      background: rgba(34,197,94,.15); color: var(--accent);
+      border-bottom-right-radius: 3px;
+    }
+    .mock-msg.in {
+      align-self: flex-start;
+      background: var(--overlay); color: var(--t1);
+      border-bottom-left-radius: 3px;
+    }
+    .mock-msg-time { font-size: 10px; color: var(--t3); margin-top: 3px; text-align: right; }
+    .mock-footer { padding: 12px 14px; border-top: 1px solid var(--border); background: var(--elevated); }
+    .mock-btns { display: flex; gap: 8px; margin-bottom: 8px; }
+    .mock-btn {
+      flex: 1; padding: 6px 8px; border-radius: 8px; font-size: 11px;
+      font-weight: 600; border: 1px solid var(--border); cursor: pointer;
+      background: var(--overlay); color: var(--t2); text-align: center;
+    }
+    .mock-btn.ai { background: var(--accent-s); color: var(--accent); border-color: rgba(34,197,94,.25); }
+    .mock-input {
+      width: 100%; background: var(--overlay); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 10px; color: var(--t2); font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .mock-send {
+      width: 100%; background: var(--accent); color: #000;
+      border: none; border-radius: 8px; padding: 8px;
+      font-size: 12px; font-weight: 700; cursor: pointer;
+    }
+
+    /* ── Slide 5 — Inbox ── */
+    .inbox-wrap { width: 100%; max-width: 920px; display: flex; gap: 32px; align-items: flex-start; }
+    .mock-inbox {
+      width: 340px; flex-shrink: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden;
+    }
+    .inbox-header {
+      background: var(--elevated); padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .inbox-header-title { font-weight: 700; font-size: 15px; }
+    .inbox-badge {
+      background: var(--accent); color: #000;
+      font-size: 11px; font-weight: 700;
+      padding: 2px 7px; border-radius: 99px;
+    }
+    .inbox-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background .15s;
+    }
+    .inbox-item:hover { background: var(--elevated); }
+    .inbox-item.unread { background: rgba(34,197,94,.04); }
+    .inbox-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--overlay); display: flex; align-items: center;
+      justify-content: center; font-size: 16px; flex-shrink: 0;
+    }
+    .inbox-info { flex: 1; min-width: 0; }
+    .inbox-name { font-size: 13px; font-weight: 600; color: var(--t1); }
+    .inbox-preview { font-size: 11px; color: var(--t2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .inbox-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .inbox-time { font-size: 11px; color: var(--t3); }
+    .inbox-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+    .inbox-right { flex: 1; }
+    .inbox-right h2 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+    .inbox-right p  { font-size: 14px; color: var(--t2); line-height: 1.7; margin-bottom: 20px; }
+
+    /* ── Slide 6 — Edge Functions ── */
+    .ef-wrap { width: 100%; max-width: 900px; }
+    .ef-title { font-size: 28px; font-weight: 700; margin-bottom: 32px; text-align: center; }
+    .ef-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .ef-card {
+      background: var(--elevated); border: 1px solid var(--border);
+      border-radius: 14px; padding: 22px 24px;
+      position: relative; overflow: hidden;
+    }
+    .ef-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; border-radius: 99px;
+    }
+    .ef-card.green::before { background: var(--accent); }
+    .ef-card.blue::before  { background: var(--info); }
+    .ef-card-name { font-size: 14px; font-weight: 700; font-family: monospace; margin-bottom: 6px; }
+    .ef-card.green .ef-card-name { color: var(--accent); }
+    .ef-card.blue  .ef-card-name { color: var(--info); }
+    .ef-card-desc { font-size: 13px; color: var(--t2); margin-bottom: 14px; line-height: 1.6; }
+    .ef-steps { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+    .ef-steps li {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 12px; color: var(--t2); line-height: 1.5;
+    }
+    .ef-step-n {
+      width: 18px; height: 18px; border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+    }
+    .green .ef-step-n { background: var(--accent-s); color: var(--accent); }
+    .blue  .ef-step-n { background: rgba(91,141,238,.12); color: var(--info); }
+
+    /* ── Slide 7 — Stack ── */
+    .stack-wrap { width: 100%; max-width: 820px; }
+    .stack-title { font-size: 28px; font-weight: 700; margin-bottom: 32px; text-align: center; }
+    .stack-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+    .stack-card {
+      background: var(--elevated); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px 18px; text-align: center;
+    }
+    .stack-icon { font-size: 28px; margin-bottom: 10px; }
+    .stack-name { font-size: 13px; font-weight: 700; color: var(--t1); margin-bottom: 4px; }
+    .stack-role { font-size: 12px; color: var(--t2); margin-bottom: 10px; line-height: 1.5; }
+    .stack-cost { font-size: 15px; font-weight: 800; }
+    .cost-free  { color: var(--accent); }
+    .cost-paid  { color: var(--warn); }
+    .stack-total {
+      background: var(--accent-s); border: 1px solid rgba(34,197,94,.25);
+      border-radius: 14px; padding: 18px 28px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .stack-total-label { font-size: 16px; font-weight: 600; color: var(--t1); }
+    .stack-total-val   { font-size: 24px; font-weight: 800; color: var(--accent); }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .slide.active .animate {
+      animation: fadeUp .5s ease-out forwards;
+      opacity: 0;
+    }
+    .slide.active .animate:nth-child(1) { animation-delay: .05s; }
+    .slide.active .animate:nth-child(2) { animation-delay: .12s; }
+    .slide.active .animate:nth-child(3) { animation-delay: .19s; }
+    .slide.active .animate:nth-child(4) { animation-delay: .26s; }
+    .slide.active .animate:nth-child(5) { animation-delay: .33s; }
+    .slide.active .animate:nth-child(6) { animation-delay: .40s; }
+  </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<div class="deck">
+
+  <!-- ══ SLIDE 1 — TÍTULO ══ -->
+  <div class="slide active">
+    <div class="title-wrap">
+      <div class="title-logo animate">💬</div>
+      <h1 class="title-main animate">WhatsApp × SLAC</h1>
+      <p class="title-sub animate">Integração completa do WhatsApp Business no CRM — envio, recebimento e automação com IA</p>
+      <div class="title-pills animate">
+        <span class="pill pill-green">Z-API</span>
+        <span class="pill pill-blue">Supabase Edge Functions</span>
+        <span class="pill pill-purple">Claude API</span>
+        <span class="pill pill-orange">Apify</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 2 — ARQUITETURA ══ -->
+  <div class="slide">
+    <div class="arch-wrap">
+      <p class="slide-label animate">Arquitetura</p>
+      <h2 class="arch-title animate">Como tudo se conecta</h2>
+      <div class="arch-flow animate">
+        <div class="arch-node accent">
+          <div class="arch-icon">🖥️</div>
+          <div class="arch-name">SLAC</div>
+          <div class="arch-desc">Vue 3 — dispara envios e exibe conversas</div>
+        </div>
+        <div class="arch-arrow">⇄</div>
+        <div class="arch-node blue">
+          <div class="arch-icon">📡</div>
+          <div class="arch-name">Z-API</div>
+          <div class="arch-desc">Envia e recebe mensagens WhatsApp</div>
+        </div>
+        <div class="arch-arrow double">
+          <div>↑↓</div>
+          <span>webhook</span>
+        </div>
+        <div class="arch-node orange">
+          <div class="arch-icon">⚡</div>
+          <div class="arch-name">Edge Functions</div>
+          <div class="arch-desc">wa-webhook + gerar-script</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node purple">
+          <div class="arch-icon">🗄️</div>
+          <div class="arch-name">Supabase</div>
+          <div class="arch-desc">Persiste conversas + Realtime para o SLAC</div>
+        </div>
+      </div>
+      <div style="margin-top: 28px; display: flex; gap: 16px; justify-content: center;" class="animate">
+        <div style="background:var(--elevated);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--t2);">
+          🤖 <strong style="color:var(--t1)">Claude API</strong> — adapta scripts ao nicho do lead
+        </div>
+        <div style="background:var(--elevated);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--t2);">
+          🕷️ <strong style="color:var(--t1)">Apify</strong> — scraping Instagram + Google Maps
+        </div>
+        <div style="background:var(--elevated);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--t2);">
+          🔄 <strong style="color:var(--t1)">n8n</strong> — automações avançadas (Fase 3)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 3 — FASES ══ -->
+  <div class="slide">
+    <div class="phases-wrap">
+      <p class="slide-label animate">Roadmap</p>
+      <h2 class="phases-title animate">3 fases de implementação</h2>
+      <div class="phase-list">
+        <div class="phase-row p1 animate">
+          <div class="phase-num">1</div>
+          <div class="phase-content">
+            <div class="phase-name">Envio inteligente</div>
+            <div class="phase-desc">Disparar mensagens do drawer do lead — texto livre, templates por etapa e script adaptado por IA com base no Instagram + Google do negócio</div>
+            <div class="phase-tags">
+              <span class="phase-tag">Z-API</span>
+              <span class="phase-tag">Claude API</span>
+              <span class="phase-tag">Apify</span>
+              <span class="phase-tag">Edge Function gerar-script</span>
+            </div>
+          </div>
+          <span class="phase-status status-now">Especificar agora</span>
+        </div>
+        <div class="phase-row p2 animate">
+          <div class="phase-num">2</div>
+          <div class="phase-content">
+            <div class="phase-name">Inbox de conversas</div>
+            <div class="phase-desc">View dedicada com todas as conversas ativas, badge de não lidas e histórico completo por lead em tempo real via Supabase Realtime</div>
+            <div class="phase-tags">
+              <span class="phase-tag">Edge Function wa-webhook</span>
+              <span class="phase-tag">Supabase Realtime</span>
+              <span class="phase-tag">Nova view WhatsAppInbox</span>
+            </div>
+          </div>
+          <span class="phase-status status-next">Fase seguinte</span>
+        </div>
+        <div class="phase-row p3 animate">
+          <div class="phase-num">3</div>
+          <div class="phase-content">
+            <div class="phase-name">Bot & automação</div>
+            <div class="phase-desc">Resposta automática, qualificação por IA e agendamento de follow-up sem intervenção manual — orquestrado pelo n8n</div>
+            <div class="phase-tags">
+              <span class="phase-tag">n8n</span>
+              <span class="phase-tag">Claude API</span>
+              <span class="phase-tag">Sequências automáticas</span>
+            </div>
+          </div>
+          <span class="phase-status status-fut">Futuro</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 4 — UI DRAWER ══ -->
+  <div class="slide">
+    <div class="ui-wrap">
+      <div class="ui-left">
+        <p class="slide-label animate">UI — Fase 1</p>
+        <h2 animate class="animate" style="font-size:26px;font-weight:700;margin-bottom:10px;">Aba WhatsApp no drawer do lead</h2>
+        <p class="animate" style="font-size:14px;color:var(--t2);line-height:1.7;margin-bottom:18px;">Sem abrir outra tela — tudo dentro do drawer que você já usa no CRM.</p>
+        <ul class="ui-points animate">
+          <li><span class="dot"></span><div><strong>Template por etapa</strong> — templates diferentes para contato, interesse, negociação e fechamento</div></li>
+          <li><span class="dot"></span><div><strong>✨ Gerar com IA</strong> — Claude analisa Instagram + Google do lead e reescreve seu script para aquele nicho específico</div></li>
+          <li><span class="dot"></span><div><strong>Histórico em tempo real</strong> — respostas do lead aparecem automaticamente na conversa</div></li>
+          <li><span class="dot"></span><div><strong>Status de entrega</strong> — enviado, entregue, lido</div></li>
+        </ul>
+      </div>
+      <div class="mock-drawer animate">
+        <div class="mock-header">
+          <div class="mock-header-name">João Silva</div>
+          <div class="mock-header-sub">Barbearia do João · Brusque/SC</div>
+        </div>
+        <div class="mock-tabs">
+          <div class="mock-tab">Dados</div>
+          <div class="mock-tab active">WhatsApp</div>
+          <div class="mock-tab">Histórico</div>
+        </div>
+        <div class="mock-body">
+          <div class="mock-msg out">
+            Oi João! Vi que a Barbearia do João ainda não tem site...
+            <div class="mock-msg-time">09:14 ✓✓</div>
+          </div>
+          <div class="mock-msg in">
+            Olá! É verdade, queria muito ter um
+            <div class="mock-msg-time">09:32</div>
+          </div>
+        </div>
+        <div class="mock-footer">
+          <div class="mock-btns">
+            <div class="mock-btn">📋 Template ▾</div>
+            <div class="mock-btn ai">✨ Gerar com IA</div>
+          </div>
+          <div class="mock-input">Digite sua mensagem...</div>
+          <button class="mock-send">Enviar no WhatsApp</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 5 — INBOX ══ -->
+  <div class="slide">
+    <div class="inbox-wrap">
+      <div class="mock-inbox animate">
+        <div class="inbox-header">
+          <span class="inbox-header-title">📱 WhatsApp Inbox</span>
+          <span class="inbox-badge">3</span>
+        </div>
+        <div class="inbox-item unread">
+          <div class="inbox-avatar">💈</div>
+          <div class="inbox-info">
+            <div class="inbox-name">João Silva</div>
+            <div class="inbox-preview">Olá! É verdade, queria muito ter um...</div>
+          </div>
+          <div class="inbox-meta">
+            <div class="inbox-time">09:32</div>
+            <div class="inbox-dot"></div>
+          </div>
+        </div>
+        <div class="inbox-item unread">
+          <div class="inbox-avatar">🍕</div>
+          <div class="inbox-info">
+            <div class="inbox-name">Pizzaria Bella</div>
+            <div class="inbox-preview">Qual o valor do pacote básico?</div>
+          </div>
+          <div class="inbox-meta">
+            <div class="inbox-time">08:51</div>
+            <div class="inbox-dot"></div>
+          </div>
+        </div>
+        <div class="inbox-item unread">
+          <div class="inbox-avatar">🐾</div>
+          <div class="inbox-info">
+            <div class="inbox-name">Pet Shop Brusque</div>
+            <div class="inbox-preview">Pode me mandar o portfólio?</div>
+          </div>
+          <div class="inbox-meta">
+            <div class="inbox-time">Ontem</div>
+            <div class="inbox-dot"></div>
+          </div>
+        </div>
+        <div class="inbox-item">
+          <div class="inbox-avatar">💅</div>
+          <div class="inbox-info">
+            <div class="inbox-name">Studio Bella</div>
+            <div class="inbox-preview">Obrigada pelo contato!</div>
+          </div>
+          <div class="inbox-meta">
+            <div class="inbox-time">Seg</div>
+          </div>
+        </div>
+      </div>
+      <div class="inbox-right">
+        <p class="slide-label animate">UI — Fase 2</p>
+        <h2 class="animate" style="font-size:26px;font-weight:700;margin-bottom:10px;">Inbox de conversas</h2>
+        <p class="animate" style="font-size:14px;color:var(--t2);line-height:1.7;margin-bottom:18px;">Nenhuma resposta perdida — todas as conversas ativas em um só lugar.</p>
+        <ul class="ui-points animate">
+          <li><span class="dot"></span><div><strong>Badge de não lidas</strong> no sidebar com contador em tempo real</div></li>
+          <li><span class="dot"></span><div><strong>Preview da última mensagem</strong> com horário relativo</div></li>
+          <li><span class="dot"></span><div><strong>Clique no lead</strong> abre o drawer completo do CRM direto</div></li>
+          <li><span class="dot"></span><div><strong>Supabase Realtime</strong> — novas mensagens aparecem sem precisar recarregar</div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 6 — EDGE FUNCTIONS ══ -->
+  <div class="slide">
+    <div class="ef-wrap">
+      <p class="slide-label animate">Backend</p>
+      <h2 class="ef-title animate">Edge Functions — o motor da integração</h2>
+      <div class="ef-grid">
+        <div class="ef-card green animate">
+          <div class="ef-card-name">✨ gerar-script</div>
+          <div class="ef-card-desc">Chamada pelo SLAC ao clicar "Gerar com IA" — pesquisa o lead e retorna script personalizado</div>
+          <ol class="ef-steps">
+            <li><span class="ef-step-n">1</span>Recebe: instagram, negocio, cidade do lead</li>
+            <li><span class="ef-step-n">2</span>Apify busca perfil Instagram (bio, posts, seguidores)</li>
+            <li><span class="ef-step-n">3</span>Apify busca Google Maps (avaliações, categoria, site)</li>
+            <li><span class="ef-step-n">4</span>Claude API monta contexto + adapta script base</li>
+            <li><span class="ef-step-n">5</span>Retorna script pronto para revisar e enviar</li>
+          </ol>
+        </div>
+        <div class="ef-card blue animate">
+          <div class="ef-card-name">📨 wa-webhook</div>
+          <div class="ef-card-desc">Chamada pela Z-API quando o lead responde — persiste a mensagem e notifica o SLAC</div>
+          <ol class="ef-steps">
+            <li><span class="ef-step-n">1</span>Z-API envia POST com mensagem recebida</li>
+            <li><span class="ef-step-n">2</span>Valida token secreto (segurança)</li>
+            <li><span class="ef-step-n">3</span>Busca lead pelo número de telefone</li>
+            <li><span class="ef-step-n">4</span>Insere na tabela <code style="font-size:11px;background:var(--overlay);padding:1px 5px;border-radius:4px;">conversas</code></li>
+            <li><span class="ef-step-n">5</span>Supabase Realtime notifica o SLAC instantaneamente</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 7 — STACK & CUSTO ══ -->
+  <div class="slide">
+    <div class="stack-wrap">
+      <p class="slide-label animate">Stack & Custo</p>
+      <h2 class="stack-title animate">O que você precisa contratar</h2>
+      <div class="stack-grid animate">
+        <div class="stack-card">
+          <div class="stack-icon">📱</div>
+          <div class="stack-name">Z-API</div>
+          <div class="stack-role">Envio e recebimento de mensagens WhatsApp. Sem aprovação da Meta.</div>
+          <div class="stack-cost cost-paid">~R$ 70/mês</div>
+        </div>
+        <div class="stack-card">
+          <div class="stack-icon">🤖</div>
+          <div class="stack-name">Claude API</div>
+          <div class="stack-role">Geração de scripts personalizados. Cobrança por uso — baixo volume = custo mínimo.</div>
+          <div class="stack-cost cost-paid">~R$ 5–15/mês</div>
+        </div>
+        <div class="stack-card">
+          <div class="stack-icon">🕷️</div>
+          <div class="stack-name">Apify</div>
+          <div class="stack-role">Scraping Instagram + Google Maps. Já usa para prospecção — mesmo plano.</div>
+          <div class="stack-cost cost-free">Já tem ✓</div>
+        </div>
+        <div class="stack-card">
+          <div class="stack-icon">⚡</div>
+          <div class="stack-name">Supabase Edge Functions</div>
+          <div class="stack-role">wa-webhook + gerar-script. Já incluído no plano atual.</div>
+          <div class="stack-cost cost-free">Grátis ✓</div>
+        </div>
+        <div class="stack-card">
+          <div class="stack-icon">🔄</div>
+          <div class="stack-name">n8n Cloud</div>
+          <div class="stack-role">Automações da Fase 3. Plano gratuito é suficiente para começar.</div>
+          <div class="stack-cost cost-free">Grátis no início</div>
+        </div>
+        <div class="stack-card">
+          <div class="stack-icon">🗄️</div>
+          <div class="stack-name">Supabase DB</div>
+          <div class="stack-role">Tabelas conversas, wa_templates, configuracoes. Já incluído.</div>
+          <div class="stack-cost cost-free">Grátis ✓</div>
+        </div>
+      </div>
+      <div class="stack-total animate">
+        <span class="stack-total-label">💰 Custo mensal total da integração</span>
+        <span class="stack-total-val">~R$ 75–85/mês</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.deck -->
+
+<div class="nav">
+  <button class="nav-btn" onclick="prev()">←</button>
+  <span class="slide-counter"><span id="cur">1</span> / <span id="tot"></span></span>
+  <button class="nav-btn" onclick="next()">→</button>
+</div>
+
+<script>
+  let cur = 1;
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  document.getElementById('tot').textContent = total;
+
+  function show(n) {
+    if (n < 1) n = 1;
+    if (n > total) n = total;
+    cur = n;
+    slides.forEach((s, i) => s.classList.toggle('active', i === n - 1));
+    document.getElementById('cur').textContent = n;
+    document.getElementById('progressBar').style.width = (n / total * 100) + '%';
+  }
+
+  function next() { show(cur + 1); }
+  function prev() { show(cur - 1); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+  });
+
+  show(1);
+</script>
+</body>
+</html>

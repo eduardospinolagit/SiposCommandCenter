@@ -101,26 +101,35 @@
     </div>
 
     <!-- KPIs Financeiros -->
-    <div class="kpi-grid kpi-grid--5">
-      <div class="kpi-card">
-        <span class="kpi-label">Receita</span>
-        <span class="kpi-value kpi-value--accent">{{ fmt(f.rec) }}</span>
-        <span class="kpi-sub">recebida</span>
+    <div class="kpi-grid dash-kpi-grid">
+      <div class="kpi-card kpi-card--split">
+        <div class="kpi-split-half">
+          <span class="kpi-label">Recebido</span>
+          <div class="kpi-split-row">
+            <span class="kpi-value kpi-value--accent">{{ fmt(f.rec) }}</span>
+            <span class="kpi-sub">recebido</span>
+          </div>
+        </div>
+        <div class="kpi-split-divider"></div>
+        <div class="kpi-split-half">
+          <span class="kpi-label">A receber</span>
+          <div class="kpi-split-row">
+            <span class="kpi-value kpi-value--warning">{{ fmt(f.pend) }}</span>
+            <span class="kpi-sub">pendente</span>
+          </div>
+        </div>
       </div>
-      <div class="kpi-card">
-        <span class="kpi-label">A receber</span>
-        <span class="kpi-value kpi-value--warning">{{ fmt(f.pend) }}</span>
-        <span class="kpi-sub">pendente</span>
+      <div class="kpi-card kpi-card--lucro" :class="(f.rec + f.pend - f.sai) < 0 ? 'kpi-card--lucro-neg' : ''">
+        <span class="kpi-label">Lucro Projetado<InfoTip text="Receita recebida + a receber, menos todas as despesas do período. É o lucro caso todos os pagamentos pendentes se concretizem." /></span>
+        <span class="kpi-value kpi-value--white">{{ fmt(f.rec + f.pend - f.sai) }}</span>
+        <div class="kpi-rec-detail">
+          <span class="kpi-lucro-atual">Atual: {{ fmt(f.lucro) }}</span>
+        </div>
       </div>
       <div class="kpi-card">
         <span class="kpi-label">Despesas</span>
         <span class="kpi-value kpi-value--danger">{{ fmt(f.sai) }}</span>
         <span class="kpi-sub">total</span>
-      </div>
-      <div class="kpi-card kpi-card--lucro" :class="f.lucro < 0 ? 'kpi-card--lucro-neg' : ''">
-        <span class="kpi-label">Lucro</span>
-        <span class="kpi-value kpi-value--white">{{ fmt(f.lucro) }}</span>
-        <span class="kpi-sub">{{ f.lucro >= 0 ? 'positivo' : 'negativo' }}</span>
       </div>
       <div class="kpi-card">
         <span class="kpi-label">Clientes pagos</span>
@@ -145,7 +154,7 @@
     <!-- Funil de Conversão -->
     <div class="sec-header funil-header" style="margin-bottom:0" @click="toggleFunil">
       <div style="display:flex;align-items:center;gap:.625rem;min-width:0">
-        <h2 class="sec-title" style="flex-shrink:0">Prospecção</h2>
+        <h2 class="sec-title" style="flex-shrink:0">Prospecção<InfoTip text="Funil de conversão dos seus leads: quantos estão em cada etapa e qual % chegou ao fechamento. Ajuda a identificar onde os negócios travam." /></h2>
         <span class="funil-taxa-geral" style="flex-shrink:0" :class="funnelStats.taxaGeral >= 10 ? 'funil-taxa--ok' : funnelStats.taxaGeral >= 5 ? 'funil-taxa--warn' : 'funil-taxa--bad'">
           {{ funnelStats.taxaGeral }}% conversão
         </span>
@@ -377,6 +386,7 @@ import { useLeadsStore } from '@/stores/leads'
 import { useWaStore } from '@/stores/wa'
 import { useTheme } from '@/composables/useTheme'
 import { sb } from '@/lib/supabase'
+import InfoTip from '@/components/ui/InfoTip.vue'
 
 const fin   = useFinStore()
 const leads = useLeadsStore()
@@ -1122,22 +1132,30 @@ watch(theme, renderCharts)
 .fu-arrow-link:hover { opacity: 1; color: var(--accent); }
 .fu-vazio { font-size: .8rem; color: var(--text-tertiary); padding: .25rem 0; }
 
-/* ── KPI Lucro destacado ── */
-.kpi-card--lucro {
-  background: var(--accent);
-  border-color: var(--accent);
-}
-.kpi-card--lucro-neg {
-  background: var(--status-danger);
-  border-color: var(--status-danger);
-}
-.kpi-card--lucro .kpi-label,
-.kpi-card--lucro .kpi-sub { color: rgba(255,255,255,.7); }
-.kpi-value--white { color: #fff !important; }
+/* ── KPI grid dashboard ── */
+.dash-kpi-grid { grid-template-columns: 2fr 1fr 1fr 1fr; }
+@media (max-width: 960px) { .dash-kpi-grid { grid-template-columns: 1fr 1fr 1fr; } }
+@media (max-width: 640px) { .dash-kpi-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 420px) { .dash-kpi-grid { grid-template-columns: 1fr; } }
 
-[data-theme="light"] .kpi-card--lucro .kpi-label,
-[data-theme="light"] .kpi-card--lucro .kpi-sub { color: rgba(0,0,0,.55); }
+/* ── Split card ── */
+.kpi-card--split { flex-direction: row; align-items: stretch; padding: 0; gap: 0; }
+.kpi-split-half { display: flex; flex-direction: column; justify-content: center; gap: .25rem; flex: 1; padding: .875rem 1.1rem; min-width: 0; }
+.kpi-split-row { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
+.kpi-split-divider { width: 1px; background: var(--border-subtle); flex-shrink: 0; margin: .75rem 0; }
+[data-theme="light"] .kpi-split-divider { background: var(--border-default); }
+
+/* ── KPI Lucro destacado ── */
+.kpi-card--lucro { background: var(--accent); border-color: var(--accent); }
+.kpi-card--lucro-neg { background: var(--status-danger); border-color: var(--status-danger); }
+.kpi-card--lucro .kpi-label { color: rgba(255,255,255,.7); }
+.kpi-value--white { color: #fff !important; }
+.kpi-rec-detail { display: flex; align-items: center; gap: .3rem; flex-wrap: wrap; margin-top: .15rem; }
+.kpi-lucro-atual { font-size: .7rem; font-weight: 500; color: rgba(255,255,255,.65); }
+
+[data-theme="light"] .kpi-card--lucro .kpi-label { color: rgba(0,0,0,.55); }
 [data-theme="light"] .kpi-value--white { color: #fff !important; }
+[data-theme="light"] .kpi-lucro-atual { color: rgba(0,0,0,.45); }
 
 /* ── Próximas ações ── */
 .acoes-card {

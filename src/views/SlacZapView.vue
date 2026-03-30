@@ -104,7 +104,7 @@
           <button class="sz-filter-tab" :class="{ 'sz-filter-tab--active': chatFilter === 'followup' }" @click="chatFilter = 'followup'">Follow-up</button>
 
           <button class="sz-filter-tab" :class="{ 'sz-filter-tab--active': chatFilter === 'relead' }" @click="chatFilter = 'relead'">Relead</button>
-          <button class="sz-filter-tab" :class="{ 'sz-filter-tab--active': chatFilter === 'work' }" @click="chatFilter = 'work'">Work</button>
+          <button class="sz-filter-tab" :class="{ 'sz-filter-tab--active': chatFilter === 'work' }" @click="chatFilter = 'work'">Tarefas</button>
         </div>
       </div>
 
@@ -169,7 +169,10 @@
                   </div>
                   <div class="sz-item-row">
                     <span class="sz-item-preview" :class="{ 'sz-item-preview--unread': isUnread(c) }">
-                      <span v-if="c.lastDirecao === 'enviado'" class="sz-checkmark">✓ </span>{{ c.lastMsg }}
+                      <span v-if="c.lastDirecao === 'enviado'" class="sz-preview-check" :class="'sz-preview-check--' + (c.lastStatus || 'sent')">
+                        <svg v-if="c.lastStatus === 'pending'" width="10" height="11" viewBox="0 0 10 11" fill="none"><path d="M1 5.5L4.5 9L9 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <svg v-else width="16" height="11" viewBox="0 0 16 11" fill="none"><path d="M1 5.5L4.5 9L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 5.5L8.5 9L15 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </span>{{ c.lastMsg }}
                     </span>
                     <span v-if="isUnread(c)" class="sz-item-unread-badge">
                       {{ getUnreadCount(c) > 99 ? '99+' : getUnreadCount(c) > 0 ? getUnreadCount(c) : '●' }}
@@ -221,7 +224,10 @@
                   </div>
                   <div class="sz-item-row">
                     <span class="sz-item-preview" :class="{ 'sz-item-preview--unread': isUnread(c) }">
-                      <span v-if="c.lastDirecao === 'enviado'" class="sz-checkmark">✓ </span>{{ c.lastMsg }}
+                      <span v-if="c.lastDirecao === 'enviado'" class="sz-preview-check" :class="'sz-preview-check--' + (c.lastStatus || 'sent')">
+                        <svg v-if="c.lastStatus === 'pending'" width="10" height="11" viewBox="0 0 10 11" fill="none"><path d="M1 5.5L4.5 9L9 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <svg v-else width="16" height="11" viewBox="0 0 16 11" fill="none"><path d="M1 5.5L4.5 9L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 5.5L8.5 9L15 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </span>{{ c.lastMsg }}
                     </span>
                     <span v-if="isUnread(c)" class="sz-item-unread-badge">
                       {{ getUnreadCount(c) > 99 ? '99+' : getUnreadCount(c) > 0 ? getUnreadCount(c) : '●' }}
@@ -306,17 +312,27 @@
       </div>
 
 
-      <!-- Messages -->
-      <div class="sz-messages" ref="messagesEl">
+      <!-- Messages wrapper (contexto para o overlay de data) -->
+      <div class="sz-messages-wrap">
+        <!-- Floating date indicator -->
+        <Transition name="sz-float-date">
+          <div v-if="floatingDateLabel && isScrollingChat" class="sz-floating-date">{{ floatingDateLabel }}</div>
+        </Transition>
+
+        <!-- Scroll to bottom -->
+        <Transition name="sz-float-date">
+          <button v-if="showScrollDown" class="sz-scroll-down" @click="scrollBottom" aria-label="Ir para o final">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </Transition>
+
+        <div class="sz-messages" ref="messagesEl" @scroll="onMessagesScroll">
         <div v-if="loadingMsgs" class="sz-msgs-loading">
           <div class="sz-typing"><span></span><span></span><span></span></div>
         </div>
         <template v-else>
-          <div v-if="msgsHasMore" class="sz-load-more-wrap">
-            <button class="sz-load-more-btn" @click="loadMoreMsgs" :disabled="loadingMoreMsgs">
-              <div v-if="loadingMoreMsgs" class="sz-typing"><span></span><span></span><span></span></div>
-              <span v-else>Carregar anteriores</span>
-            </button>
+          <div v-if="loadingMoreMsgs" class="sz-load-more-wrap">
+            <div class="sz-typing"><span></span><span></span><span></span></div>
           </div>
           <p v-if="!waMsgs.length" class="sz-no-msgs">Nenhuma mensagem ainda.<br>Diga olá! 👋</p>
           <template v-for="(group, gi) in msgGroups" :key="gi">
@@ -326,14 +342,22 @@
                 <span>Não lidas</span>
               </div>
             <div
-              class="sz-bubble-wrap" :class="m.direcao === 'enviado' ? 'sz-bubble-wrap--out' : 'sz-bubble-wrap--in'">
+              class="sz-bubble-wrap"
+              :class="[m.direcao === 'enviado' ? 'sz-bubble-wrap--out' : 'sz-bubble-wrap--in', mi > 0 && group.msgs[mi-1].direcao !== m.direcao ? 'sz-bubble-wrap--gap' : '']">
               <div class="sz-bubble"
+                :data-msg-id="m.id"
                 :class="[
                   m.direcao === 'enviado' ? 'sz-bubble--out' : 'sz-bubble--in',
                   mi === group.msgs.length - 1 ? (m.direcao === 'enviado' ? 'sz-bubble--tail-out' : 'sz-bubble--tail-in') : '',
                   mi < group.msgs.length - 1 ? 'sz-bubble--stacked' : '',
                   (bubbleMedia(m.mensagem)?.type === 'image' || bubbleMedia(m.mensagem)?.type === 'video') ? 'sz-bubble--media' : ''
                 ]">
+                <!-- quoted (resposta) -->
+                <div v-if="m.quoted" class="sz-quoted" :class="m.direcao === 'enviado' ? 'sz-quoted--out' : 'sz-quoted--in'" @click="scrollToMsg(m.quoted.id)">
+                  <span class="sz-quoted-author">{{ m.quoted.direcao === 'enviado' ? 'Você' : activeLead?.nome }}</span>
+                  <span class="sz-quoted-text">{{ quotedPreview(m.quoted) }}</span>
+                </div>
+
                 <!-- imagem -->
                 <template v-if="bubbleMedia(m.mensagem)?.type === 'image'">
                   <img :src="bubbleMedia(m.mensagem).url" class="sz-bubble-img" loading="lazy"
@@ -430,6 +454,7 @@
           </template>
         </template>
       </div>
+      </div><!-- /sz-messages-wrap -->
 
       <!-- File preview -->
       <div v-if="selectedFile" class="sz-file-preview">
@@ -531,8 +556,19 @@
           </button>
         </div>
 
+        <!-- Reply preview -->
+        <div v-if="replyTo" class="sz-reply-bar">
+          <div class="sz-reply-bar-content">
+            <span class="sz-reply-bar-author">{{ replyTo.direcao === 'enviado' ? 'Você' : activeLead?.nome }}</span>
+            <span class="sz-reply-bar-text">{{ quotedPreview(replyTo) }}</span>
+          </div>
+          <button class="sz-reply-bar-close" @click="replyTo = null" aria-label="Cancelar resposta">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
         <!-- Normal -->
-        <div v-else class="sz-composer-inner">
+        <div v-show="!isRecording && !audioBlob" class="sz-composer-inner">
 
           <!-- Botão IA -->
           <button v-if="activeLead" class="sz-ai-trigger-btn" :class="{ 'sz-ai-trigger-btn--active': aiSugestao || aiLoading }"
@@ -915,6 +951,10 @@
     <Transition name="sz-menu">
       <div v-if="msgMenu.id" class="sz-item-menu-overlay" @click="msgMenu.id = null">
         <div class="sz-item-menu" :style="msgMenu.style" @click.stop>
+          <button class="sz-item-menu-item" @click.stop="responderMensagem(msgMenu.msg)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+            Responder
+          </button>
           <button class="sz-item-menu-item" @click="copiarMensagem()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             Copiar
@@ -996,6 +1036,45 @@ const msgsHasMore      = ref(false)
 const loadingMoreMsgs  = ref(false)
 const isMobile    = ref(window.innerWidth < 768)
 const isDarkTheme = ref(document.documentElement.getAttribute('data-theme') !== 'light')
+
+// ── Floating date indicator + scroll-down button ──
+const floatingDateLabel = ref(null)
+const isScrollingChat = ref(false)
+const showScrollDown = ref(false)
+let floatingDateTimer = null
+
+function onMessagesScroll() {
+  if (!messagesEl.value) return
+  const container = messagesEl.value
+
+  // Auto-load mais mensagens ao chegar perto do topo
+  if (container.scrollTop < 80) loadMoreMsgs()
+
+  // Mostrar botão de scroll-down quando longe do final
+  const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight
+  showScrollDown.value = distFromBottom > 200
+
+  const containerTop = container.getBoundingClientRect().top
+
+  const seps = container.querySelectorAll('.sz-time-sep')
+  if (!seps.length) return
+
+  // Find the last separator scrolled above the visible area
+  let currentLabel = null
+  for (const sep of seps) {
+    const rect = sep.getBoundingClientRect()
+    if (rect.bottom <= containerTop + 8) {
+      currentLabel = sep.textContent
+    }
+  }
+
+  floatingDateLabel.value = currentLabel
+  isScrollingChat.value = true
+
+  // Hide after 1.5s of no scrolling
+  clearTimeout(floatingDateTimer)
+  floatingDateTimer = setTimeout(() => { isScrollingChat.value = false }, 1500)
+}
 
 const qrSrc = computed(() => isDarkTheme.value ? wa.qrImage : (wa.qrImageLight || wa.qrImage))
 
@@ -1457,6 +1536,38 @@ async function analisarLeadIA() {
     toast('Erro ao analisar lead: ' + (e.message || ''), 'error')
   } finally {
     analysisLoading.value = false
+  }
+}
+
+// Reply
+const replyTo = ref(null)
+
+function responderMensagem(m) {
+  const snapshot = { ...m }
+  msgMenu.id = null
+  nextTick(() => {
+    replyTo.value = snapshot
+    nextTick(() => { if (inputEl.value) inputEl.value.focus() })
+  })
+}
+
+function quotedPreview(m) {
+  if (!m?.mensagem) return ''
+  const media = bubbleMedia(m.mensagem)
+  if (media?.type === 'image') return '📷 Imagem'
+  if (media?.type === 'audio') return '🎵 Áudio'
+  if (media?.type === 'video') return '🎬 Vídeo'
+  if (media?.type === 'document') return `📄 ${media.filename || 'Documento'}`
+  return m.mensagem.length > 80 ? m.mensagem.slice(0, 80) + '…' : m.mensagem
+}
+
+function scrollToMsg(id) {
+  if (!messagesEl.value || !id) return
+  const el = messagesEl.value.querySelector(`[data-msg-id="${id}"]`)
+  if (el) {
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    el.classList.add('sz-bubble--highlight')
+    setTimeout(() => el.classList.remove('sz-bubble--highlight'), 1500)
   }
 }
 
@@ -2157,7 +2268,7 @@ function itemStatuses(lead) {
   if (full.relead_data && new Date(full.relead_data) <= now)
     s.push({ type: 'relead', label: 'Relead', color: '#8b5cf6' })
   if (work.leadsComWork.has(lead.id))
-    s.push({ type: 'work', label: 'Work', color: '#5b8dee' })
+    s.push({ type: 'work', label: 'Tarefas', color: '#5b8dee' })
   return s
 }
 
@@ -2202,7 +2313,7 @@ const leadStatus = computed(() => {
     s.push({ type: 'relead', label: 'Relead', color: '#8b5cf6',
       date: new Date(lead.relead_data).toLocaleDateString('pt-BR') })
   if (work.leadsComWork.has(lead.id))
-    s.push({ type: 'work', label: 'Work', color: '#5b8dee' })
+    s.push({ type: 'work', label: 'Tarefas', color: '#5b8dee' })
   return s
 })
 
@@ -2449,6 +2560,11 @@ async function openChat(chatLead) {
   loadingMsgs.value = true
   msgsOffset.value = 0
   msgsHasMore.value = false
+  floatingDateLabel.value = null
+  isScrollingChat.value = false
+  showScrollDown.value = false
+  replyTo.value = null
+  clearTimeout(floatingDateTimer)
   const PAGE = 50
   const all = chatLead.id
     ? await leads.loadConversas(chatLead.id, { limit: PAGE, offset: 0 })
@@ -2458,6 +2574,16 @@ async function openChat(chatLead) {
   msgsOffset.value = PAGE
   msgsHasMore.value = (all || []).length === PAGE
   loadingMsgs.value = false
+
+  // Sincroniza lastStatus do preview com o status real da última mensagem enviada
+  const lastSent = [...filtered].reverse().find(m => m.direcao === 'enviado' && m.status)
+  if (lastSent) {
+    const chatIdx = wa.chats.findIndex(c =>
+      (c.lead?.id && c.lead.id === chatLead.id) ||
+      (!c.lead?.id && c.lead?.telefone === chatLead.telefone)
+    )
+    if (chatIdx !== -1) wa.chats[chatIdx] = { ...wa.chats[chatIdx], lastStatus: lastSent.status }
+  }
   // Restaura sugestão de IA da sessão para este chat
   restaurarSessaoAi(activeLead.value)
   scrollToUnreadOrBottom()
@@ -2478,7 +2604,6 @@ async function loadMoreMsgs() {
   if (!activeLead.value || !msgsHasMore.value || loadingMoreMsgs.value) return
   loadingMoreMsgs.value = true
   const el = messagesEl.value
-  const prevScrollHeight = el ? el.scrollHeight : 0
   const PAGE = 50
   try {
     const all = activeLead.value.id
@@ -2486,16 +2611,22 @@ async function loadMoreMsgs() {
       : await leads.loadConversasByPhone(activeLead.value.telefone, { limit: PAGE, offset: msgsOffset.value })
     const older = (all || []).filter(c => c.canal === 'whatsapp')
     if (older.length) {
+      // Captura altura AGORA (com spinner visível)
+      const prevScrollHeight = el ? el.scrollHeight : 0
+      // Desativa spinner e adiciona mensagens no mesmo ciclo de render
+      loadingMoreMsgs.value = false
       waMsgs.value = [...older, ...waMsgs.value]
       msgsOffset.value += PAGE
       msgsHasMore.value = (all || []).length === PAGE
+      // Após o DOM refletir spinner removido + mensagens adicionadas, corrige scroll
       nextTick(() => {
         if (el) el.scrollTop = el.scrollHeight - prevScrollHeight
       })
     } else {
       msgsHasMore.value = false
+      loadingMoreMsgs.value = false
     }
-  } finally {
+  } catch {
     loadingMoreMsgs.value = false
   }
 }
@@ -2594,13 +2725,15 @@ async function enviar() {
   const txt = novaMsg.value.trim()
   if (!txt) return
   enviando.value = true
-  const opt = { id: 'opt_' + Date.now(), direcao: 'enviado', mensagem: txt, data: new Date().toISOString(), canal: 'whatsapp' }
+  const quoted = replyTo.value
+  const opt = { id: 'opt_' + Date.now(), direcao: 'enviado', mensagem: txt, data: new Date().toISOString(), canal: 'whatsapp', quoted: quoted || undefined }
   waMsgs.value.push(opt)
   novaMsg.value = ''
+  replyTo.value = null
   if (inputEl.value) inputEl.value.style.height = 'auto'
   scrollBottom()
   try {
-    await wa.enviarMensagem(activeLead.value.id, auth.user.id, activeLead.value.telefone, txt)
+    await wa.enviarMensagem(activeLead.value.id, auth.user.id, activeLead.value.telefone, txt, quoted)
     await wa.loadChats()
   } catch (e) {
     waMsgs.value = waMsgs.value.filter(m => m.id !== opt.id)
@@ -2725,9 +2858,25 @@ async function pollMsgs() {
     const added = fresh.filter(m => !existingIds.has(m.id))
     if (added.length) {
       const confirmedTexts = new Set(added.map(m => m.mensagem))
+      // Preserva o campo quoted das mensagens otimistas ao confirmá-las + persiste no DB
+      const quotedByText = {}
+      for (const m of waMsgs.value) {
+        if (m.id?.startsWith('opt_') && m.quoted && confirmedTexts.has(m.mensagem)) {
+          quotedByText[m.mensagem] = m.quoted
+        }
+      }
+      const addedWithQuoted = added.map(m => {
+        const q = quotedByText[m.mensagem]
+        if (q) {
+          // Persiste quoted no banco para sobreviver a reloads
+          sb.from('conversas').update({ quoted: q }).eq('id', m.id).then(() => {})
+          return { ...m, quoted: q }
+        }
+        return m
+      })
       waMsgs.value = [
         ...waMsgs.value.filter(m => !m.id?.startsWith('opt_') || !confirmedTexts.has(m.mensagem)),
-        ...added,
+        ...addedWithQuoted,
       ].sort((a, b) => new Date(a.data) - new Date(b.data))
       scrollBottom()
       if (added.some(m => m.direcao === 'recebido')) playNotifSound()
@@ -2836,8 +2985,15 @@ onMounted(async () => {
         const upd = payload.new
         if (upd.user_id !== auth.user.id) return
         if (!upd?.status || !upd?.id) return
+        // Atualiza bolha no chat aberto
         const idx = waMsgs.value.findIndex(m => m.id === upd.id)
         if (idx !== -1) waMsgs.value[idx] = { ...waMsgs.value[idx], status: upd.status }
+        // Atualiza preview na lista de chats
+        const chatIdx = wa.chats.findIndex(c =>
+          (c.lead?.id && c.lead.id === upd.lead_id) ||
+          (!c.lead?.id && c.lead?.telefone === upd.telefone)
+        )
+        if (chatIdx !== -1) wa.chats[chatIdx] = { ...wa.chats[chatIdx], lastStatus: upd.status }
       })
     .subscribe()
 })
@@ -2850,6 +3006,7 @@ onUnmounted(() => {
   clearInterval(msgPoller)
   clearInterval(fuAutoTimer)
   cancelRecording()
+  clearTimeout(floatingDateTimer)
 })
 </script>
 
@@ -3726,7 +3883,11 @@ onUnmounted(() => {
 
 .sz-list { flex: 1; overflow-y: auto; overflow-x: hidden; }
 .sz-list::-webkit-scrollbar { width: 3px; }
-.sz-list::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
+.sz-list::-webkit-scrollbar-track { background: transparent; }
+.sz-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 99px; }
+.sz-list::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.15); }
+[data-theme="light"] .sz-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
+[data-theme="light"] .sz-list::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.18); }
 .sz-load-sentinel { height: 32px; display: flex; align-items: center; justify-content: center; }
 .sz-load-more-hint { font-size: .65rem; color: var(--text-tertiary); }
 
@@ -3823,7 +3984,12 @@ onUnmounted(() => {
   font-size: .78rem; color: var(--text-secondary); flex: 1; min-width: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.35;
 }
-.sz-checkmark { color: var(--accent); }
+.sz-preview-check { display: inline-flex; align-items: center; margin-right: 2px; flex-shrink: 0; vertical-align: middle; }
+.sz-preview-check--pending  { color: var(--text-tertiary); }
+.sz-preview-check--sent     { color: var(--text-tertiary); }
+.sz-preview-check--delivered { color: var(--text-tertiary); }
+.sz-preview-check--read     { color: #38bdf8; }
+[data-theme="light"] .sz-preview-check--read { color: #0077b6; }
 
 /* ── Skeleton ── */
 .sz-skeleton { display: flex; gap: .75rem; padding: .65rem 1rem; align-items: center; }
@@ -3891,14 +4057,35 @@ onUnmounted(() => {
 }
 .sz-status-date { font-weight: 400; opacity: .85; }
 
+/* ── Messages wrap ── */
+.sz-messages-wrap {
+  flex: 1; position: relative; min-height: 0; display: flex; flex-direction: column;
+}
+
 /* ── Messages ── */
 .sz-messages {
   flex: 1; overflow-y: auto; overflow-x: hidden;
   padding: .75rem 1rem 1rem;
   display: flex; flex-direction: column;
 }
-.sz-messages::-webkit-scrollbar { width: 3px; }
-.sz-messages::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
+[data-theme="light"] .sz-messages {
+  background-image: url('https://i.ibb.co/KjVTWkdz/slaczap-wallpaper-1920x1080-1.png');
+  background-size: 400px auto;
+  background-repeat: repeat;
+  background-position: top left;
+}
+[data-theme="dark"] .sz-messages {
+  background-image: url('https://i.ibb.co/d4QJpWYj/slaczap-wallpaper-1920x1080.png');
+  background-size: 400px auto;
+  background-repeat: repeat;
+  background-position: top left;
+}
+.sz-messages::-webkit-scrollbar { width: 4px; }
+.sz-messages::-webkit-scrollbar-track { background: transparent; }
+.sz-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,.22); border-radius: 99px; }
+.sz-messages::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.38); }
+[data-theme="light"] .sz-messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,.2); }
+[data-theme="light"] .sz-messages::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.32); }
 
 .sz-msgs-loading { display: flex; justify-content: center; padding: 2rem; }
 .sz-no-msgs { text-align: center; color: var(--text-tertiary); font-size: .83rem; padding: 3rem 1rem; line-height: 1.7; }
@@ -3914,9 +4101,80 @@ onUnmounted(() => {
 
 /* ── Time separator ── */
 .sz-time-sep {
-  text-align: center; font-size: .7rem; color: var(--text-tertiary);
-  margin: .75rem 0 .5rem; font-weight: 500; letter-spacing: .03em;
+  display: block;
+  width: fit-content;
+  margin: 2rem auto 1.5rem;
+  font-size: .7rem; font-weight: 600; letter-spacing: .03em;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 99px;
+  padding: .2rem .875rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,.18);
 }
+[data-theme="light"] .sz-time-sep {
+  background: rgba(255,255,255,.85);
+  border-color: rgba(0,0,0,.08);
+  box-shadow: 0 1px 4px rgba(0,0,0,.1);
+  color: #555;
+}
+
+/* ── Floating date indicator ── */
+.sz-floating-date {
+  position: absolute;
+  top: .625rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: max-content;
+  font-size: .7rem; font-weight: 600; letter-spacing: .03em;
+  color: var(--text-secondary);
+  background: rgba(22, 22, 22, 0.6);
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 99px;
+  padding: .25rem .9rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  pointer-events: none;
+}
+[data-theme="light"] .sz-floating-date {
+  background: rgba(255,255,255,.75);
+  border-color: rgba(0,0,0,.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  color: #444;
+}
+.sz-float-date-enter-active, .sz-float-date-leave-active { transition: opacity .2s ease, transform .2s ease; }
+.sz-float-date-enter-from { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+.sz-float-date-leave-to { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+
+/* ── Scroll to bottom button ── */
+.sz-scroll-down {
+  position: absolute;
+  bottom: .75rem;
+  right: 1rem;
+  z-index: 20;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: rgba(22,22,22,.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.1);
+  color: var(--text-secondary);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  transition: background .15s, color .15s;
+}
+.sz-scroll-down:hover { background: rgba(40,40,40,.9); color: var(--text-primary); }
+[data-theme="light"] .sz-scroll-down {
+  background: rgba(255,255,255,.8);
+  border-color: rgba(0,0,0,.1);
+  color: #555;
+  box-shadow: 0 2px 8px rgba(0,0,0,.14);
+}
+[data-theme="light"] .sz-scroll-down:hover { background: rgba(255,255,255,.97); color: #222; }
+
 .sz-unread-divider {
   display: flex; align-items: center; gap: .5rem;
   margin: .75rem 0 .5rem; color: var(--accent); font-size: .7rem; font-weight: 600;
@@ -3932,6 +4190,7 @@ onUnmounted(() => {
 }
 .sz-bubble-wrap--out { justify-content: flex-end; }
 .sz-bubble-wrap--in  { justify-content: flex-start; }
+.sz-bubble-wrap--gap { margin-top: .75rem; }
 
 /* Botão de opções — canto superior direito da bolha */
 .sz-bubble-menu-btn {
@@ -3952,7 +4211,7 @@ onUnmounted(() => {
 [data-theme="light"] .sz-bubble-menu-btn--in:hover  { background: #d8d8d8; }
 
 .sz-bubble {
-  max-width: 72%; padding: .5rem .75rem .35rem;
+  max-width: 55%; padding: .5rem .75rem .35rem;
   border-radius: 8px; position: relative; word-break: break-word;
 }
 .sz-bubble--out { background: #005236; color: #fff; border-bottom-right-radius: 8px; }
@@ -3968,6 +4227,72 @@ onUnmounted(() => {
 
 .sz-bubble-text { font-size: .88rem; line-height: 1.45; display: block; }
 .sz-bubble-spacer { display: inline-block; width: 36px; }
+
+/* ── Quoted (resposta) no bubble ── */
+.sz-quoted {
+  display: flex; flex-direction: column; gap: .15rem;
+  border-radius: 5px; padding: .35rem .55rem;
+  margin: -.1rem -.1rem .45rem -.1rem;
+  cursor: pointer; overflow: hidden;
+  border-left: 3px solid rgba(255,255,255,.35);
+  background: rgba(0,0,0,.18);
+  transition: background .15s;
+}
+.sz-quoted:hover { background: rgba(0,0,0,.28); }
+.sz-quoted--in {
+  border-left-color: var(--accent);
+  background: rgba(34,197,94,.08);
+}
+.sz-quoted--in:hover { background: rgba(34,197,94,.14); }
+[data-theme="light"] .sz-quoted--out {
+  background: rgba(0,0,0,.07);
+  border-left-color: rgba(0,61,40,.4);
+}
+[data-theme="light"] .sz-quoted--in {
+  background: rgba(34,197,94,.1);
+}
+.sz-quoted-author {
+  font-size: .7rem; font-weight: 700;
+  color: var(--accent); line-height: 1;
+}
+.sz-quoted--out .sz-quoted-author { color: rgba(255,255,255,.7); }
+[data-theme="light"] .sz-quoted--out .sz-quoted-author { color: rgba(0,61,40,.65); }
+.sz-quoted-text {
+  font-size: .78rem; line-height: 1.35;
+  color: rgba(255,255,255,.75);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sz-quoted--in .sz-quoted-text { color: var(--text-secondary); }
+[data-theme="light"] .sz-quoted-text { color: rgba(0,0,0,.55); }
+
+/* highlight ao clicar no quoted */
+@keyframes sz-msg-highlight { 0%,100% { background: inherit } 30%,70% { background: rgba(34,197,94,.22) } }
+.sz-bubble--highlight { animation: sz-msg-highlight 1.4s ease; }
+
+/* ── Reply bar no composer ── */
+.sz-reply-bar {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .45rem .75rem .45rem 1rem;
+  margin: -.6rem -.75rem .5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--accent);
+  background: var(--bg-elevated);
+}
+.sz-reply-bar-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .1rem; }
+.sz-reply-bar-author { font-size: .7rem; font-weight: 700; color: var(--accent); }
+.sz-reply-bar-text {
+  font-size: .78rem; color: var(--text-secondary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sz-reply-bar-close {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+  background: transparent; border: none; cursor: pointer;
+  color: var(--text-tertiary); display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s;
+}
+.sz-reply-bar-close:hover { background: var(--bg-overlay); color: var(--text-primary); }
+.sz-reply-slide-enter-active, .sz-reply-slide-leave-active { transition: max-height .2s ease, opacity .2s ease; max-height: 60px; overflow: hidden; }
+.sz-reply-slide-enter-from, .sz-reply-slide-leave-to { max-height: 0; opacity: 0; }
 .sz-bubble--out .sz-bubble-spacer { width: 46px; }
 .sz-bubble-footer {
   display: flex; align-items: center; justify-content: flex-end; gap: .25rem;

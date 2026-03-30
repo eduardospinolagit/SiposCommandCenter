@@ -30,8 +30,8 @@
       <div class="kpi-card"><span class="kpi-label">Total</span><span class="kpi-value" style="color:var(--status-info)">{{ leads.stats.total }}</span><span class="kpi-sub">leads</span></div>
       <div class="kpi-card"><span class="kpi-label">Negociando</span><span class="kpi-value kpi-value--warning">{{ leads.stats.negociando }}</span><span class="kpi-sub">demo + negoc.</span></div>
       <div class="kpi-card"><span class="kpi-label">Fechados</span><span class="kpi-value kpi-value--accent">{{ leads.stats.fechados }}</span><span class="kpi-sub">convertidos</span></div>
-      <div class="kpi-card"><span class="kpi-label">Follow-up hoje</span><span class="kpi-value kpi-value--danger">{{ leads.stats.fuHoje }}</span><span class="kpi-sub">pendentes</span></div>
-      <div class="kpi-card"><span class="kpi-label">Pipeline</span><span class="kpi-value" style="color:var(--status-info)">{{ fmt(leads.stats.pipe) }}</span><span class="kpi-sub">potencial</span></div>
+      <div class="kpi-card"><span class="kpi-label">Follow-up hoje<InfoTip text="Leads com data de retorno agendada para hoje ou que já venceram. Clique na aba Follow-up para ver a lista completa." /></span><span class="kpi-value kpi-value--danger">{{ leads.stats.fuHoje }}</span><span class="kpi-sub">pendentes</span></div>
+      <div class="kpi-card"><span class="kpi-label">Pipeline<InfoTip text="Soma dos valores potenciais de todos os leads em negociação ativa. Representa a receita que pode entrar caso todos fechem." /></span><span class="kpi-value" style="color:var(--status-info)">{{ fmt(leads.stats.pipe) }}</span><span class="kpi-sub">potencial</span></div>
     </div>
 
     <!-- Sel bar -->
@@ -322,6 +322,7 @@ import { useWorkStore } from '@/stores/work'
 import { useFinStore } from '@/stores/fin'
 import { useSaving } from '@/composables/useSaving'
 import { usePushNotifications } from '@/composables/usePushNotifications'
+import InfoTip from '@/components/ui/InfoTip.vue'
 
 const router = useRouter()
 const route  = useRoute()

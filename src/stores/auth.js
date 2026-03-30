@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { sb } from '@/lib/supabase'
+import { slacLog } from '@/utils/log'
 
 export const useAuthStore = defineStore('auth', () => {
   const user        = ref(null)
@@ -52,6 +53,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function saveUserName(nome) {
     if (!user.value) return
     userName.value = nome
+    slacLog('AUTH-003', `Nome de usuário salvo: ${nome}`, { nome })
     await sb.from('configuracoes').upsert({
       id: user.value.id + '_user_nome',
       user_id: user.value.id,
@@ -79,10 +81,12 @@ export const useAuthStore = defineStore('auth', () => {
     if (data.session?.user) {
       user.value = data.session.user
       await loadUserName()
+      slacLog('AUTH-001', `Login: ${email}`, { email })
     }
   }
 
   async function logout() {
+    slacLog('AUTH-002', `Logout: ${user.value?.email || ''}`, { email: user.value?.email })
     user.value = null
     userName.value = ''
     companyName.value = ''

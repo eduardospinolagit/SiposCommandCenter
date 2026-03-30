@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { sb } from '@/lib/supabase'
 import { uid } from '@/utils/uid'
+import { slacLog } from '@/utils/log'
 
 export const useFinStore = defineStore('fin', () => {
   const fin = ref([])
@@ -43,16 +44,28 @@ export const useFinStore = defineStore('fin', () => {
   }
 
   async function upsert(tx) {
+    const isNew = !fin.value.find(t => t.id === tx.id)
+    const prev  = !isNew ? fin.value.find(t => t.id === tx.id) : null
     const { error } = await sb.from('financeiro').upsert({
       id: tx.id, user_id: uid(), tipo: tx.tipo, descricao: tx.desc,
       cat: tx.cat, val: tx.val, data: tx.data, st: tx.st, rec: tx.rec, cli: tx.cli, obs: tx.obs
     }, { onConflict: 'id' })
     if (error) throw error
+    const valor = `${tx.tipo === 'entrada' ? '+' : '-'}R$ ${Number(tx.val).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+    if (isNew) {
+      slacLog('FIN-001', `Transação criada: ${tx.desc} ${valor}`, { id: tx.id, tipo: tx.tipo, val: tx.val, cat: tx.cat })
+    } else if (prev?.st !== 'recebido' && tx.st === 'recebido') {
+      slacLog('FIN-004', `Recebimento confirmado: ${tx.desc} ${valor}`, { id: tx.id, val: tx.val, cli: tx.cli })
+    } else {
+      slacLog('FIN-002', `Transação atualizada: ${tx.desc} ${valor}`, { id: tx.id, tipo: tx.tipo, val: tx.val })
+    }
   }
 
   async function remove(id) {
+    const tx = fin.value.find(t => t.id === id)
     const { error } = await sb.from('financeiro').delete().eq('id', id).eq('user_id', uid())
     if (error) throw error
+    slacLog('FIN-003', `Transação removida: ${tx?.desc || id}`, { id, desc: tx?.desc, val: tx?.val })
   }
 
   async function savePgtoEntry(chave, p) {
@@ -60,6 +73,7 @@ export const useFinStore = defineStore('fin', () => {
       id: uid() + '_' + chave, user_id: uid(), chave, ...p
     }, { onConflict: 'id' })
     if (error) throw error
+    slacLog('FIN-006', `Pagamento de recorrência salvo: ${chave}`, { chave, st: p.st, obs: p.obs })
   }
 
   async function saveMeta(m) {
@@ -69,6 +83,7 @@ export const useFinStore = defineStore('fin', () => {
       chave: 'meta', valor: m, updated_at: new Date().toISOString()
     }, { onConflict: 'id' })
     if (error) throw error
+    slacLog('FIN-005', `Meta financeira salva: R$ ${m.val}`, { val: m.val, desc: m.desc })
   }
 
   const mRec = computed(() =>

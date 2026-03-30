@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { sb } from '@/lib/supabase'
 import { uid } from '@/utils/uid'
+import { slacLog } from '@/utils/log'
 
 export const ETAPAS = [
   { id: 'contato',    label: 'Contato',      color: '#3b82f6' },
@@ -98,19 +99,31 @@ export const useLeadsStore = defineStore('leads', () => {
     const prev = leads.value.find(l => l.id === payload.id)
     undoStack.value.push({ action: 'upsert', prev: prev ? { ...prev } : null, id: payload.id })
     // Grava timestamp de entrada na etapa quando ela muda + loga evento
-    if (payload.etapa && prev && prev.etapa !== payload.etapa) {
+    const etapaChanged = payload.etapa && prev && prev.etapa !== payload.etapa
+    const priChanged   = payload.prioridade && prev && prev.prioridade !== payload.prioridade
+    if (etapaChanged) {
       payload = { ...payload, etapa_since: new Date().toISOString() }
       _logEvent(payload.id, `Etapa: ${ETAPA_LABEL[prev.etapa] || prev.etapa} → ${ETAPA_LABEL[payload.etapa] || payload.etapa}`)
+      slacLog('CRM-004', `Etapa: ${ETAPA_LABEL[prev.etapa] || prev.etapa} → ${ETAPA_LABEL[payload.etapa] || payload.etapa}`, { lead_id: payload.id, nome: payload.nome || prev.nome, de: prev.etapa, para: payload.etapa })
     }
-    if (payload.prioridade && prev && prev.prioridade !== payload.prioridade) {
+    if (priChanged) {
       _logEvent(payload.id, `Prioridade: ${PRI_LABEL[prev.prioridade] || prev.prioridade} → ${PRI_LABEL[payload.prioridade] || payload.prioridade}`)
+      slacLog('CRM-005', `Prioridade: ${PRI_LABEL[prev.prioridade] || prev.prioridade} → ${PRI_LABEL[payload.prioridade] || payload.prioridade}`, { lead_id: payload.id, nome: payload.nome || prev.nome })
     }
     await _upsert(payload)
+    if (!prev) {
+      slacLog('CRM-001', `Lead criado: ${payload.nome}`, { lead_id: payload.id, nome: payload.nome, etapa: payload.etapa })
+    } else if (!etapaChanged && !priChanged) {
+      slacLog('CRM-002', `Lead atualizado: ${payload.nome || prev.nome}`, { lead_id: payload.id, nome: payload.nome || prev.nome })
+    }
   }
 
   async function remove(id) {
     const lead = leads.value.find(l => l.id === id)
-    if (lead) undoStack.value.push({ action: 'remove', lead: { ...lead } })
+    if (lead) {
+      undoStack.value.push({ action: 'remove', lead: { ...lead } })
+      slacLog('CRM-003', `Lead removido: ${lead.nome}`, { lead_id: id, nome: lead.nome })
+    }
     await _remove(id)
   }
 
@@ -119,9 +132,15 @@ export const useLeadsStore = defineStore('leads', () => {
     if (!entry) return
     if (entry.action === 'remove') {
       await _upsert(entry.lead)
+      slacLog('CRM-007', `Lead restaurado via undo: ${entry.lead?.nome}`, { lead_id: entry.lead?.id })
     } else if (entry.action === 'upsert') {
-      if (entry.prev) await _upsert(entry.prev)   // restaura estado anterior
-      else await _remove(entry.id)                 // era novo, desfaz criação
+      if (entry.prev) {
+        await _upsert(entry.prev)
+        slacLog('CRM-007', `Lead restaurado via undo: ${entry.prev?.nome}`, { lead_id: entry.prev?.id })
+      } else {
+        await _remove(entry.id)
+        slacLog('CRM-007', 'Criação de lead desfeita via undo', { lead_id: entry.id })
+      }
     }
   }
 
@@ -142,6 +161,7 @@ export const useLeadsStore = defineStore('leads', () => {
       lead.ultima_direcao = direcao
       sb.from('leads').update({ ultima_direcao: direcao }).eq('id', leadId).then(() => {})
     }
+    slacLog('CRM-006', `Conversa adicionada ao lead: ${lead?.nome || leadId}`, { lead_id: leadId, canal, direcao })
     return nova
   }
 

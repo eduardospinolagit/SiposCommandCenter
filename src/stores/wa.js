@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, reactive, computed } from 'vue'
 import { sb } from '@/lib/supabase'
 import { uid } from '@/utils/uid'
+import { slacLog } from '@/utils/log'
 
 const BASE_URL = 'http://localhost:3001'
 
@@ -132,12 +133,13 @@ export const useWaStore = defineStore('wa', () => {
     connected.value = false
     hasQr.value     = false
     qrImage.value   = null
+    slacLog('ZAP-007', 'WhatsApp desconectado')
   }
 
   async function loadChats() {
     const { data: convs, error: convErr } = await sb
       .from('conversas')
-      .select('lead_id, mensagem, data, direcao, telefone, contato_nome')
+      .select('lead_id, mensagem, data, direcao, status, telefone, contato_nome')
       .eq('canal', 'whatsapp')
       .eq('user_id', uid())
       .order('data', { ascending: false })
@@ -160,7 +162,7 @@ export const useWaStore = defineStore('wa', () => {
         .in('id', [...leadMap.keys()]).eq('user_id', uid())
       for (const l of (leadsData || [])) {
         const c = leadMap.get(l.id)
-        result.push({ lead: l, lastMsg: c?.mensagem || '', lastAt: c?.data || '', lastDirecao: c?.direcao || '' })
+        result.push({ lead: l, lastMsg: c?.mensagem || '', lastAt: c?.data || '', lastDirecao: c?.direcao || '', lastStatus: c?.status || 'sent' })
       }
     }
 
@@ -168,7 +170,7 @@ export const useWaStore = defineStore('wa', () => {
     for (const [phone, c] of phoneMap) {
       result.push({
         lead: { id: null, nome: c.contato_nome || phone, telefone: phone, etapa: null },
-        lastMsg: c.mensagem || '', lastAt: c.data || '', lastDirecao: c.direcao || '',
+        lastMsg: c.mensagem || '', lastAt: c.data || '', lastDirecao: c.direcao || '', lastStatus: c.status || 'sent',
       })
     }
 
@@ -193,12 +195,15 @@ export const useWaStore = defineStore('wa', () => {
     const idx = templates.value.findIndex(x => x.id === data.id)
     if (idx !== -1) templates.value[idx] = data
     else templates.value.push(data)
+    slacLog('ZAP-004', `Template salvo: ${t.nome || t.titulo || t.id}`, { id: data.id, nome: t.nome || t.titulo })
     return data
   }
 
   async function deleteTemplate(id) {
+    const tpl = templates.value.find(t => t.id === id)
     await sb.from('wa_templates').delete().eq('id', id).eq('user_id', uid())
     templates.value = templates.value.filter(t => t.id !== id)
+    slacLog('ZAP-005', `Template removido: ${tpl?.nome || tpl?.titulo || id}`, { id })
   }
 
   async function loadConfig() {
@@ -228,6 +233,7 @@ export const useWaStore = defineStore('wa', () => {
     ])
     config.value.instance_id = instanceId
     scriptBase.value = script
+    slacLog('ZAP-006', 'Configuração WhatsApp salva', { instance_id: instanceId })
   }
 
   async function enviarArquivo(leadId, userId, telefone, tipo, arquivo, arquivoNome, caption) {
@@ -243,17 +249,21 @@ export const useWaStore = defineStore('wa', () => {
     })
     const data = await r.json()
     if (!r.ok) throw new Error(data.error || 'Falha ao enviar arquivo')
+    slacLog('ZAP-002', `Arquivo enviado para ${telefone} (${tipo})`, { lead_id: leadId, telefone, tipo, nome: arquivoNome })
     return data
   }
 
-  async function enviarMensagem(leadId, userId, telefone, mensagem) {
+  async function enviarMensagem(leadId, userId, telefone, mensagem, quoted) {
+    const body = { telefone, mensagem, lead_id: leadId, user_id: userId }
+    if (quoted?.id) body.quoted_id = quoted.id
     const r = await fetch(BASE_URL + '/send-text', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ telefone, mensagem, lead_id: leadId, user_id: userId }),
+      body: JSON.stringify(body),
     })
     const data = await r.json()
     if (!r.ok) throw new Error(data.error || 'Falha ao enviar')
+    slacLog('ZAP-001', `Mensagem enviada para ${telefone}`, { lead_id: leadId, telefone, preview: mensagem?.slice(0, 80) })
     return data
   }
 
@@ -268,6 +278,7 @@ export const useWaStore = defineStore('wa', () => {
     horaFim: '18:00',
     diasSemana: [1, 2, 3, 4, 5],
     limiteMsg: 15,
+    sempreAtivo: false,
   })
   const sdrChats  = reactive({}) // chatKey → { active, msgCount }
   const sdrLogs   = ref([])      // { chatKey, leadNome, acao, msg, ts }
@@ -305,11 +316,13 @@ export const useWaStore = defineStore('wa', () => {
       chave: 'sdr_config', valor: { ...sdrConfig.value },
       updated_at: new Date().toISOString(),
     }, { onConflict: 'id' })
+    slacLog('SDR-004', 'Configuração SDR salva', { enabled: sdrConfig.value.enabled })
   }
 
   async function toggleSdrChat(lead) {
     const key = sdrChatKey(lead)
-    if (sdrChats[key]?.active) {
+    const wasActive = !!sdrChats[key]?.active
+    if (wasActive) {
       sdrChats[key] = { active: false, msgCount: sdrChats[key].msgCount || 0 }
     } else {
       // Reseta msgCount ao re-ativar — evita desativação imediata por limite antigo
@@ -321,6 +334,7 @@ export const useWaStore = defineStore('wa', () => {
       chave: 'sdr_chats', valor: { ...sdrChats },
       updated_at: new Date().toISOString(),
     }, { onConflict: 'id' })
+    slacLog('SDR-003', `SDR ${wasActive ? 'desativado' : 'ativado'} para chat: ${lead?.nome || key}`, { lead_id: lead?.id, ativo: !wasActive })
   }
 
   async function sdrIncrementMsg(lead) {
@@ -344,6 +358,7 @@ export const useWaStore = defineStore('wa', () => {
   }
 
   function sdrIsInHours() {
+    if (sdrConfig.value.sempreAtivo) return true
     const now  = new Date()
     const day  = now.getDay() // 0=Dom … 6=Sab
     const dias = sdrConfig.value.diasSemana
@@ -425,6 +440,7 @@ export const useWaStore = defineStore('wa', () => {
     })
     if (error) throw error
     if (!data?.script) throw new Error(data?.error || 'Falha ao gerar script')
+    slacLog('ZAP-003', `Script gerado para: ${negocio || instagram || 'lead'}`, { negocio, instagram, cidade })
     return data.script
   }
 
