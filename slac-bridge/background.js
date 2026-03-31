@@ -133,16 +133,18 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       case 'SAVE_MSGS': {
         if (!state.token || !state.userId) return { error: 'sem token' }
         try {
-          // Preenche user_id e resolve lead_id pelo telefone (cache construído no START_SYNC)
           const rows = msg.msgs.map(m => {
             const lead_id = resolveLeadId(m.telefone)
-            return {
-              ...m,
-              user_id:  state.userId,
-              lead_id,
-              // Se vinculou ao lead, limpa telefone (conversa fica no leadMap, não phoneMap)
-              telefone: lead_id ? null : m.telefone,
+            const row = { ...m, user_id: state.userId }
+            if (lead_id) {
+              // Lead encontrado: inclui lead_id e limpa telefone
+              // merge-duplicates vai atualizar lead_id e telefone no registro existente
+              row.lead_id  = lead_id
+              row.telefone = null
             }
+            // Se não achou lead: NÃO inclui lead_id no payload
+            // merge-duplicates só atualiza campos presentes → não sobrescreve lead_id existente
+            return row
           })
           await upsertConversas(rows, state.token)
           state.syncMsgCount += rows.length
