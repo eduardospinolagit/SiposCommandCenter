@@ -112,15 +112,22 @@
             }
 
             // Fonte 1: chat.contact da lista (já carregado em memória)
+            // wid = WhatsApp ID (@c.us) — o JID real do contato no Multi-Device
             phone = cleanPhone(chat.contact?.phone)
               || cleanPhone(chat.contact?.formattedUser)
+              || cleanPhone(chat.contact?.wid?.user)
+              || cleanPhone((chat.contact?.wid?._serialized || '').replace(/@[\w.]+/g, ''))
               || null
 
             // Fonte 2: WPP.contact.get()
             if (!phone) {
               try {
                 const c = await window.WPP.contact.get(chatId)
-                phone = cleanPhone(c?.phone) || cleanPhone(c?.formattedUser) || null
+                phone = cleanPhone(c?.phone)
+                  || cleanPhone(c?.formattedUser)
+                  || cleanPhone(c?.wid?.user)
+                  || cleanPhone((c?.wid?._serialized || '').replace(/@[\w.]+/g, ''))
+                  || null
               } catch {}
             }
 
