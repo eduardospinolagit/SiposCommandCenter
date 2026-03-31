@@ -189,6 +189,7 @@ export const useWaStore = defineStore('wa', () => {
     // Se achar lead: auto-linka as conversas (evita "Salvar no CRM" indevido) e mostra como lead
     // Se não achar: mostra como contato avulso
     if (phoneMap.size) {
+      // Mapa tail→lead por telefone cadastrado no CRM
       const leadByTail = new Map()
       const { data: leadsPhone } = await sb
         .from('leads').select('id, nome, telefone, etapa').eq('user_id', uid())
@@ -197,24 +198,48 @@ export const useWaStore = defineStore('wa', () => {
         if (tail && l.nome) leadByTail.set(tail, l)
       }
 
+      // Mapa tail→lead_id por telefone das conversas Baileys (lead_id já definido)
+      // Cobre o caso em que o lead não tem telefone cadastrado no CRM
+      const convPhoneToLeadId = new Map()
+      for (const [leadId, c] of leadMap) {
+        const t = c.telefone?.replace(/\D/g, '').slice(-8)
+        if (t) convPhoneToLeadId.set(t, leadId)
+      }
+
       // Telefones já cobertos por leads vinculados via lead_id (evita duplicata na lista)
       const phonesEmLeadMap = new Set()
       for (const entry of result) {
         const tail = entry.lead?.telefone?.replace(/\D/g, '').slice(-8)
         if (tail) phonesEmLeadMap.add(tail)
       }
+      for (const [, c] of leadMap) {
+        if (c.telefone) {
+          const tail = c.telefone.replace(/\D/g, '').slice(-8)
+          if (tail) phonesEmLeadMap.add(tail)
+        }
+      }
 
       for (const [phone, c] of phoneMap) {
         const tail = phone.replace(/\D/g, '').slice(-8)
-        if (phonesEmLeadMap.has(tail)) continue // já aparece como lead com lead_id
 
-        const crmLead = leadByTail.get(tail)
+        // Resolve lead: pelo telefone do CRM ou pela conversa Baileys vinculada
+        let crmLead = leadByTail.get(tail)
+        if (!crmLead) {
+          const linkedId = convPhoneToLeadId.get(tail)
+          if (linkedId) crmLead = result.find(e => e.lead?.id === linkedId)?.lead || null
+        }
+
+        // Auto-linka no DB sempre que achar lead, mesmo que já esteja na lista (dedup)
         if (crmLead) {
-          // Auto-linka em background — próximo loadChats vai buscar pelo lead_id
           sb.from('conversas')
             .update({ lead_id: crmLead.id, telefone: null })
             .eq('telefone', phone).eq('user_id', uid()).is('lead_id', null)
             .then(() => {})
+        }
+
+        if (phonesEmLeadMap.has(tail)) continue // já aparece como lead com lead_id — não duplica
+
+        if (crmLead) {
           result.push({
             lead: crmLead,
             lastMsg: c.mensagem || '', lastAt: c.data || '', lastDirecao: c.direcao || '', lastStatus: c.status || 'sent',
