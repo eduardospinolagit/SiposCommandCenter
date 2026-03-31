@@ -630,7 +630,7 @@ tbody tr:hover td {
   position: fixed;
   top: 0;
   right: 0;
-  height: 100vh;
+  bottom: 0;
   width: 480px;
   max-width: 95vw;
   background: rgba(18, 18, 18, 0.38);

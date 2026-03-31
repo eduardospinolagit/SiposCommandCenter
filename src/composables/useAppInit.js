@@ -186,13 +186,16 @@ export async function useAppInit() {
         const lead = leads.leads.find(l => l.id === nova.lead_id)
         if (lead) lead.ultima_direcao = nova.direcao
       }
-      if (nova.canal === 'whatsapp' && nova.direcao === 'recebido') {
-        const key = nova.lead_id || nova.telefone || ''
-        wa.storeIncrementUnread(key)
-        try { await wa.loadChats() } catch {}
-        // Atualiza timestamp do poll para não reprocessar via polling
-        _sdrLastCheck = new Date().toISOString()
-        _sdrProcess(nova, wa, auth, leads).catch(() => {})
+      if (nova.canal === 'whatsapp') {
+        // Notifica SlacZapView imediatamente (sem esperar pollMsgs de 3s)
+        wa.lastWaMsg = nova
+        if (nova.direcao === 'recebido') {
+          const key = nova.lead_id || nova.telefone || ''
+          wa.storeIncrementUnread(key)
+          try { await wa.loadChats() } catch {}
+          _sdrLastCheck = new Date().toISOString()
+          _sdrProcess(nova, wa, auth, leads).catch(() => {})
+        }
       }
     })
     .subscribe((status, err) => {

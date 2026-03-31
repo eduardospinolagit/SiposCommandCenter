@@ -121,6 +121,14 @@ export const useLeadsStore = defineStore('leads', () => {
   async function remove(id) {
     const lead = leads.value.find(l => l.id === id)
     if (lead) {
+      // Desvincula conversas antes de deletar — evita cascade delete perder o histórico
+      if (lead.telefone) {
+        const tel = lead.telefone.replace(/\D/g, '').replace(/^55/, '')
+        await sb.from('conversas')
+          .update({ lead_id: null, telefone: tel })
+          .eq('lead_id', id)
+          .eq('user_id', uid())
+      }
       undoStack.value.push({ action: 'remove', lead: { ...lead } })
       slacLog('CRM-003', `Lead removido: ${lead.nome}`, { lead_id: id, nome: lead.nome })
     }

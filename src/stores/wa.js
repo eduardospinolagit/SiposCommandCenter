@@ -185,12 +185,47 @@ export const useWaStore = defineStore('wa', () => {
       }
     }
 
-    // Contatos sem lead (inbox direto do WhatsApp)
-    for (const [phone, c] of phoneMap) {
-      result.push({
-        lead: { id: null, nome: c.contato_nome || phone, telefone: phone, etapa: null },
-        lastMsg: c.mensagem || '', lastAt: c.data || '', lastDirecao: c.direcao || '', lastStatus: c.status || 'sent',
-      })
+    // Contatos sem lead — cruza telefone com CRM
+    // Se achar lead: auto-linka as conversas (evita "Salvar no CRM" indevido) e mostra como lead
+    // Se não achar: mostra como contato avulso
+    if (phoneMap.size) {
+      const leadByTail = new Map()
+      const { data: leadsPhone } = await sb
+        .from('leads').select('id, nome, telefone, etapa').eq('user_id', uid())
+      for (const l of (leadsPhone || [])) {
+        const tail = l.telefone?.replace(/\D/g, '').slice(-8)
+        if (tail && l.nome) leadByTail.set(tail, l)
+      }
+
+      // Telefones já cobertos por leads vinculados via lead_id (evita duplicata na lista)
+      const phonesEmLeadMap = new Set()
+      for (const l of (leadsData || [])) {
+        const tail = l.telefone?.replace(/\D/g, '').slice(-8)
+        if (tail) phonesEmLeadMap.add(tail)
+      }
+
+      for (const [phone, c] of phoneMap) {
+        const tail = phone.replace(/\D/g, '').slice(-8)
+        if (phonesEmLeadMap.has(tail)) continue // já aparece como lead com lead_id
+
+        const crmLead = leadByTail.get(tail)
+        if (crmLead) {
+          // Auto-linka em background — próximo loadChats vai buscar pelo lead_id
+          sb.from('conversas')
+            .update({ lead_id: crmLead.id, telefone: null })
+            .eq('telefone', phone).eq('user_id', uid()).is('lead_id', null)
+            .then(() => {})
+          result.push({
+            lead: crmLead,
+            lastMsg: c.mensagem || '', lastAt: c.data || '', lastDirecao: c.direcao || '', lastStatus: c.status || 'sent',
+          })
+        } else {
+          result.push({
+            lead: { id: null, nome: c.contato_nome || phone, telefone: phone, etapa: null },
+            lastMsg: c.mensagem || '', lastAt: c.data || '', lastDirecao: c.direcao || '', lastStatus: c.status || 'sent',
+          })
+        }
+      }
     }
 
     chats.value = result.sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt))
@@ -256,11 +291,15 @@ export const useWaStore = defineStore('wa', () => {
   }
 
   async function enviarArquivo(leadId, userId, telefone, tipo, arquivo, arquivoNome, caption) {
-    const endpoint = tipo === 'image' ? '/send-image' : tipo === 'audio' ? '/send-audio' : '/send-document'
+    const endpoint = tipo === 'image' ? '/send-image'
+      : tipo === 'audio'    ? '/send-audio'
+      : tipo === 'video'    ? '/send-video'
+      : '/send-document'
     const body = { telefone, lead_id: leadId, user_id: userId }
     if (tipo === 'image')    { body.imagem = arquivo; body.caption = caption || '' }
+    else if (tipo === 'video')    { body.video = arquivo; body.caption = caption || '' }
     else if (tipo === 'audio')    { body.audio = arquivo }
-    else                     { body.documento = arquivo; body.nome = arquivoNome; body.mimetype = '' }
+    else                     { body.documento = arquivo; body.nome = arquivoNome; body.mimetype = arquivoNome?.split('.').pop() || '' }
     const r = await fetch(BASE_URL + endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

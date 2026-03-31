@@ -901,7 +901,7 @@ function go(path) { router.push(path) }
 .menu-pop-enter-from   { opacity: 0; transform: scale(.92) translateY(-6px); }
 .menu-pop-leave-to     { opacity: 0; transform: scale(.96) translateY(-4px); }
 
-.main { flex: 1; min-width: 0; overflow-x: hidden; }
+.main { flex: 1; min-width: 0; overflow-x: hidden; display: flex; flex-direction: column; min-height: 0; }
 
 .mobile-nav {
   display: none; position: fixed; bottom: 0; left: 0; right: 0;

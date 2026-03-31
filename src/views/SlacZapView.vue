@@ -613,7 +613,7 @@
                   </button>
                 </div>
               </Transition>
-              <input ref="fileInputMedia" type="file" accept="image/*,video/*" style="display:none" @change="e => onFileSelected(e, e.target.files[0]?.type?.startsWith('video') ? 'document' : 'image')" />
+              <input ref="fileInputMedia" type="file" accept="image/*,video/*" style="display:none" @change="e => onFileSelected(e, e.target.files[0]?.type?.startsWith('video') ? 'video' : 'image')" />
               <input ref="fileInputDoc"   type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip" style="display:none" @change="e => onFileSelected(e, 'document')" />
               <input ref="fileInputAudio" type="file" accept="audio/*" style="display:none" @change="e => onFileSelected(e, 'audio')" />
             </div>
@@ -1010,6 +1010,7 @@ import { useWorkStore } from '@/stores/work'
 import { useFinStore } from '@/stores/fin'
 import { sb } from '@/lib/supabase'
 import { uid } from '@/utils/uid'
+import { slacLog } from '@/utils/log'
 import JSZip from 'jszip'
 
 const router  = useRouter()
@@ -2226,10 +2227,9 @@ async function refreshChats() {
   if (refreshingChats.value) return
   refreshingChats.value = true
   try {
-    // Garante que o servidor tem o JWT antes de qualquer operação no banco
     await wa.sendToken()
-    if (wa.connected) await wa.syncHistory()
     await wa.loadChats()
+    slacLog('ZAP-008', 'Conversas atualizadas manualmente')
   } finally {
     refreshingChats.value = false
   }
@@ -2571,9 +2571,18 @@ async function openChat(chatLead) {
   firstUnreadTs.value = lastSeenAt.value[key] || null
   const chat = wa.chats.find(c => (c.lead.id || c.lead.telefone) === key)
   markAsRead(chatLead, chat?.lastAt)
-  activeLead.value = chatLead.id
+  // Resolve chat por telefone → se existe lead vinculado, usa o lead (mensagens ficam no lead_id)
+  let resolvedLead = chatLead.id
     ? (leads.leads.find(l => l.id === chatLead.id) || chatLead)
     : chatLead
+  if (!resolvedLead.id && resolvedLead.telefone) {
+    const phone10 = String(resolvedLead.telefone).replace(/\D/g, '').slice(-10)
+    const linked = leads.leads.find(l =>
+      l.telefone && String(l.telefone).replace(/\D/g, '').slice(-10) === phone10
+    )
+    if (linked) resolvedLead = linked
+  }
+  activeLead.value = resolvedLead
   loadingMsgs.value = true
   msgsOffset.value = 0
   msgsHasMore.value = false
@@ -2583,9 +2592,9 @@ async function openChat(chatLead) {
   replyTo.value = null
   clearTimeout(floatingDateTimer)
   const PAGE = 50
-  const all = chatLead.id
-    ? await leads.loadConversas(chatLead.id, { limit: PAGE, offset: 0 })
-    : await leads.loadConversasByPhone(chatLead.telefone, { limit: PAGE, offset: 0 })
+  const all = resolvedLead.id
+    ? await leads.loadConversas(resolvedLead.id, { limit: PAGE, offset: 0 })
+    : await leads.loadConversasByPhone(resolvedLead.telefone, { limit: PAGE, offset: 0 })
   const filtered = (all || []).filter(c => c.canal === 'whatsapp')
   waMsgs.value = filtered
   msgsOffset.value = PAGE
@@ -2761,7 +2770,7 @@ async function enviar() {
 async function _enviarArquivo() {
   const f = selectedFile.value
   const caption = fileCaption.value
-  const labels = { image: '[Imagem]', document: `[Documento: ${f.nome}]`, audio: '[Áudio]' }
+  const labels = { image: '[Imagem]', video: '[Vídeo]', document: `[Documento: ${f.nome}]`, audio: '[Áudio]' }
   const previewText = caption || labels[f.tipo] || '[Arquivo]'
   const opt = { id: 'opt_' + Date.now(), direcao: 'enviado', mensagem: previewText, data: new Date().toISOString(), canal: 'whatsapp' }
   waMsgs.value.push(opt)
@@ -2865,8 +2874,19 @@ async function pollMsgs() {
     if (activeLead.value.id) {
       q = q.eq('lead_id', activeLead.value.id)
     } else {
+      // Chat aberto por telefone — busca por lead_id (se o servidor vinculou) OU por telefone
       const phone = String(activeLead.value.telefone).replace(/\D/g, '').replace(/^55/, '').slice(-10)
-      q = q.is('lead_id', null).ilike('telefone', `%${phone}%`)
+      // Descobre se existe lead vinculado a este telefone
+      const matchedLead = leads.leads.find(l =>
+        l.telefone && String(l.telefone).replace(/\D/g, '').slice(-10) === phone
+      )
+      if (matchedLead) {
+        // Servidor vinculou as mensagens ao lead — atualiza activeLead e busca por lead_id
+        activeLead.value = matchedLead
+        q = q.eq('lead_id', matchedLead.id)
+      } else {
+        q = q.is('lead_id', null).ilike('telefone', `%${phone}%`)
+      }
     }
     const { data } = await q
     const fresh = data || []
@@ -2978,10 +2998,26 @@ onMounted(async () => {
   watch(() => wa.lastWaMsg, async (nova) => {
     if (!nova || nova.canal !== 'whatsapp') return
     const active = activeLead.value
-    const isActive = active && (
+    if (!active) {
+      if (nova.direcao === 'recebido') { setTimeout(fetchUnreadCounts, 500); playNotifSound() }
+      return
+    }
+    // Verifica se a mensagem pertence ao chat aberto (cobre 3 casos)
+    const tail8 = (s) => String(s || '').replace(/\D/g, '').slice(-8)
+    const isActive = (
+      // 1. Chat por lead_id e mensagem vinculada ao mesmo lead
       (active.id && active.id === nova.lead_id) ||
+      // 2. Chat por telefone e mensagem salva por telefone
       (!active.id && nova.telefone && active.telefone &&
-        nova.telefone.slice(-8) === active.telefone.replace(/\D/g,'').slice(-8))
+        tail8(nova.telefone) === tail8(active.telefone)) ||
+      // 3. Chat por telefone mas mensagem foi salva com lead_id (servidor encontrou o lead)
+      (!active.id && nova.lead_id && active.telefone && (() => {
+        const l = leads.leads.find(l => l.id === nova.lead_id)
+        return l?.telefone && tail8(l.telefone) === tail8(active.telefone)
+      })()) ||
+      // 4. Chat por lead mas mensagem chegou por telefone sem lead_id (fallback)
+      (active.id && !nova.lead_id && nova.telefone && active.telefone &&
+        tail8(nova.telefone) === tail8(active.telefone))
     )
     if (isActive) {
       const exists = waMsgs.value.some(m => m.id === nova.id || (m.id?.startsWith('opt_') && m.mensagem === nova.mensagem))
@@ -3843,7 +3879,8 @@ onUnmounted(() => {
 .sz-root {
   position: relative;
   display: flex;
-  height: calc(100vh - 56px);
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
   border-top: 1px solid var(--border-subtle);
   background: var(--bg-base);

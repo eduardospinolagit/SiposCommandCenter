@@ -40,6 +40,7 @@ export const LOG_CODES = {
   'ZAP-005': 'Template de WhatsApp removido',
   'ZAP-006': 'Configuração WhatsApp salva',
   'ZAP-007': 'WhatsApp desconectado',
+  'ZAP-008': 'Conversas atualizadas manualmente',
 
   // SDR — agente autônomo de vendas
   'SDR-001': 'SDR global ativado',
