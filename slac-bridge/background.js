@@ -137,13 +137,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             const lead_id = resolveLeadId(m.telefone)
             const row = { ...m, user_id: state.userId }
             if (lead_id) {
-              // Lead encontrado: inclui lead_id e limpa telefone
-              // merge-duplicates vai atualizar lead_id e telefone no registro existente
-              row.lead_id  = lead_id
-              row.telefone = null
+              // Lead encontrado: vincula e limpa telefone (conversa vai para leadMap, não phoneMap)
+              row.lead_id      = lead_id
+              row.telefone     = null
+              row.contato_nome = null  // CRM já tem o nome — não precisa sobrescrever
             }
-            // Se não achou lead: NÃO inclui lead_id no payload
-            // merge-duplicates só atualiza campos presentes → não sobrescreve lead_id existente
+            // Se não achou lead: mantém telefone e contato_nome para exibir no SlacZap
+            // NÃO inclui lead_id → merge não sobrescreve lead_id existente
             return row
           })
           await upsertConversas(rows, state.token)

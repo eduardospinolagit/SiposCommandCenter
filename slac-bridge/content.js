@@ -117,14 +117,15 @@
             if (!msg.id) continue
             const fromMe = msg.id?.fromMe ?? msg.fromMe ?? false
             rows.push({
-              id:       'wa_' + (msg.id?._serialized || msg.id),
-              user_id:  null,
-              canal:    'whatsapp',
-              direcao:  fromMe ? 'enviado' : 'recebido',
-              mensagem: msg.body || labelPorTipo(msg.type),
-              data:     new Date((msg.t || Date.now() / 1000) * 1000).toISOString(),
-              telefone: phone,
-              status:   fromMe ? 'sent' : 'received',
+              id:           'wa_' + (msg.id?._serialized || msg.id),
+              user_id:      null,
+              canal:        'whatsapp',
+              direcao:      fromMe ? 'enviado' : 'recebido',
+              mensagem:     msg.body || labelPorTipo(msg.type),
+              data:         new Date((msg.t || Date.now() / 1000) * 1000).toISOString(),
+              telefone:     phone,
+              status:       fromMe ? 'sent' : 'received',
+              contato_nome: name,
             })
           }
 
