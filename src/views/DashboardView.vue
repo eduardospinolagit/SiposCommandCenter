@@ -526,7 +526,15 @@ async function analisarConversao() {
         nichos,
       }
     })
-    if (error) throw new Error(error.message || JSON.stringify(error))
+    if (error) {
+      // Extrai o erro real do corpo da resposta (FunctionsHttpError.context = Response)
+      let detail = error.message
+      try {
+        const body = await error.context?.json?.()
+        if (body?.error) detail = body.error
+      } catch {}
+      throw new Error(detail)
+    }
     if (data?.error) throw new Error(data.error)
     const saveAt    = new Date()
     const ts        = saveAt.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
