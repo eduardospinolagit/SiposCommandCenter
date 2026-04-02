@@ -506,15 +506,13 @@ async function analisarConversao() {
       scriptBase = scriptRow?.valor?.texto || ''
     } catch {}
 
-    // Usa fetch direto para ter controle total sobre o erro
-    const { data: { session } } = await sb.auth.getSession()
-    const token = session?.access_token || ''
+    const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpxbW5tdWRmeHhkY2pmcmFkdmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDAxNTMsImV4cCI6MjA4OTYxNjE1M30.LKZz_djPhIc_PvdLxAAhLaV-BZxX70nGup-qODIDEF4'
     const resp = await fetch('https://jqmnmudfxxdcjfradvcj.supabase.co/functions/v1/analisar-conversao', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token,
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpxbW5tdWRmeHhkY2pmcmFkdmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDAxNTMsImV4cCI6MjA4OTYxNjE1M30.LKZz_djPhIc_PvdLxAAhLaV-BZxX70nGup-qODIDEF4',
+        'Authorization': 'Bearer ' + ANON,
+        'apikey': ANON,
       },
       body: JSON.stringify({
         leads: {
