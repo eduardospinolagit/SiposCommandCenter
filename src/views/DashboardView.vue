@@ -506,8 +506,17 @@ async function analisarConversao() {
       scriptBase = scriptRow?.valor?.texto || ''
     } catch {}
 
-    const { data, error } = await sb.functions.invoke('analisar-conversao', {
-      body: {
+    // Usa fetch direto para ter controle total sobre o erro
+    const { data: { session } } = await sb.auth.getSession()
+    const token = session?.access_token || ''
+    const resp = await fetch('https://jqmnmudfxxdcjfradvcj.supabase.co/functions/v1/analisar-conversao', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpxbW5tdWRmeHhkY2pmcmFkdmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDAxNTMsImV4cCI6MjA4OTYxNjE1M30.LKZz_djPhIc_PvdLxAAhLaV-BZxX70nGup-qODIDEF4',
+      },
+      body: JSON.stringify({
         leads: {
           total:      leads.stats.total,
           por_etapa:  etapas,
@@ -524,17 +533,13 @@ async function analisarConversao() {
         },
         scriptBase,
         nichos,
-      }
+      }),
     })
-    if (error) {
-      // Extrai o erro real do corpo da resposta (FunctionsHttpError.context = Response)
-      let detail = error.message
-      try {
-        const body = await error.context?.json?.()
-        if (body?.error) detail = body.error
-      } catch {}
-      throw new Error(detail)
+    if (!resp.ok) {
+      const text = await resp.text()
+      throw new Error(`HTTP ${resp.status}: ${text}`)
     }
+    const data = await resp.json()
     if (data?.error) throw new Error(data.error)
     const saveAt    = new Date()
     const ts        = saveAt.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
