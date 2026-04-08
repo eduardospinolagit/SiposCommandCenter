@@ -25,6 +25,8 @@ const routes = [
       { path: 'contatos',      name: 'Contatos',      component: () => import('@/views/ContatosView.vue') },
       { path: 'logs',          name: 'Logs',          component: () => import('@/views/LogsView.vue') },
       { path: 'sdr',           name: 'SDR',           component: () => import('@/views/SDRView.vue') },
+      { path: 'admin-zap',    name: 'AdminZap',      component: () => import('@/views/AdminZapView.vue'),  meta: { requiresAdmin: true } },
+      { path: 'admin-sdr',    name: 'AdminSDR',      component: () => import('@/views/AdminSDRView.vue'),  meta: { requiresAdmin: true } },
     ]
   },
 ]
@@ -45,6 +47,7 @@ router.beforeEach(async (to) => {
     })
   }
   if (to.meta.requiresAuth && !auth.isLoggedIn) return { name: 'Login' }
+  if (to.meta.requiresAdmin && !auth.isAdmin) return { path: '/dashboard' }
   if (to.meta.public && auth.isLoggedIn) return { path: '/dashboard' }
 })
 

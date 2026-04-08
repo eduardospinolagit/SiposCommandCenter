@@ -41,6 +41,19 @@
             <span class="sb-text">Logs</span>
           </button>
         </div>
+        <div v-if="auth.isAdmin" class="sb-section">
+          <p class="sb-section-label">Admin</p>
+          <button class="sb-item" :class="{ active: route.path === '/admin-zap' }"
+            @click="go('/admin-zap')" title="Admin Zap">
+            <span class="sb-icon" v-html="icons.adminzap"></span>
+            <span class="sb-text">Admin Zap</span>
+          </button>
+          <button class="sb-item" :class="{ active: route.path === '/admin-sdr' }"
+            @click="go('/admin-sdr')" title="Admin SDR">
+            <span class="sb-icon" v-html="icons.adminsdr"></span>
+            <span class="sb-text">Admin SDR</span>
+          </button>
+        </div>
       </nav>
 
       <div class="sb-footer">
@@ -467,6 +480,8 @@ const icons = {
   slaczap:      `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.77.46 3.43 1.27 4.88L2 22l5.25-1.25A9.95 9.95 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm4.9 14.07c-.2.58-1.19 1.11-1.63 1.18-.44.06-1 .09-1.6-.1-.48-.15-.97-.36-1.45-.53-2.57-1.1-4.07-3.04-4.2-3.18-.12-.17-1.03-1.38-1.03-2.63s.65-1.86.89-2.12c.23-.25.5-.32.67-.32.17 0 .34 0 .48.01.16.01.36-.06.57.43.2.49.7 1.7.76 1.82.06.12.1.26.02.43-.08.16-.12.26-.24.4-.12.14-.26.32-.37.43-.12.12-.25.26-.1.5.14.24.63 1.05 1.36 1.7.94.84 1.73 1.1 1.98 1.22.24.12.39.1.53-.06.14-.16.62-.72.86-.96.24-.25.49-.2.82-.08.33.12 2.07.98 2.42 1.16.35.18.59.27.67.41.09.15.09.85-.11 1.43z"/></svg>`,
   sdr:          `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M4 6h16v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"/><path d="M9 14l2 2 4-4"/></svg>`,
   contatos:     `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  adminzap:     `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.77.46 3.43 1.27 4.88L2 22l5.25-1.25A9.95 9.95 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm4.9 14.07c-.2.58-1.19 1.11-1.63 1.18-.44.06-1 .09-1.6-.1-.48-.15-.97-.36-1.45-.53-2.57-1.1-4.07-3.04-4.2-3.18-.12-.17-1.03-1.38-1.03-2.63s.65-1.86.89-2.12c.23-.25.5-.32.67-.32.17 0 .34 0 .48.01.16.01.36-.06.57.43.2.49.7 1.7.76 1.82.06.12.1.26.02.43-.08.16-.12.26-.24.4-.12.14-.26.32-.37.43-.12.12-.25.26-.1.5.14.24.63 1.05 1.36 1.7.94.84 1.73 1.1 1.98 1.22.24.12.39.1.53-.06.14-.16.62-.72.86-.96.24-.25.49-.2.82-.08.33.12 2.07.98 2.42 1.16.35.18.59.27.67.41.09.15.09.85-.11 1.43z"/></svg>`,
+  adminsdr:     `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
 }
 
 const mainNav = [
@@ -498,13 +513,16 @@ const allRoutes = [
   { path: '/prospeccao',   label: 'Prospecção',   desc: 'Importar e prospectar',    icon: icons.search },
   { path: '/work',         label: 'Tarefas',      desc: 'Tarefas e serviços',        icon: icons.work },
   { path: '/sdr',          label: 'SDR IA',       desc: 'Agente autônomo de vendas', icon: icons.sdr },
+  { path: '/admin-zap',   label: 'Admin Zap',    desc: 'WhatsApp admin exclusivo',  icon: icons.adminzap, adminOnly: true },
+  { path: '/admin-sdr',   label: 'Admin SDR',    desc: 'SDR admin exclusivo',       icon: icons.adminsdr, adminOnly: true },
 ]
 
 function onSearchInput() {
   const q = searchQuery.value.trim().toLowerCase()
   if (!q) { searchResults.value = []; return }
   searchResults.value = allRoutes.filter(r =>
-    r.label.toLowerCase().includes(q) || r.desc.toLowerCase().includes(q))
+    (!r.adminOnly || auth.isAdmin) &&
+    (r.label.toLowerCase().includes(q) || r.desc.toLowerCase().includes(q)))
 }
 function runSearch() {
   if (searchResults.value.length === 1) {
