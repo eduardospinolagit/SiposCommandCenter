@@ -1036,7 +1036,7 @@ import { ref, computed, watch, reactive, nextTick, onMounted, onUnmounted, injec
 import EmojiData from '@emoji-mart/data'
 import { Picker } from 'emoji-mart'
 import { useRouter, useRoute } from 'vue-router'
-import { useWaStore } from '@/stores/wa'
+import { useAdminWaStore } from '@/stores/adminWa'
 import { useLeadsStore, ETAPAS } from '@/stores/leads'
 import { useAuthStore } from '@/stores/auth'
 import { useWorkStore } from '@/stores/work'
@@ -1048,7 +1048,7 @@ import JSZip from 'jszip'
 
 const router  = useRouter()
 const route   = useRoute()
-const wa      = useWaStore()
+const wa      = useAdminWaStore()
 const leads   = useLeadsStore()
 const auth    = useAuthStore()
 const work    = useWorkStore()

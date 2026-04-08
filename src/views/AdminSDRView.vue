@@ -197,12 +197,12 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, inject } from 'vue'
-import { useWaStore } from '@/stores/wa'
+import { useAdminWaStore } from '@/stores/adminWa'
 import { useLeadsStore } from '@/stores/leads'
 import { slacLog } from '@/utils/log'
 import InfoTip from '@/components/ui/InfoTip.vue'
 
-const wa    = useWaStore()
+const wa    = useAdminWaStore()
 const leads = useLeadsStore()
 const toast = inject('toast')
 
