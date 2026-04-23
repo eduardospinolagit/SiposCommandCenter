@@ -25,6 +25,7 @@ const routes = [
       { path: 'contatos',      name: 'Contatos',      component: () => import('@/views/ContatosView.vue') },
       { path: 'logs',          name: 'Logs',          component: () => import('@/views/LogsView.vue') },
       { path: 'sdr',           name: 'SDR',           component: () => import('@/views/SDRView.vue') },
+      { path: 'pessoal',      name: 'Pessoal',       component: () => import('@/views/FinanceiroPessoalView.vue') },
       { path: 'admin-zap',    name: 'AdminZap',      component: () => import('@/views/AdminZapView.vue'),  meta: { requiresAdmin: true } },
       { path: 'admin-sdr',    name: 'AdminSDR',      component: () => import('@/views/AdminSDRView.vue'),  meta: { requiresAdmin: true } },
     ]

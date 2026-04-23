@@ -10,9 +10,10 @@ export const useAuthStore = defineStore('auth', () => {
   const loading     = ref(true)
   const role        = ref('pro') // 'admin' | 'elite' | 'pro'
 
-  const isLoggedIn = computed(() => !!user.value)
-  const isAdmin    = computed(() => role.value === 'admin')
-  const isElite    = computed(() => role.value === 'elite' || role.value === 'admin')
+  const isLoggedIn  = computed(() => !!user.value)
+  const isAdmin     = computed(() => role.value === 'admin')
+  const isElite     = computed(() => role.value === 'elite' || role.value === 'admin')
+  const isPersonal  = computed(() => user.value?.id === '2dff3b58-a049-4d94-a1e8-c9b19dba65ea')
   const roleLabel  = computed(() => ({ admin: 'Admin', elite: 'Elite', pro: 'Pro' }[role.value] ?? 'Pro'))
 
   async function init() {
@@ -105,5 +106,5 @@ export const useAuthStore = defineStore('auth', () => {
     if (targetUserId === user.value?.id) role.value = newRole
   }
 
-  return { user, userName, companyName, role, loading, isLoggedIn, isAdmin, isElite, roleLabel, init, login, logout, saveUserName, saveCompanyName, loadUserName, saveUserRole }
+  return { user, userName, companyName, role, loading, isLoggedIn, isAdmin, isElite, isPersonal, roleLabel, init, login, logout, saveUserName, saveCompanyName, loadUserName, saveUserRole }
 })
