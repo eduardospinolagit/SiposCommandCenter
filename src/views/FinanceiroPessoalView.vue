@@ -187,6 +187,10 @@
                 <p class="cats-section-title">Despesas</p>
                 <div class="cats-list">
                   <div v-for="c in fp.catsSaida" :key="c" class="cats-tag">
+                    <label class="cats-color-wrap" :title="`Cor de ${c}`">
+                      <input type="color" :value="fp.colorFor(c)" @change="e => fp.setColor(c, e.target.value)" class="cats-color-input" />
+                      <span class="cats-color-swatch" :style="{ background: fp.colorFor(c) }"></span>
+                    </label>
                     <span>{{ c }}</span>
                     <button @click="removerCat('saida', c)" class="cats-remove" title="Remover">
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -205,6 +209,10 @@
                 <p class="cats-section-title">Receitas</p>
                 <div class="cats-list">
                   <div v-for="c in fp.catsEntrada" :key="c" class="cats-tag cats-tag--entrada">
+                    <label class="cats-color-wrap" :title="`Cor de ${c}`">
+                      <input type="color" :value="fp.colorFor(c)" @change="e => fp.setColor(c, e.target.value)" class="cats-color-input" />
+                      <span class="cats-color-swatch" :style="{ background: fp.colorFor(c) }"></span>
+                    </label>
                     <span>{{ c }}</span>
                     <button @click="removerCat('entrada', c)" class="cats-remove" title="Remover">
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -266,6 +274,7 @@ const saldoMes = computed(() => recMes.value - saiMes.value)
 const chartCat = ref(null)
 let chartInst  = null
 watch(listaFiltrada, () => nextTick(renderChart), { deep: true })
+watch(() => fp.catColors, () => nextTick(renderChart), { deep: true })
 onMounted(() => nextTick(renderChart))
 
 function renderChart() {
@@ -277,14 +286,13 @@ function renderChart() {
   const entries = Object.entries(gastos).filter(([, v]) => v > 0)
   if (!entries.length) { if (chartInst) { chartInst.destroy(); chartInst = null } return }
 
-  const COLORS = ['#22c55e','#3b82f6','#a855f7','#f59e0b','#ef4444','#06b6d4','#ec4899','#84cc16','#f97316']
   if (chartInst) chartInst.destroy()
   window.Chart.defaults.font.family = 'Sora'
   chartInst = new window.Chart(chartCat.value, {
     type: 'doughnut',
     data: {
       labels: entries.map(([k]) => k),
-      datasets: [{ data: entries.map(([, v]) => v), backgroundColor: COLORS, borderWidth: 0 }]
+      datasets: [{ data: entries.map(([, v]) => v), backgroundColor: entries.map(([k]) => fp.colorFor(k)), borderWidth: 0 }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
@@ -471,6 +479,22 @@ function fmtData(d) {
   border-color: rgba(34,197,94,.2);
   color: var(--accent);
 }
+.cats-color-wrap {
+  position: relative; display: flex; align-items: center;
+  cursor: pointer; flex-shrink: 0; width: 14px; height: 14px;
+}
+.cats-color-input {
+  position: absolute; inset: 0; opacity: 0;
+  width: 100%; height: 100%; cursor: pointer; padding: 0; border: none;
+}
+.cats-color-swatch {
+  display: block; width: 12px; height: 12px;
+  border-radius: 50%; border: 1.5px solid rgba(255,255,255,.15);
+  flex-shrink: 0; pointer-events: none; transition: transform 120ms;
+}
+[data-theme="light"] .cats-color-swatch { border-color: rgba(0,0,0,.15); }
+.cats-color-wrap:hover .cats-color-swatch { transform: scale(1.25); }
+
 .cats-remove {
   display: flex; align-items: center; justify-content: center;
   background: none; border: none; cursor: pointer;

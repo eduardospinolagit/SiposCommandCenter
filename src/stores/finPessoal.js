@@ -5,11 +5,20 @@ import { uid } from '@/utils/uid'
 
 const DEFAULTS_SAIDA   = ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Lazer', 'Educação', 'Assinaturas', 'Vestuário', 'Outros']
 const DEFAULTS_ENTRADA = ['Salário', 'Freelance', 'Investimentos', 'Presente', 'Outros']
+const DEFAULT_COLORS   = ['#22c55e','#3b82f6','#a855f7','#f59e0b','#ef4444','#06b6d4','#ec4899','#84cc16','#f97316','#64748b']
 
 export const useFinPessoalStore = defineStore('finPessoal', () => {
-  const items      = ref([])
-  const catsSaida  = ref([...DEFAULTS_SAIDA])
+  const items       = ref([])
+  const catsSaida   = ref([...DEFAULTS_SAIDA])
   const catsEntrada = ref([...DEFAULTS_ENTRADA])
+  const catColors   = ref({}) // { 'Moradia': '#ff0000', ... }
+
+  function colorFor(cat) {
+    if (catColors.value[cat]) return catColors.value[cat]
+    const all = [...catsSaida.value, ...catsEntrada.value]
+    const idx = all.indexOf(cat)
+    return DEFAULT_COLORS[idx >= 0 ? idx % DEFAULT_COLORS.length : 0]
+  }
 
   async function load() {
     const [txRes, catRes] = await Promise.all([
@@ -20,6 +29,7 @@ export const useFinPessoalStore = defineStore('finPessoal', () => {
     if (catRes.data?.valor) {
       catsSaida.value   = catRes.data.valor.saida   || [...DEFAULTS_SAIDA]
       catsEntrada.value = catRes.data.valor.entrada || [...DEFAULTS_ENTRADA]
+      catColors.value   = catRes.data.valor.colors  || {}
     }
   }
 
@@ -28,7 +38,7 @@ export const useFinPessoalStore = defineStore('finPessoal', () => {
       id:         uid() + '_fin_pessoal_cats',
       user_id:    uid(),
       chave:      'fin_pessoal_cats',
-      valor:      { saida: catsSaida.value, entrada: catsEntrada.value },
+      valor:      { saida: catsSaida.value, entrada: catsEntrada.value, colors: catColors.value },
       updated_at: new Date().toISOString()
     }, { onConflict: 'id' })
   }
@@ -44,6 +54,12 @@ export const useFinPessoalStore = defineStore('finPessoal', () => {
   async function removeCat(tipo, nome) {
     const lista = tipo === 'entrada' ? catsEntrada : catsSaida
     lista.value = lista.value.filter(c => c !== nome)
+    delete catColors.value[nome]
+    await saveCats()
+  }
+
+  async function setColor(cat, color) {
+    catColors.value = { ...catColors.value, [cat]: color }
     await saveCats()
   }
 
@@ -83,19 +99,10 @@ export const useFinPessoalStore = defineStore('finPessoal', () => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0)
   }
 
-  function gastosPorCat() {
-    const c = {}
-    items.value.filter(t => t.tipo === 'saida').forEach(t => {
-      c[t.cat] = (c[t.cat] || 0) + Number(t.val)
-    })
-    return c
-  }
-
   return {
-    items, catsSaida, catsEntrada,
+    items, catsSaida, catsEntrada, catColors,
     load, upsert, remove,
-    addCat, removeCat,
-    totalEntrada, totalSaida, saldo,
-    fmt, gastosPorCat
+    addCat, removeCat, setColor, colorFor,
+    totalEntrada, totalSaida, saldo, fmt
   }
 })
