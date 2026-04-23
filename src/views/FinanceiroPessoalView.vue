@@ -48,7 +48,7 @@
     </div>
 
     <!-- Gráfico despesas por categoria -->
-    <div class="card chart-card" v-if="listaFiltrada.some(t=>t.tipo==='saida')">
+    <div class="card chart-card" v-show="listaFiltrada.some(t=>t.tipo==='saida')">
       <h3 class="chart-title">Despesas por categoria</h3>
       <div class="chart-wrap"><canvas ref="chartCat"></canvas></div>
     </div>
@@ -270,7 +270,10 @@ onMounted(() => nextTick(renderChart))
 
 function renderChart() {
   if (!chartCat.value || !window.Chart) return
-  const gastos  = fp.gastosPorCat()
+  const gastos = {}
+  listaFiltrada.value.filter(t => t.tipo === 'saida').forEach(t => {
+    gastos[t.cat] = (gastos[t.cat] || 0) + Number(t.val)
+  })
   const entries = Object.entries(gastos).filter(([, v]) => v > 0)
   if (!entries.length) { if (chartInst) { chartInst.destroy(); chartInst = null } return }
 

@@ -13,7 +13,7 @@ export const useFinPessoalStore = defineStore('finPessoal', () => {
 
   async function load() {
     const [txRes, catRes] = await Promise.all([
-      sb.from('fin_pessoal').select('*').eq('user_id', uid()).order('data', { ascending: false }),
+      sb.from('fin_pessoal').select('*').eq('user_id', uid()).order('data', { ascending: false }).order('created_at', { ascending: false }),
       sb.from('configuracoes').select('valor').eq('user_id', uid()).eq('chave', 'fin_pessoal_cats').maybeSingle()
     ])
     if (!txRes.error) items.value = txRes.data || []
