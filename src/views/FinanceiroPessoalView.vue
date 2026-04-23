@@ -30,13 +30,13 @@
     <div class="kpi-grid kpi-grid--3">
       <div class="kpi-card">
         <span class="kpi-label">Receitas</span>
-        <span class="kpi-value kpi-value--accent">{{ fp.fmt(recMes) }}</span>
+        <span class="kpi-value kpi-value--accent">{{ fp.fmt(recPago) }}</span>
         <div class="kpi-detail-row">
           <span class="kpi-detail-item">
             <span class="kpi-dot kpi-dot--ok"></span>
             Recebido <strong>{{ fp.fmt(recPago) }}</strong>
           </span>
-          <span class="kpi-detail-item" v-if="recPendente > 0">
+          <span class="kpi-detail-item">
             <span class="kpi-dot kpi-dot--warn"></span>
             A receber <strong>{{ fp.fmt(recPendente) }}</strong>
           </span>
@@ -44,24 +44,28 @@
       </div>
       <div class="kpi-card">
         <span class="kpi-label">Despesas</span>
-        <span class="kpi-value kpi-value--danger">{{ fp.fmt(saiMes) }}</span>
+        <span class="kpi-value kpi-value--danger">{{ fp.fmt(saiPago) }}</span>
         <div class="kpi-detail-row">
           <span class="kpi-detail-item">
             <span class="kpi-dot kpi-dot--danger"></span>
             Pago <strong>{{ fp.fmt(saiPago) }}</strong>
           </span>
-          <span class="kpi-detail-item" v-if="saiPendente > 0">
+          <span class="kpi-detail-item">
             <span class="kpi-dot kpi-dot--warn"></span>
             Pendente <strong>{{ fp.fmt(saiPendente) }}</strong>
           </span>
         </div>
       </div>
       <div class="kpi-card">
-        <span class="kpi-label">Saldo atual</span>
+        <span class="kpi-label">Saldo</span>
         <span class="kpi-value" :style="{ color: saldoAtual >= 0 ? 'var(--accent)' : 'var(--status-danger)' }">
           {{ fp.fmt(saldoAtual) }}
         </span>
         <div class="kpi-detail-row">
+          <span class="kpi-detail-item">
+            <span class="kpi-dot kpi-dot--ok"></span>
+            Atual (pago) <strong>{{ fp.fmt(saldoAtual) }}</strong>
+          </span>
           <span class="kpi-detail-item">
             <span class="kpi-dot" :style="{ background: saldoMes >= 0 ? 'var(--status-info)' : 'var(--status-warning)' }"></span>
             Projetado <strong>{{ fp.fmt(saldoMes) }}</strong>
@@ -264,7 +268,10 @@ import { useFinPessoalStore } from '@/stores/finPessoal'
 const fp    = useFinPessoalStore()
 const toast = inject('toast')
 
-onMounted(fp.load)
+onMounted(async () => {
+  await fp.load()
+  nextTick(renderChart)
+})
 
 // Filtros
 const mesFil  = ref('')
@@ -303,9 +310,8 @@ const saldoMes    = computed(() => recMes.value - saiMes.value)
 // Chart
 const chartCat = ref(null)
 let chartInst  = null
-watch(listaFiltrada, () => nextTick(renderChart), { deep: true })
+watch(listaFiltrada, () => nextTick(renderChart))
 watch(() => fp.catColors, () => nextTick(renderChart), { deep: true })
-onMounted(() => nextTick(renderChart))
 
 function renderChart() {
   if (!chartCat.value || !window.Chart) return
