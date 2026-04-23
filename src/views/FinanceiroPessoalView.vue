@@ -11,11 +11,15 @@
           <option value="">Todo período</option>
           <option v-for="m in mesesDisponiveis" :key="m.val" :value="m.val">{{ m.label }}</option>
         </select>
-        <button class="btn btn-secondary" @click="abrirModal('saida')">
+        <button class="btn btn-ghost btn-sm" @click="modalCats = true" title="Gerenciar categorias">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Categorias
+        </button>
+        <button class="btn btn-secondary" @click="abrirDrawer('saida')">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Despesa
         </button>
-        <button class="btn btn-primary" @click="abrirModal('entrada')">
+        <button class="btn btn-primary" @click="abrirDrawer('entrada')">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Receita
         </button>
@@ -34,7 +38,7 @@
         <span class="kpi-value kpi-value--danger">{{ fp.fmt(saiMes) }}</span>
         <span class="kpi-sub">{{ listaFiltrada.filter(t=>t.tipo==='saida').length }} saídas</span>
       </div>
-      <div class="kpi-card" :class="saldoMes >= 0 ? '' : 'kpi-card--neg'">
+      <div class="kpi-card">
         <span class="kpi-label">Saldo</span>
         <span class="kpi-value" :style="{ color: saldoMes >= 0 ? 'var(--accent)' : 'var(--status-danger)' }">
           {{ fp.fmt(saldoMes) }}
@@ -69,7 +73,7 @@
       <div v-if="listaFiltrada.length === 0" class="empty-state">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         <p>Nenhuma transação encontrada</p>
-        <button class="btn btn-primary btn-sm" @click="abrirModal('saida')">Adicionar primeira despesa</button>
+        <button class="btn btn-primary btn-sm" @click="abrirDrawer('saida')">Adicionar primeira despesa</button>
       </div>
 
       <div v-else class="table-wrapper">
@@ -108,11 +112,11 @@
       </div>
     </div>
 
-    <!-- Drawer -->
+    <!-- Drawer transação -->
     <div v-show="drawer" class="drawer-bg" @click="drawer = false"></div>
     <div v-show="drawer" class="drawer">
       <div class="drawer-header">
-        <h3 class="drawer-title">{{ form.id ? 'Editar' : (form.tipo === 'entrada' ? 'Nova receita' : 'Nova despesa') }}</h3>
+        <h3 class="drawer-title">{{ form.id ? 'Editar transação' : (form.tipo === 'entrada' ? 'Nova receita' : 'Nova despesa') }}</h3>
         <button class="btn-icon btn-ghost" @click="drawer = false">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -133,7 +137,7 @@
           <div class="form-group">
             <label class="form-label">Categoria</label>
             <select v-model="form.cat" class="form-select">
-              <option v-for="c in (form.tipo === 'entrada' ? fp.CATS_ENTRADA : fp.CATS_SAIDA)" :key="c" :value="c">{{ c }}</option>
+              <option v-for="c in (form.tipo === 'entrada' ? fp.catsEntrada : fp.catsSaida)" :key="c" :value="c">{{ c }}</option>
             </select>
           </div>
           <div class="form-group">
@@ -164,6 +168,60 @@
         </button>
       </div>
     </div>
+
+    <!-- Modal categorias -->
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div v-if="modalCats" class="modal-backdrop" @click.self="modalCats = false">
+          <div class="cats-modal">
+            <div class="cats-modal-header">
+              <h3 class="cats-modal-title">Gerenciar categorias</h3>
+              <button class="btn-icon btn-ghost" @click="modalCats = false">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div class="cats-modal-body">
+              <!-- Despesas -->
+              <div class="cats-section">
+                <p class="cats-section-title">Despesas</p>
+                <div class="cats-list">
+                  <div v-for="c in fp.catsSaida" :key="c" class="cats-tag">
+                    <span>{{ c }}</span>
+                    <button @click="removerCat('saida', c)" class="cats-remove" title="Remover">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="cats-add-row">
+                  <input v-model="novaCatSaida" class="form-input" placeholder="Nova categoria de despesa..."
+                    @keydown.enter="adicionarCat('saida')" />
+                  <button class="btn btn-secondary btn-sm" @click="adicionarCat('saida')">Adicionar</button>
+                </div>
+              </div>
+
+              <!-- Receitas -->
+              <div class="cats-section">
+                <p class="cats-section-title">Receitas</p>
+                <div class="cats-list">
+                  <div v-for="c in fp.catsEntrada" :key="c" class="cats-tag cats-tag--entrada">
+                    <span>{{ c }}</span>
+                    <button @click="removerCat('entrada', c)" class="cats-remove" title="Remover">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="cats-add-row">
+                  <input v-model="novaCatEntrada" class="form-input" placeholder="Nova categoria de receita..."
+                    @keydown.enter="adicionarCat('entrada')" />
+                  <button class="btn btn-secondary btn-sm" @click="adicionarCat('entrada')">Adicionar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
   </div>
 </template>
@@ -198,10 +256,10 @@ const listaFiltrada = computed(() => {
   return l
 })
 
-const catsDisponiveis = computed(() => [...new Set(listaFiltrada.value.map(t => t.cat))].sort())
+const catsDisponiveis = computed(() => [...new Set(fp.items.map(t => t.cat))].sort())
 
-const recMes  = computed(() => listaFiltrada.value.filter(t => t.tipo === 'entrada').reduce((s, t) => s + Number(t.val), 0))
-const saiMes  = computed(() => listaFiltrada.value.filter(t => t.tipo === 'saida').reduce((s, t) => s + Number(t.val), 0))
+const recMes   = computed(() => listaFiltrada.value.filter(t => t.tipo === 'entrada').reduce((s, t) => s + Number(t.val), 0))
+const saiMes   = computed(() => listaFiltrada.value.filter(t => t.tipo === 'saida').reduce((s, t) => s + Number(t.val), 0))
 const saldoMes = computed(() => recMes.value - saiMes.value)
 
 // Chart
@@ -212,7 +270,7 @@ onMounted(() => nextTick(renderChart))
 
 function renderChart() {
   if (!chartCat.value || !window.Chart) return
-  const gastos = fp.gastosPorCat()
+  const gastos  = fp.gastosPorCat()
   const entries = Object.entries(gastos).filter(([, v]) => v > 0)
   if (!entries.length) { if (chartInst) { chartInst.destroy(); chartInst = null } return }
 
@@ -235,7 +293,7 @@ function renderChart() {
   })
 }
 
-// Drawer / form
+// Drawer transação
 const drawer = ref(false)
 const saving = ref(false)
 const form   = ref(formVazio('saida'))
@@ -243,17 +301,17 @@ const form   = ref(formVazio('saida'))
 function formVazio(tipo) {
   return {
     id: null, tipo, descricao: '', val: '',
-    cat: tipo === 'entrada' ? 'Salário' : 'Alimentação',
+    cat: tipo === 'entrada' ? (fp.catsEntrada[0] || 'Outros') : (fp.catsSaida[0] || 'Outros'),
     data: new Date().toISOString().split('T')[0],
     st: 'pago', obs: ''
   }
 }
 
 watch(() => form.value.tipo, tipo => {
-  form.value.cat = tipo === 'entrada' ? 'Salário' : 'Alimentação'
+  form.value.cat = tipo === 'entrada' ? (fp.catsEntrada[0] || 'Outros') : (fp.catsSaida[0] || 'Outros')
 })
 
-function abrirModal(tipo) {
+function abrirDrawer(tipo) {
   form.value = formVazio(tipo)
   drawer.value = true
 }
@@ -291,6 +349,26 @@ async function confirmarRemover(t) {
   }
 }
 
+// Modal categorias
+const modalCats     = ref(false)
+const novaCatSaida  = ref('')
+const novaCatEntrada = ref('')
+
+async function adicionarCat(tipo) {
+  const nome = tipo === 'saida' ? novaCatSaida.value : novaCatEntrada.value
+  if (!nome.trim()) return
+  await fp.addCat(tipo, nome)
+  if (tipo === 'saida') novaCatSaida.value = ''
+  else novaCatEntrada.value = ''
+  toast?.('Categoria adicionada', 'ok')
+}
+
+async function removerCat(tipo, nome) {
+  if (!confirm(`Remover categoria "${nome}"?`)) return
+  await fp.removeCat(tipo, nome)
+  toast?.('Categoria removida', 'ok')
+}
+
 function fmtData(d) {
   if (!d) return ''
   const [y, m, day] = d.split('-')
@@ -316,10 +394,7 @@ function fmtData(d) {
   padding: .5rem .75rem; border-bottom: 1px solid var(--border-subtle);
   text-align: left;
 }
-.fp-row {
-  cursor: pointer;
-  transition: background 100ms;
-}
+.fp-row { cursor: pointer; transition: background 100ms; }
 .fp-row:hover { background: var(--bg-elevated); }
 .fp-row td { padding: .625rem .75rem; border-bottom: 1px solid var(--border-subtle); }
 .fp-row:last-child td { border-bottom: none; }
@@ -327,6 +402,7 @@ function fmtData(d) {
 .fp-desc { font-size: .85rem; color: var(--text-primary); font-weight: 500; }
 .fp-val  { text-align: right; font-size: .9rem; font-weight: 700; white-space: nowrap; }
 
+/* Drawer */
 .drawer-bg {
   position: fixed; inset: 0; background: rgba(0,0,0,.45);
   z-index: 400; backdrop-filter: blur(2px);
@@ -352,4 +428,57 @@ function fmtData(d) {
   border-top: 1px solid var(--border-default); flex-shrink: 0;
 }
 .drawer-footer .btn { flex: 1; justify-content: center; }
+
+/* Modal categorias */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,.5); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+}
+.cats-modal {
+  width: 480px; max-width: 100%; max-height: 80vh;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.4);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+[data-theme="light"] .cats-modal { box-shadow: 0 12px 40px rgba(0,0,0,.15); }
+.cats-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-default); flex-shrink: 0;
+}
+.cats-modal-title { font-size: .9375rem; font-weight: 700; color: var(--text-primary); margin: 0; }
+.cats-modal-body { flex: 1; overflow-y: auto; padding: 1.25rem; display: flex; flex-direction: column; gap: 1.5rem; }
+
+.cats-section { display: flex; flex-direction: column; gap: .625rem; }
+.cats-section-title {
+  font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--text-tertiary); margin: 0;
+}
+.cats-list { display: flex; flex-wrap: wrap; gap: .375rem; }
+.cats-tag {
+  display: inline-flex; align-items: center; gap: .35rem;
+  background: var(--bg-overlay); border: 1px solid var(--border-default);
+  border-radius: 99px; padding: .25rem .625rem .25rem .75rem;
+  font-size: .78rem; color: var(--text-secondary);
+}
+.cats-tag--entrada {
+  background: rgba(34,197,94,.07);
+  border-color: rgba(34,197,94,.2);
+  color: var(--accent);
+}
+.cats-remove {
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-tertiary); padding: 0; line-height: 1;
+  transition: color 100ms;
+}
+.cats-remove:hover { color: var(--status-danger); }
+.cats-add-row { display: flex; gap: .5rem; margin-top: .25rem; }
+.cats-add-row .form-input { flex: 1; }
+
+.modal-fade-enter-active { transition: opacity 150ms ease; }
+.modal-fade-leave-active { transition: opacity 100ms ease; }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
 </style>

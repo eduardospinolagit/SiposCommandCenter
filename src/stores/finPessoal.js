@@ -3,19 +3,48 @@ import { ref, computed } from 'vue'
 import { sb } from '@/lib/supabase'
 import { uid } from '@/utils/uid'
 
-export const useFinPessoalStore = defineStore('finPessoal', () => {
-  const items = ref([])
+const DEFAULTS_SAIDA   = ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Lazer', 'Educação', 'Assinaturas', 'Vestuário', 'Outros']
+const DEFAULTS_ENTRADA = ['Salário', 'Freelance', 'Investimentos', 'Presente', 'Outros']
 
-  const CATS_SAIDA = ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Lazer', 'Educação', 'Assinaturas', 'Vestuário', 'Outros']
-  const CATS_ENTRADA = ['Salário', 'Freelance', 'Investimentos', 'Presente', 'Outros']
+export const useFinPessoalStore = defineStore('finPessoal', () => {
+  const items      = ref([])
+  const catsSaida  = ref([...DEFAULTS_SAIDA])
+  const catsEntrada = ref([...DEFAULTS_ENTRADA])
 
   async function load() {
-    const { data, error } = await sb
-      .from('fin_pessoal')
-      .select('*')
-      .eq('user_id', uid())
-      .order('data', { ascending: false })
-    if (!error) items.value = data || []
+    const [txRes, catRes] = await Promise.all([
+      sb.from('fin_pessoal').select('*').eq('user_id', uid()).order('data', { ascending: false }),
+      sb.from('configuracoes').select('valor').eq('user_id', uid()).eq('chave', 'fin_pessoal_cats').maybeSingle()
+    ])
+    if (!txRes.error) items.value = txRes.data || []
+    if (catRes.data?.valor) {
+      catsSaida.value   = catRes.data.valor.saida   || [...DEFAULTS_SAIDA]
+      catsEntrada.value = catRes.data.valor.entrada || [...DEFAULTS_ENTRADA]
+    }
+  }
+
+  async function saveCats() {
+    await sb.from('configuracoes').upsert({
+      id:         uid() + '_fin_pessoal_cats',
+      user_id:    uid(),
+      chave:      'fin_pessoal_cats',
+      valor:      { saida: catsSaida.value, entrada: catsEntrada.value },
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' })
+  }
+
+  async function addCat(tipo, nome) {
+    const lista = tipo === 'entrada' ? catsEntrada : catsSaida
+    const n = nome.trim()
+    if (!n || lista.value.includes(n)) return
+    lista.value.push(n)
+    await saveCats()
+  }
+
+  async function removeCat(tipo, nome) {
+    const lista = tipo === 'entrada' ? catsEntrada : catsSaida
+    lista.value = lista.value.filter(c => c !== nome)
+    await saveCats()
   }
 
   async function upsert(tx) {
@@ -62,5 +91,11 @@ export const useFinPessoalStore = defineStore('finPessoal', () => {
     return c
   }
 
-  return { items, CATS_SAIDA, CATS_ENTRADA, load, upsert, remove, totalEntrada, totalSaida, saldo, fmt, gastosPorCat }
+  return {
+    items, catsSaida, catsEntrada,
+    load, upsert, remove,
+    addCat, removeCat,
+    totalEntrada, totalSaida, saldo,
+    fmt, gastosPorCat
+  }
 })
